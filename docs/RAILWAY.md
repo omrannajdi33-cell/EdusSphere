@@ -40,9 +40,9 @@ Puis ajoute manuellement (Raw Editor) :
 | `DB_DATABASE` | `${{MySQL.MYSQLDATABASE}}` |
 | `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
 | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-| `SESSION_DRIVER` | `database` |
-| `CACHE_STORE` | `database` |
-| `QUEUE_CONNECTION` | `database` |
+| `SESSION_DRIVER` | `file` |
+| `CACHE_STORE` | `file` |
+| `QUEUE_CONNECTION` | `sync` |
 | `RUN_SEED` | `true` (première fois seulement) |
 
 **APP_KEY** (sur ton PC) :
