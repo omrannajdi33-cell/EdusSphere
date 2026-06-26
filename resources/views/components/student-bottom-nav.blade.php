@@ -1,27 +1,36 @@
 @props(['active' => null])
 
 @php
+$navIcons = config('subjects.icons');
+
 $items = [
-    ['label' => 'Accueil', 'href' => url('/student'), 'key' => 'home'],
-    ['label' => 'Matières', 'href' => url('/student/subjects'), 'key' => 'subjects'],
-    ['label' => 'Leçons', 'href' => url('/student/lessons'), 'key' => 'lessons'],
-    ['label' => 'Activités', 'href' => url('/student/activities'), 'key' => 'activities'],
-    ['label' => 'Examens', 'href' => url('/student/exams'), 'key' => 'exams'],
-    ['label' => 'Horaire', 'href' => url('/student/schedule'), 'key' => 'schedule'],
-    ['label' => 'Points', 'href' => url('/student/points'), 'key' => 'points'],
+    ['label' => 'Accueil', 'href' => route('student.dashboard'), 'key' => 'home', 'icon' => $navIcons['home']],
+    ['label' => 'Matières', 'href' => route('student.subjects.index'), 'key' => 'subjects', 'icon' => $navIcons['book-open']],
+    ['label' => 'Leçons', 'href' => route('student.lessons.index'), 'key' => 'lessons', 'icon' => $navIcons['document']],
+    ['label' => 'Activités', 'href' => route('student.activities.index'), 'key' => 'activities', 'icon' => $navIcons['clipboard']],
+    ['label' => 'Examens', 'href' => route('student.exams.index'), 'key' => 'exams', 'icon' => $navIcons['document']],
+    ['label' => 'Bulletin', 'href' => route('student.bulletin.index'), 'key' => 'bulletin', 'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+    ['label' => 'Horaire', 'href' => route('student.schedule.index'), 'key' => 'schedule', 'icon' => $navIcons['calendar']],
 ];
 @endphp
 
-<nav {{ $attributes->merge(['class' => 'fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden']) }}>
-    <div class="flex justify-around px-1 py-2">
+<nav {{ $attributes->merge(['class' => 'es-dock']) }} aria-label="Navigation principale">
+    <div class="es-dock-inner">
         @foreach ($items as $item)
             @php $isActive = $active === $item['key']; @endphp
             <a
                 href="{{ $item['href'] }}"
-                class="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1 text-[10px] font-medium {{ $isActive ? 'text-indigo-600' : 'text-slate-500' }}"
+                aria-current="{{ $isActive ? 'page' : 'false' }}"
+                @class([
+                    'es-dock-item',
+                    'es-dock-item-active' => $isActive,
+                    'es-dock-item-idle' => ! $isActive,
+                ])
             >
-                <span class="h-1.5 w-1.5 rounded-full {{ $isActive ? 'bg-indigo-600' : 'bg-transparent' }}"></span>
-                {{ $item['label'] }}
+                <svg class="es-dock-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
+                </svg>
+                <span class="es-dock-label">{{ $item['label'] }}</span>
             </a>
         @endforeach
     </div>

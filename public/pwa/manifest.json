@@ -4,8 +4,8 @@
     "description": "Plateforme éducative interactive pour enfants",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#f8f7f4",
-    "theme_color": "#6366f1",
+    "background_color": "#eef2ff",
+    "theme_color": "#4f46e5",
     "lang": "fr",
     "icons": [
         {

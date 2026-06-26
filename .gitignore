@@ -30,3 +30,6 @@ Thumbs.db
 /.laravel-tmp
 /database/database.sqlite
 
+# PDF de référence local (modèle bulletin)
+/*.pdf
+

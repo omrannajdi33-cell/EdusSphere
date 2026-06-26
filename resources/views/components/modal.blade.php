@@ -9,13 +9,21 @@
     x-show="open"
     x-cloak
     @keydown.escape.window="open = false"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5"
     style="display: none;"
+    role="dialog"
+    aria-modal="true"
 >
-    <div class="absolute inset-0 bg-slate-900/40" @click="open = false"></div>
-    <div {{ $attributes->merge(['class' => 'relative w-full max-w-md rounded-3xl bg-white p-6 shadow-xl']) }}>
+    <div class="es-modal-backdrop" @click="open = false"></div>
+    <div
+        {{ $attributes->merge(['class' => 'es-modal-panel']) }}
+        x-show="open"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+    >
         @if ($title)
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">{{ $title }}</h3>
+            <h3 class="es-modal-title">{{ $title }}</h3>
         @endif
         {{ $slot }}
     </div>

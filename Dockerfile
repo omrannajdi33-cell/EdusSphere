@@ -1,8 +1,16 @@
 FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    git curl libpng-dev libonig-dev libxml2-dev zip unzip libzip-dev libicu-dev \
+    libreoffice \
+    libreoffice-writer \
+    libreoffice-impress \
+    libreoffice-common \
+    fonts-liberation \
+    --no-install-recommends \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -10,6 +18,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-edusphere.conf
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

@@ -11,15 +11,43 @@ Plateforme web éducative interactive (PWA) pour enfants de **7 à 10 ans**, con
 ```bash
 docker compose up -d --build
 docker compose exec app php artisan migrate
+docker compose exec app php artisan db:seed
+npm run build
 ```
+
+**Performance (Windows / Docker)** — après mise à jour, rebuild une fois :
+
+```bash
+docker compose down
+docker compose up -d --build
+docker compose exec app php artisan config:clear
+```
+
+Dans ton `.env`, utilise Redis (déjà dans `.env.example`) :
+
+```
+CACHE_STORE=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
+REDIS_HOST=redis
+LOG_LEVEL=warning
+```
+
+Les assets CSS/JS doivent être **compilés** (`npm run build`), pas le serveur Vite en dev, sauf si tu lances `docker compose --profile dev up node`.
+
 
 | Service | URL |
 |---------|-----|
 | Application | http://localhost:8080 |
+| Connexion | http://localhost:8080/login |
+
+**Comptes démo** (après `db:seed`) : `prof@edusphere.fr` / `eleve1@edusphere.fr` — mot de passe `password`
 | Vite (assets dev) | http://localhost:5173 |
 | phpMyAdmin | http://localhost:8081 |
 
-Conteneurs : `app`, `nginx`, `mysql`, `phpmyadmin`, `node`, `scheduler`.
+Conteneurs par défaut : `app`, `nginx`, `mysql`, `redis`.
+
+Optionnels : `docker compose --profile dev up node` (Vite) · `docker compose --profile tools up phpmyadmin`
 
 Voir [docs/GIT.md](docs/GIT.md) pour les conventions Git · [docs/GITHUB.md](docs/GITHUB.md) pour créer le dépôt distant.
 
@@ -133,7 +161,7 @@ Matière → Compétence → Leçon → Activité → Pages → Questions → Co
 
 - **Todo interactive :** ouvrir [`todo-list.html`](todo-list.html) dans le navigateur
 - **Cahier des charges complet :** [`cahier-de-charge.md`](cahier-de-charge.md)
-- **Phase actuelle :** Phases 1–2 terminées → prochaine étape : Phase 3 (migrations BDD métier)
+- **Phase actuelle :** Phase 7 terminée (P0) → Phase 8 (leçons)
 
 ---
 

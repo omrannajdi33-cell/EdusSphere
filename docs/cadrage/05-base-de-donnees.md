@@ -63,7 +63,7 @@ announcements ── notifications
 | Colonne | Type | Notes |
 |---------|------|-------|
 | id | BIGINT PK | |
-| name | VARCHAR(100) | ex. CE1, CE2 |
+| name | VARCHAR(100) | ex. Primaire 1, Primaire 2 |
 | order | INT | Affichage |
 | created_at, updated_at | TIMESTAMP | |
 

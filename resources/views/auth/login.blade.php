@@ -1,28 +1,90 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Connexion — {{ config('app.name') }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="min-h-screen bg-[#f8f7f4] flex items-center justify-center p-6">
-    <x-card class="w-full max-w-md">
-        <h1 class="text-2xl font-bold text-slate-900 mb-2">Connexion</h1>
-        <p class="text-slate-600 text-sm mb-6">Authentification — Phase 4</p>
-        <form class="space-y-4">
-            @csrf
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input type="email" class="w-full rounded-2xl border border-slate-200 px-4 py-2.5" placeholder="prof@edusphere.local" disabled>
+@extends('layouts.guest')
+
+@section('title', 'Connexion — '.config('app.name'))
+
+@section('content')
+<div class="relative min-h-screen flex">
+    {{-- Panel gauche (tablette / desktop) --}}
+    <div class="es-split-panel">
+        <div class="es-split-blob-1"></div>
+        <div class="es-split-blob-2"></div>
+        <div class="es-split-content">
+            <a href="{{ route('home') }}" class="flex items-center gap-4 group">
+                <span class="es-logo-mark">E</span>
+                <span class="text-3xl font-black text-white">EduSphere</span>
+            </a>
+            <h2 class="es-split-title">Ton espace d'apprentissage</h2>
+            <p class="es-split-text">Connecte-toi pour accéder à tes leçons, activités et ta découverte du jour.</p>
+            <ul class="mt-12 space-y-5">
+                @foreach (['Découverte scientifique quotidienne', 'Activités interactives', 'Points & progression'] as $item)
+                    <li class="es-check-item">
+                        <span class="es-check-icon">✓</span>
+                        {{ $item }}
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+
+    {{-- Formulaire --}}
+    <div class="flex flex-1 items-center justify-center px-6 py-12">
+        <div class="es-login-panel es-page-enter">
+            <div class="lg:hidden mb-10">
+                <x-logo subtitle="Connexion" />
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Mot de passe</label>
-                <input type="password" class="w-full rounded-2xl border border-slate-200 px-4 py-2.5" disabled>
-            </div>
-            <x-button type="button" class="w-full opacity-50 cursor-not-allowed" disabled>Se connecter (bientôt)</x-button>
-        </form>
-        <p class="mt-4 text-center"><a href="{{ url('/') }}" class="text-sm text-indigo-600">← Retour</a></p>
-    </x-card>
-</body>
-</html>
+
+            <h1 class="text-4xl font-black text-es-ink">Connexion</h1>
+            <p class="mt-3 text-xl font-medium text-es-muted">Email et mot de passe</p>
+
+            @if ($errors->any())
+                <div class="mt-7">
+                    <x-alert type="error">{{ $errors->first() }}</x-alert>
+                </div>
+            @endif
+
+            <form method="POST" action="/login" class="mt-9 space-y-6">
+                @csrf
+
+                <div>
+                    <label for="email" class="es-label">Email</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value="{{ old('email') }}"
+                        placeholder="eleve1@edusphere.fr"
+                        required
+                        autofocus
+                        class="es-input"
+                    >
+                </div>
+
+                <div>
+                    <label for="password" class="es-label">Mot de passe</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                        class="es-input"
+                    >
+                </div>
+
+                <label class="flex items-center gap-3.5 cursor-pointer">
+                    <input type="checkbox" name="remember" class="es-checkbox">
+                    <span class="text-base font-bold text-es-muted">Rester connecté</span>
+                </label>
+
+                <button type="submit" class="es-btn-primary w-full">
+                    Se connecter
+                </button>
+            </form>
+
+            <p class="mt-10 text-center">
+                <a href="{{ route('home') }}" class="es-link text-base">← Retour à l'accueil</a>
+            </p>
+        </div>
+    </div>
+</div>
+@endsection

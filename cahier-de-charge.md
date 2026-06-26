@@ -121,76 +121,76 @@ Legende :
 
 ### 3.1 Tables utilisateurs et profils
 
-- [ ] P0 Creer la table `users`.
-- [ ] P0 Ajouter les champs : nom, email, mot de passe, role, statut.
-- [ ] P0 Creer la table `students`.
-- [ ] P0 Lier un eleve a un utilisateur si necessaire.
-- [ ] P0 Ajouter prenom, nom, date de naissance, avatar, niveau scolaire.
-- [ ] P0 Creer la table `school_levels`.
-- [ ] P1 Ajouter les champs de profil eleve.
-- [ ] P1 Ajouter les champs de preferences d'interface.
+- [x] P0 Creer la table `users`.
+- [x] P0 Ajouter les champs : nom, email, mot de passe, role, statut.
+- [x] P0 Creer la table `students`.
+- [x] P0 Lier un eleve a un utilisateur si necessaire.
+- [x] P0 Ajouter prenom, nom, date de naissance, avatar, niveau scolaire.
+- [x] P0 Creer la table `school_levels`.
+- [x] P1 Ajouter les champs de profil eleve.
+- [x] P1 Ajouter les champs de preferences d'interface.
 
 ### 3.2 Tables pedagogiques
 
-- [ ] P0 Creer la table `subjects`.
-- [ ] P0 Ajouter nom, couleur, icone, ordre d'affichage.
-- [ ] P0 Creer la table `skills`.
-- [ ] P0 Lier chaque competence a une matiere.
-- [ ] P0 Ajouter un pourcentage de ponderation.
-- [ ] P0 Ajouter une contrainte logique : total des competences d'une matiere = 100%.
-- [ ] P0 Creer la table `lessons`.
-- [ ] P0 Lier chaque lecon a une matiere et une competence.
-- [ ] P0 Creer la table `activities`.
-- [ ] P0 Lier chaque activite a une matiere et une competence.
-- [ ] P0 Creer la table `activity_pages`.
-- [ ] P0 Creer la table `questions`.
-- [ ] P0 Creer la table `answers`.
-- [ ] P1 Ajouter un champ `status` aux lecons, activites et examens.
-- [ ] P1 Ajouter les champs de publication.
-- [ ] P1 Ajouter les champs d'ordre d'affichage.
+- [x] P0 Creer la table `subjects`.
+- [x] P0 Ajouter nom, couleur, icone, ordre d'affichage.
+- [x] P0 Creer la table `skills`.
+- [x] P0 Lier chaque competence a une matiere.
+- [x] P0 Ajouter un pourcentage de ponderation.
+- [x] P0 Ajouter une contrainte logique : total des competences d'une matiere = 100%.
+- [x] P0 Creer la table `lessons`.
+- [x] P0 Lier chaque lecon a une matiere et une competence.
+- [x] P0 Creer la table `activities`.
+- [x] P0 Lier chaque activite a une matiere et une competence.
+- [x] P0 Creer la table `activity_pages`.
+- [x] P0 Creer la table `questions`.
+- [x] P0 Creer la table `answers`.
+- [x] P1 Ajouter un champ `status` aux lecons, activites et examens.
+- [x] P1 Ajouter les champs de publication.
+- [x] P1 Ajouter les champs d'ordre d'affichage.
 
 ### 3.3 Tables examens et resultats
 
-- [ ] P0 Creer la table `exams`.
-- [ ] P0 Creer la table `exam_attempts`.
-- [ ] P0 Creer la table `grades`.
-- [ ] P0 Creer la table `progressions`.
-- [ ] P0 Stocker heure de debut, heure de fin, duree totale, progression et note finale.
-- [ ] P1 Stocker le nombre de pages visitees.
-- [ ] P1 Stocker le nombre de reponses.
-- [ ] P1 Stocker les tentatives restantes.
+- [x] P0 Creer la table `exams`.
+- [x] P0 Creer la table `exam_attempts`.
+- [x] P0 Creer la table `grades`.
+- [x] P0 Creer la table `progressions`.
+- [x] P0 Stocker heure de debut, heure de fin, duree totale, progression et note finale.
+- [x] P1 Stocker le nombre de pages visitees.
+- [x] P1 Stocker le nombre de reponses.
+- [x] P1 Stocker les tentatives restantes.
 
 ### 3.4 Tables correction et annotations
 
-- [ ] P0 Creer la table `corrections`.
-- [ ] P0 Creer la table `annotations`.
-- [ ] P0 Stocker les commentaires professeur.
-- [ ] P0 Stocker les annotations manuscrites ou dessinees.
-- [ ] P0 Stocker l'historique des corrections.
-- [ ] P1 Ajouter un statut : soumis, a corriger, corrige, renvoye, valide.
-- [ ] P1 Ajouter la date de chaque etape.
+- [x] P0 Creer la table `corrections`.
+- [x] P0 Creer la table `annotations`.
+- [x] P0 Stocker les commentaires professeur.
+- [x] P0 Stocker les annotations manuscrites ou dessinees.
+- [x] P0 Stocker l'historique des corrections.
+- [x] P1 Ajouter un statut : soumis, a corriger, corrige, renvoye, valide.
+- [x] P1 Ajouter la date de chaque etape.
 
 ### 3.5 Tables points et comportement
 
-- [ ] P0 Creer la table `points`.
-- [ ] P0 Creer la table `point_actions`.
-- [ ] P0 Ajouter actions positives : participation, excellent travail, respect, entraide, perseverance.
-- [ ] P0 Ajouter actions negatives : distraction, retard, manque d'effort.
-- [ ] P0 Rendre la valeur de chaque action configurable.
-- [ ] P1 Ajouter historique complet des points.
-- [ ] P1 Ajouter la personne qui a attribue les points.
+- [x] P0 Creer la table `points`.
+- [x] P0 Creer la table `point_actions`.
+- [x] P0 Ajouter actions positives : participation, excellent travail, respect, entraide, perseverance.
+- [x] P0 Ajouter actions negatives : distraction, retard, manque d'effort.
+- [x] P0 Rendre la valeur de chaque action configurable.
+- [x] P1 Ajouter historique complet des points.
+- [x] P1 Ajouter la personne qui a attribue les points.
 
 ### 3.6 Tables administration scolaire
 
-- [ ] P0 Creer la table `schedules`.
-- [ ] P0 Creer la table `events`.
-- [ ] P0 Creer la table `announcements`.
-- [ ] P0 Creer la table `notifications`.
-- [ ] P0 Creer la table `reports`.
-- [ ] P0 Creer la table `media_files`.
-- [ ] P1 Ajouter les relations entre horaires, matieres et periodes.
-- [ ] P1 Ajouter les relations entre annonces et destinataires.
-- [ ] P1 Ajouter les relations entre bulletins et eleves.
+- [x] P0 Creer la table `schedules`.
+- [x] P0 Creer la table `events`.
+- [x] P0 Creer la table `announcements`.
+- [x] P0 Creer la table `notifications`.
+- [x] P0 Creer la table `reports`.
+- [x] P0 Creer la table `media_files`.
+- [x] P1 Ajouter les relations entre horaires, matieres et periodes.
+- [x] P1 Ajouter les relations entre annonces et destinataires.
+- [x] P1 Ajouter les relations entre bulletins et eleves.
 
 ---
 
@@ -198,37 +198,37 @@ Legende :
 
 ### 4.1 Authentification
 
-- [ ] P0 Installer ou configurer le systeme d'authentification Laravel.
-- [ ] P0 Creer la page de connexion.
-- [ ] P0 Creer la deconnexion.
-- [ ] P0 Ajouter le hashage obligatoire des mots de passe.
-- [ ] P0 Ajouter la validation backend des formulaires.
-- [ ] P0 Ajouter la protection CSRF.
-- [ ] P1 Ajouter la gestion du profil.
-- [ ] P1 Ajouter le changement de mot de passe.
-- [ ] P1 Ajouter la deconnexion automatique apres inactivite.
+- [x] P0 Installer ou configurer le systeme d'authentification Laravel.
+- [x] P0 Creer la page de connexion.
+- [x] P0 Creer la deconnexion.
+- [x] P0 Ajouter le hashage obligatoire des mots de passe.
+- [x] P0 Ajouter la validation backend des formulaires.
+- [x] P0 Ajouter la protection CSRF.
+- [x] P1 Ajouter la gestion du profil.
+- [x] P1 Ajouter le changement de mot de passe.
+- [x] P1 Ajouter la deconnexion automatique apres inactivite.
 
 ### 4.2 Roles
 
-- [ ] P0 Definir les roles : admin/professeur, eleve.
-- [ ] P0 Creer un middleware pour proteger l'espace admin.
-- [ ] P0 Creer un middleware pour proteger l'espace eleve.
-- [ ] P0 Bloquer l'acces admin aux eleves.
-- [ ] P0 Bloquer l'acces aux donnees des autres eleves.
-- [ ] P0 Bloquer la modification des notes par les eleves.
-- [ ] P0 Bloquer la modification des points par les eleves.
-- [ ] P1 Ajouter des policies Laravel pour les entites sensibles.
-- [ ] P1 Ajouter des tests de permissions.
+- [x] P0 Definir les roles : admin/professeur, eleve.
+- [x] P0 Creer un middleware pour proteger l'espace admin.
+- [x] P0 Creer un middleware pour proteger l'espace eleve.
+- [x] P0 Bloquer l'acces admin aux eleves.
+- [x] P0 Bloquer l'acces aux donnees des autres eleves.
+- [x] P0 Bloquer la modification des notes par les eleves.
+- [x] P0 Bloquer la modification des points par les eleves.
+- [x] P1 Ajouter des policies Laravel pour les entites sensibles.
+- [x] P1 Ajouter des tests de permissions.
 
 ### 4.3 Securite des donnees
 
-- [ ] P0 Valider toutes les donnees cote serveur.
-- [ ] P0 Verifier les uploads de fichiers.
-- [ ] P0 Limiter les formats autorises.
-- [ ] P0 Limiter la taille des photos de profil a 5 Mo.
-- [ ] P0 Stocker les fichiers dans un emplacement non public si necessaire.
-- [ ] P1 Ajouter des noms de fichiers securises.
-- [ ] P1 Ajouter une protection contre l'acces direct aux fichiers prives.
+- [x] P0 Valider toutes les donnees cote serveur.
+- [x] P0 Verifier les uploads de fichiers.
+- [x] P0 Limiter les formats autorises.
+- [x] P0 Limiter la taille des photos de profil a 5 Mo.
+- [x] P0 Stocker les fichiers dans un emplacement non public si necessaire.
+- [x] P1 Ajouter des noms de fichiers securises.
+- [x] P1 Ajouter une protection contre l'acces direct aux fichiers prives.
 - [ ] P2 Ajouter des logs d'activite admin.
 
 ---
@@ -237,45 +237,45 @@ Legende :
 
 ### 5.1 Direction visuelle
 
-- [ ] P0 Definir une interface tablette first.
-- [ ] P0 Definir une grille responsive pour tablette, desktop et mobile.
-- [ ] P0 Definir les couleurs globales : fond blanc casse, fond gris ultra clair.
-- [ ] P0 Definir les couleurs par matiere.
-- [ ] P0 Definir les icones par matiere.
-- [ ] P0 Definir les styles de cartes modernes.
-- [ ] P0 Definir des coins arrondis de 24 px pour les cartes principales.
-- [ ] P0 Definir des ombres douces.
-- [ ] P0 Definir des animations fluides.
-- [ ] P0 Eviter les tableaux surcharges.
-- [ ] P0 Eviter les menus complexes.
-- [ ] P0 Eviter les textes inutiles.
-- [ ] P0 Eviter les petites polices.
+- [x] P0 Definir une interface tablette first.
+- [x] P0 Definir une grille responsive pour tablette, desktop et mobile.
+- [x] P0 Definir les couleurs globales : fond blanc casse, fond gris ultra clair.
+- [x] P0 Definir les couleurs par matiere.
+- [x] P0 Definir les icones par matiere.
+- [x] P0 Definir les styles de cartes modernes.
+- [x] P0 Definir des coins arrondis de 24 px pour les cartes principales.
+- [x] P0 Definir des ombres douces.
+- [x] P0 Definir des animations fluides.
+- [x] P0 Eviter les tableaux surcharges.
+- [x] P0 Eviter les menus complexes.
+- [x] P0 Eviter les textes inutiles.
+- [x] P0 Eviter les petites polices.
 
 ### 5.2 Composants communs
 
-- [ ] P0 Creer un layout principal admin.
-- [ ] P0 Creer un layout principal eleve.
-- [ ] P0 Creer un composant carte.
-- [ ] P0 Creer un composant bouton.
-- [ ] P0 Creer un composant modal.
-- [ ] P0 Creer un composant alerte.
-- [ ] P0 Creer un composant badge de statut.
-- [ ] P0 Creer un composant barre de progression.
-- [ ] P0 Creer un composant avatar.
-- [ ] P0 Creer un composant navigation inferieure tablette.
-- [ ] P0 Creer un composant formulaire.
-- [ ] P1 Creer un composant onglets.
-- [ ] P1 Creer un composant calendrier.
-- [ ] P1 Creer un composant graphique simple.
+- [x] P0 Creer un layout principal admin.
+- [x] P0 Creer un layout principal eleve.
+- [x] P0 Creer un composant carte.
+- [x] P0 Creer un composant bouton.
+- [x] P0 Creer un composant modal.
+- [x] P0 Creer un composant alerte.
+- [x] P0 Creer un composant badge de statut.
+- [x] P0 Creer un composant barre de progression.
+- [x] P0 Creer un composant avatar.
+- [x] P0 Creer un composant navigation inferieure tablette.
+- [x] P0 Creer un composant formulaire.
+- [x] P1 Creer un composant onglets.
+- [x] P1 Creer un composant calendrier.
+- [x] P1 Creer un composant graphique simple.
 
 ### 5.3 Navigation
 
-- [ ] P0 Ajouter la navigation admin.
-- [ ] P0 Ajouter la navigation eleve.
-- [ ] P0 Ajouter la barre inferieure tablette eleve : Accueil, Matieres, Lecons, Activites, Examens, Horaire, Points.
-- [ ] P0 S'assurer que les fonctions importantes sont accessibles en 3 clics maximum.
-- [ ] P1 Ajouter des transitions entre pages.
-- [ ] P1 Ajouter des etats actifs clairs.
+- [x] P0 Ajouter la navigation admin.
+- [x] P0 Ajouter la navigation eleve.
+- [x] P0 Ajouter la barre inferieure tablette eleve : Accueil, Matieres, Lecons, Activites, Examens, Horaire, Points.
+- [x] P0 S'assurer que les fonctions importantes sont accessibles en 3 clics maximum.
+- [x] P1 Ajouter des transitions entre pages.
+- [x] P1 Ajouter des etats actifs clairs.
 
 ---
 
@@ -283,37 +283,37 @@ Legende :
 
 ### 6.1 Matieres officielles
 
-- [ ] P0 Creer le seeder des matieres.
-- [ ] P0 Ajouter Francais.
-- [ ] P0 Ajouter Mathematiques.
-- [ ] P0 Ajouter Sciences.
-- [ ] P0 Ajouter Histoire.
-- [ ] P0 Ajouter Geographie.
-- [ ] P0 Ajouter Islam.
-- [ ] P0 Ajouter Natation.
-- [ ] P0 Ajouter Education physique.
-- [ ] P0 Associer une couleur a chaque matiere.
-- [ ] P0 Associer une icone a chaque matiere.
+- [x] P0 Creer le seeder des matieres.
+- [x] P0 Ajouter Francais.
+- [x] P0 Ajouter Mathematiques.
+- [x] P0 Ajouter Sciences.
+- [x] P0 Ajouter Histoire.
+- [x] P0 Ajouter Geographie.
+- [x] P0 Ajouter Islam.
+- [x] P0 Ajouter Natation.
+- [x] P0 Ajouter Education physique.
+- [x] P0 Associer une couleur a chaque matiere.
+- [x] P0 Associer une icone a chaque matiere.
 
 ### 6.2 Competences officielles
 
-- [ ] P0 Creer le seeder des competences de Francais.
-- [ ] P0 Creer le seeder des competences de Mathematiques.
-- [ ] P0 Creer le seeder des competences de Sciences.
-- [ ] P0 Creer le seeder des competences de Histoire.
-- [ ] P0 Creer le seeder des competences de Geographie.
-- [ ] P0 Creer le seeder des competences de Islam.
-- [ ] P0 Creer le seeder des competences de Natation.
-- [ ] P0 Creer le seeder des competences de Education physique.
-- [ ] P0 Verifier que chaque matiere totalise 100%.
+- [x] P0 Creer le seeder des competences de Francais.
+- [x] P0 Creer le seeder des competences de Mathematiques.
+- [x] P0 Creer le seeder des competences de Sciences.
+- [x] P0 Creer le seeder des competences de Histoire.
+- [x] P0 Creer le seeder des competences de Geographie.
+- [x] P0 Creer le seeder des competences de Islam.
+- [x] P0 Creer le seeder des competences de Natation.
+- [x] P0 Creer le seeder des competences de Education physique.
+- [x] P0 Verifier que chaque matiere totalise 100%.
 - [ ] P1 Ajouter une page admin pour ajuster les ponderations.
 
 ### 6.3 Comptes de test
 
-- [ ] P0 Creer un compte professeur de test.
-- [ ] P0 Creer plusieurs comptes eleves de test.
-- [ ] P0 Creer un niveau scolaire de test.
-- [ ] P1 Creer des donnees de demonstration : lecons, activites, examens, points.
+- [x] P0 Creer un compte professeur de test.
+- [x] P0 Creer plusieurs comptes eleves de test.
+- [x] P0 Creer un niveau scolaire de test.
+- [x] P1 Creer des donnees de demonstration : lecons, activites, examens, points.
 
 ---
 
@@ -321,12 +321,12 @@ Legende :
 
 ### 7.1 Dashboard admin
 
-- [ ] P0 Creer la route du dashboard admin.
-- [ ] P0 Afficher le nombre d'eleves.
-- [ ] P0 Afficher les activites en attente.
-- [ ] P0 Afficher les examens actifs.
-- [ ] P0 Afficher les corrections a effectuer.
-- [ ] P0 Afficher les annonces publiees.
+- [x] P0 Creer la route du dashboard admin.
+- [x] P0 Afficher le nombre d'eleves.
+- [x] P0 Afficher les activites en attente.
+- [x] P0 Afficher les examens actifs.
+- [x] P0 Afficher les corrections a effectuer.
+- [x] P0 Afficher les annonces publiees.
 - [ ] P1 Afficher la moyenne generale.
 - [ ] P1 Afficher la moyenne par matiere.
 - [ ] P1 Afficher les dernieres activites creees.
@@ -334,12 +334,12 @@ Legende :
 
 ### 7.2 Gestion des eleves
 
-- [ ] P0 Creer la liste des eleves.
-- [ ] P0 Creer le formulaire d'ajout.
-- [ ] P0 Creer le formulaire de modification.
-- [ ] P0 Ajouter la suppression.
-- [ ] P0 Ajouter le niveau scolaire.
-- [ ] P0 Ajouter l'avatar/photo.
+- [x] P0 Creer la liste des eleves.
+- [x] P0 Creer le formulaire d'ajout.
+- [x] P0 Creer le formulaire de modification.
+- [x] P0 Ajouter la suppression.
+- [x] P0 Ajouter le niveau scolaire.
+- [x] P0 Ajouter l'avatar/photo.
 - [ ] P1 Ajouter les statistiques par eleve.
 - [ ] P1 Ajouter la recherche.
 - [ ] P1 Ajouter les filtres.
@@ -347,22 +347,22 @@ Legende :
 
 ### 7.3 Gestion des matieres
 
-- [ ] P0 Creer la liste des matieres.
-- [ ] P0 Creer l'ajout de matiere.
-- [ ] P0 Creer la modification de matiere.
-- [ ] P0 Creer la suppression de matiere.
-- [ ] P0 Gerer les couleurs.
-- [ ] P0 Gerer les icones.
+- [x] P0 Creer la liste des matieres.
+- [x] P0 Creer l'ajout de matiere.
+- [x] P0 Creer la modification de matiere.
+- [x] P0 Creer la suppression de matiere.
+- [x] P0 Gerer les couleurs.
+- [x] P0 Gerer les icones.
 - [ ] P1 Afficher les statistiques par matiere.
 
 ### 7.4 Gestion des competences
 
-- [ ] P0 Creer la liste des competences par matiere.
-- [ ] P0 Creer l'ajout de competence.
-- [ ] P0 Creer la modification de competence.
-- [ ] P0 Creer la suppression de competence.
-- [ ] P0 Gerer le pourcentage de chaque competence.
-- [ ] P0 Bloquer l'enregistrement si le total n'est pas egal a 100%.
+- [x] P0 Creer la liste des competences par matiere.
+- [x] P0 Creer l'ajout de competence.
+- [x] P0 Creer la modification de competence.
+- [x] P0 Creer la suppression de competence.
+- [x] P0 Gerer le pourcentage de chaque competence.
+- [x] P0 Bloquer l'enregistrement si le total n'est pas egal a 100%.
 - [ ] P1 Afficher l'impact de la ponderation sur les moyennes.
 
 ---
@@ -415,47 +415,47 @@ Legende :
 
 ### 9.1 Creation des activites
 
-- [ ] P0 Creer la liste admin des activites.
-- [ ] P0 Creer une activite.
-- [ ] P0 Modifier une activite.
-- [ ] P0 Supprimer une activite.
-- [ ] P0 Publier une activite.
-- [ ] P0 Depublier une activite.
-- [ ] P0 Lier l'activite a une matiere.
-- [ ] P0 Lier l'activite a une competence.
-- [ ] P0 Ajouter plusieurs pages.
-- [ ] P0 Ajouter des questions.
-- [ ] P0 Ajouter des medias.
-- [ ] P1 Ajouter une previsualisation professeur.
+- [x] P0 Creer la liste admin des activites.
+- [x] P0 Creer une activite.
+- [x] P0 Modifier une activite.
+- [x] P0 Supprimer une activite.
+- [x] P0 Publier une activite.
+- [x] P0 Depublier une activite.
+- [x] P0 Lier l'activite a une matiere.
+- [x] P0 Lier l'activite a une competence.
+- [x] P0 Ajouter plusieurs pages.
+- [x] P0 Ajouter des questions.
+- [x] P0 Ajouter des medias.
+- [x] P1 Ajouter une previsualisation professeur.
 
 ### 9.2 Pages interactives
 
-- [ ] P0 Creer le modele de page interactive.
-- [ ] P0 Ajouter ordre, titre, contenu et configuration.
-- [ ] P0 Permettre le changement de page.
-- [ ] P0 Permettre la sauvegarde de l'etat de chaque page.
+- [x] P0 Creer le modele de page interactive.
+- [x] P0 Ajouter ordre, titre, contenu et configuration.
+- [x] P0 Permettre le changement de page.
+- [x] P0 Permettre la sauvegarde de l'etat de chaque page.
 - [ ] P1 Ajouter historique des modifications.
 - [ ] P1 Ajouter reprise plus tard.
 - [ ] P2 Ajouter duplication de page.
 
 ### 9.3 Outils eleve
 
-- [ ] P0 Permettre d'ecrire.
-- [ ] P0 Permettre de dessiner.
-- [ ] P0 Permettre de surligner.
-- [ ] P0 Permettre d'effacer.
-- [ ] P0 Permettre d'ajouter des reponses.
-- [ ] P0 Permettre de sauvegarder.
+- [x] P0 Permettre d'ecrire.
+- [x] P0 Permettre de dessiner.
+- [x] P0 Permettre de surligner.
+- [x] P0 Permettre d'effacer.
+- [x] P0 Permettre d'ajouter des reponses.
+- [x] P0 Permettre de sauvegarder.
 - [ ] P1 Ajouter support tactile fluide.
 - [ ] P1 Ajouter annulation/retablissement.
-- [ ] P1 Ajouter indicateur de page.
+- [x] P1 Ajouter indicateur de page.
 
 ### 9.4 Types de questions
 
-- [ ] P0 QCM.
-- [ ] P0 Vrai/Faux.
-- [ ] P0 Reponse courte.
-- [ ] P0 Reponse longue.
+- [x] P0 QCM.
+- [x] P0 Vrai/Faux.
+- [x] P0 Reponse courte.
+- [x] P0 Reponse longue.
 - [ ] P1 Texte a trous.
 - [ ] P1 Associer des elements.
 - [ ] P1 Relier des elements.

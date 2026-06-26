@@ -2,6 +2,7 @@
     'value' => 0,
     'max' => 100,
     'label' => null,
+    'color' => null,
 ])
 
 @php
@@ -10,12 +11,15 @@ $percent = $max > 0 ? min(100, round(($value / $max) * 100)) : 0;
 
 <div {{ $attributes->merge(['class' => 'w-full']) }}>
     @if ($label)
-        <div class="flex justify-between text-sm text-slate-600 mb-1">
+        <div class="flex justify-between text-base font-bold text-es-muted mb-2.5">
             <span>{{ $label }}</span>
             <span>{{ $percent }}%</span>
         </div>
     @endif
-    <div class="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-        <div class="h-full rounded-full bg-indigo-500 transition-all duration-500" style="width: {{ $percent }}%"></div>
+    <div class="es-progress-track">
+        <div
+            class="es-progress-fill"
+            style="width: {{ $percent }}%;{{ $color ? " background: {$color};" : '' }}"
+        ></div>
     </div>
 </div>

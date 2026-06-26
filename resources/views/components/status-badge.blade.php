@@ -4,15 +4,15 @@
 ])
 
 @php
-[$classes, $text] = match ($status) {
-    'published' => ['bg-emerald-100 text-emerald-700', $label ?? 'Publié'],
-    'submitted' => ['bg-blue-100 text-blue-700', $label ?? 'Soumis'],
-    'in_progress' => ['bg-amber-100 text-amber-700', $label ?? 'En cours'],
-    'corrected' => ['bg-violet-100 text-violet-700', $label ?? 'Corrigé'],
-    default => ['bg-slate-100 text-slate-600', $label ?? 'Brouillon'],
+[$class, $text] = match ($status) {
+    'published' => ['es-badge es-badge-published', $label ?? 'Publié'],
+    'submitted' => ['es-badge es-badge-submitted', $label ?? 'Soumis'],
+    'in_progress' => ['es-badge es-badge-progress', $label ?? 'En cours'],
+    'corrected' => ['es-badge es-badge-corrected', $label ?? 'Corrigé'],
+    default => ['es-badge es-badge-draft', $label ?? 'Brouillon'],
 };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium $classes"]) }}>
+<span {{ $attributes->merge(['class' => $class]) }}>
     {{ $text }}
 </span>
