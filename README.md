@@ -1,5 +1,8 @@
 # EduSphere
 
+> **GitHub n’est pas l’application.** L’URL `github.com/omrannajdi33-cell/EdusSphere` affiche ce fichier README (documentation).  
+> En production, ouvre l’URL de ton **serveur déployé** (ex. `https://edusphere.example.com`) — la page d’accueil redirige vers `/login`.
+
 Plateforme web éducative interactive (PWA) pour enfants de **7 à 10 ans**, conçue en **tablette first**. Elle centralise leçons, activités, examens, corrections, points et administration scolaire dans une seule application tactile.
 
 **Stack :** HTML (Blade) · PHP (Laravel 12) · MySQL · Tailwind CSS · Alpine.js · Docker · GitHub
@@ -49,7 +52,7 @@ Conteneurs par défaut : `app`, `nginx`, `mysql`, `redis`.
 
 Optionnels : `docker compose --profile dev up node` (Vite) · `docker compose --profile tools up phpmyadmin`
 
-Voir [docs/GIT.md](docs/GIT.md) pour les conventions Git · [docs/GITHUB.md](docs/GITHUB.md) pour créer le dépôt distant.
+Voir [docs/GIT.md](docs/GIT.md) pour les conventions Git · [docs/GITHUB.md](docs/GITHUB.md) pour GitHub · [docs/RAILWAY.md](docs/RAILWAY.md) pour déployer sur Railway (iPad / production).
 
 ---
 

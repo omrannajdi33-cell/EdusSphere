@@ -29,7 +29,9 @@ GitHub demandera une connexion (navigateur ou token personnel).
 
 ## 3. iPad — installer l’app (PWA)
 
-GitHub **héberge le code**, pas l’application Laravel. Pour utiliser EduSphere sur iPad :
+GitHub **héberge le code**, pas l’application Laravel. Si tu ouvres `https://github.com/omrannajdi33-cell/EdusSphere`, tu verras le README — ce n’est **pas** l’app.
+
+Pour utiliser EduSphere sur iPad :
 
 1. **Déployer** sur un serveur avec URL **HTTPS** (Railway, Render, VPS, etc.) ou utiliser ton PC en réseau local avec Docker (`http://IP-DU-PC:8080` — PWA limitée sans HTTPS).
 2. Ouvrir l’URL dans **Safari** sur l’iPad.

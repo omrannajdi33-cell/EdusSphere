@@ -9,7 +9,7 @@
         <div class="es-split-blob-1"></div>
         <div class="es-split-blob-2"></div>
         <div class="es-split-content">
-            <a href="{{ route('home') }}" class="flex items-center gap-4 group">
+            <a href="{{ route('login') }}" class="flex items-center gap-4 group">
                 <span class="es-logo-mark">E</span>
                 <span class="text-3xl font-black text-white">EduSphere</span>
             </a>

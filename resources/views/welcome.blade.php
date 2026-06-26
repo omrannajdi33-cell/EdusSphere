@@ -43,7 +43,7 @@
             <x-logo subtitle="Découverte quotidienne" />
 
             <div class="flex items-center gap-3">
-                @auth
+                    @auth
                     @if ($isStudent)
                         <a href="{{ route('student.dashboard') }}" class="hidden sm:inline-flex es-btn-secondary es-btn-sm">
                             Mon espace →
@@ -55,11 +55,11 @@
                             Déconnexion
                         </button>
                     </form>
-                @else
+                    @else
                     <a href="{{ route('login') }}" class="es-btn-primary es-btn-sm">
                         Se connecter
                     </a>
-                @endauth
+                    @endauth
             </div>
         </div>
     </header>

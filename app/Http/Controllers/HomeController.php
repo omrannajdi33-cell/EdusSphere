@@ -2,31 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\DailyDiscovery;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(): View|RedirectResponse
+    public function __invoke(): RedirectResponse
     {
         $user = auth()->user();
 
-        if ($user?->isTeacher()) {
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        if ($user->isTeacher()) {
             return redirect()->route('admin.dashboard');
         }
 
-        $discovery = DailyDiscovery::today();
-        $firstName = null;
-
-        if ($user?->isStudent()) {
-            $firstName = $user->student?->first_name ?? explode(' ', $user->name)[0];
-        }
-
-        return view('welcome', [
-            'discovery' => $discovery,
-            'firstName' => $firstName,
-            'isStudent' => (bool) $user?->isStudent(),
-        ]);
+        return redirect()->route('student.dashboard');
     }
 }
