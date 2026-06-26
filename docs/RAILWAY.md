@@ -22,18 +22,20 @@ Dans ton projet Railway :
 
 ## 3. Variables d’environnement (service web)
 
-Clique sur le service web → **Variables** :
+Clique sur le service **EdusSphere** → **Variables** → bouton **Add Reference** → choisis le service **MySQL** → ajoute toutes les variables (`MYSQLHOST`, `MYSQLPORT`, etc.).
+
+Puis ajoute manuellement (Raw Editor) :
 
 | Variable | Valeur |
 |----------|--------|
 | `APP_NAME` | `EduSphere` |
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
-| `APP_URL` | `https://TON-DOMAINE.up.railway.app` (ton URL Railway) |
-| `APP_KEY` | générer avec `docker compose exec app php artisan key:generate --show` |
+| `APP_URL` | `https://TON-DOMAINE.up.railway.app` (après Generate Domain) |
+| `APP_KEY` | `base64:...` (voir ci-dessous) |
 | `LOG_LEVEL` | `warning` |
 | `DB_CONNECTION` | `mysql` |
-| `DB_HOST` | `${{MySQL.MYSQLHOST}}` (référence au service MySQL) |
+| `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
 | `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
 | `DB_DATABASE` | `${{MySQL.MYSQLDATABASE}}` |
 | `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
@@ -41,11 +43,15 @@ Clique sur le service web → **Variables** :
 | `SESSION_DRIVER` | `database` |
 | `CACHE_STORE` | `database` |
 | `QUEUE_CONNECTION` | `database` |
-| `RUN_SEED` | `true` (première fois seulement, pour les comptes démo) |
+| `RUN_SEED` | `true` (première fois seulement) |
 
-> Remplace `MySQL` par le **nom exact** de ton service MySQL dans Railway si différent.
+**APP_KEY** (sur ton PC) :
 
-Sans Redis sur Railway, utilise `database` pour session/cache (déjà ci-dessus).
+```powershell
+docker compose exec app php artisan key:generate --show
+```
+
+> Remplace `MySQL` par le **nom exact** du service MySQL dans Railway (casse incluse).
 
 ## 4. Redéployer
 
@@ -72,4 +78,4 @@ Safari → URL Railway → **Partager** → **Sur l’écran d’accueil**
 | `APP_KEY is missing` | Variable non définie | Ajouter `APP_KEY` dans Variables |
 | Database not reachable | MySQL pas lié | Vérifier `DB_HOST` etc. avec références `${{MySQL...}}` |
 | Unexposed service | Pas de domaine | Generate Domain dans Networking |
-| Page sans CSS | Build assets raté | Voir Build Logs, étape `npm run build` |
+| Healthcheck failure | Variables manquantes ou nginx pas démarré | Vérifier `APP_KEY` + références MySQL, puis Redeploy |
