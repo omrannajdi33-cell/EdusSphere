@@ -3,35 +3,48 @@
 @section('student-content')
 <div class="es-page-enter">
     <div class="mb-8">
-        <h1 class="es-page-title">Mes résultats</h1>
-        <p class="es-page-subtitle">Notes et moyennes de tes activités</p>
+        <h1 class="es-page-title">Mes points</h1>
+        <p class="es-page-subtitle">Tes bons points et rappels à l'ordre</p>
     </div>
 
-    <div class="es-points-hero mb-8">
-        <p class="text-base font-extrabold text-es-muted uppercase tracking-wide">Moyenne générale</p>
-        <p class="es-points-value">{{ $general !== null ? number_format($general, 0) : '—' }}</p>
-        <p class="text-sm font-bold text-es-muted mt-2">sur 100</p>
+    <div class="es-behavior-student-hero mb-8">
+        <p class="text-base font-extrabold text-es-muted uppercase tracking-wide">Total</p>
+        <p @class([
+            'es-points-value',
+            'text-emerald-600' => $total >= 0,
+            'text-red-600' => $total < 0,
+        ])>
+            {{ $total >= 0 ? '+' : '' }}{{ $total }}
+        </p>
+        <p class="text-sm font-bold text-es-muted mt-2">points comportement</p>
     </div>
 
-    @if ($bySubject !== [])
-        <x-card title="Moyennes par matière" class="mb-8">
-            <x-chart :items="collect($bySubject)->map(fn ($value, $subjectId) => [
-                'label' => $subjects->get($subjectId)?->name ?? 'Matière',
-                'value' => (float) $value,
-                'color' => $subjects->get($subjectId)?->color ?? '#6366f1',
-            ])->values()->all()"/>
-        </x-card>
-    @endif
-
-    <x-card title="Notes par activité">
-        @if ($activityGrades->isEmpty())
-            <p class="text-es-muted">Aucune note pour le moment. Termine et soumets des activités !</p>
+    <x-card title="Historique">
+        @if ($history->isEmpty())
+            <p class="text-es-muted">Aucun point pour le moment. Continue comme ça !</p>
         @else
             <ul class="divide-y divide-stone-100">
-                @foreach ($activityGrades as $grade)
-                    <li class="py-4 flex items-center justify-between gap-4">
-                        <span class="font-bold">{{ $activityTitles->get($grade->source_id) ?? 'Activité #'.$grade->source_id }}</span>
-                        <span class="text-xl font-black text-es-primary">{{ number_format($grade->value, 0) }}/100</span>
+                @foreach ($history as $point)
+                    @php
+                        $positive = $point->value > 0;
+                    @endphp
+                    <li class="py-4 flex items-start gap-4">
+                        <span @class([
+                            'es-behavior-history-badge shrink-0',
+                            'es-behavior-history-badge-good' => $positive,
+                            'es-behavior-history-badge-bad' => ! $positive,
+                        ])>
+                            {{ $positive ? '+' : '' }}{{ $point->value }}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-extrabold text-es-ink">{{ $point->pointAction?->name ?? 'Action' }}</p>
+                            @if ($point->pointAction?->description)
+                                <p class="text-sm text-es-muted mt-0.5">{{ $point->pointAction->description }}</p>
+                            @endif
+                            <p class="text-xs font-bold text-es-muted mt-2">
+                                {{ $point->created_at?->translatedFormat('d M Y · H:i') }}
+                            </p>
+                        </div>
                     </li>
                 @endforeach
             </ul>

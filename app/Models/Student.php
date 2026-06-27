@@ -43,6 +43,22 @@ class Student extends Model
         return $this->belongsTo(ClassGroup::class);
     }
 
+    public function points(): HasMany
+    {
+        return $this->hasMany(Point::class);
+    }
+
+    public function avatarUrl(string $context = 'admin'): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return $context === 'student'
+            ? route('student.profile.avatar.show')
+            : route('admin.students.avatar.show', $this);
+    }
+
     public function activities(): BelongsToMany
     {
         return $this->belongsToMany(Activity::class, 'activity_student')->withTimestamps();

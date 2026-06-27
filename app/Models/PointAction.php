@@ -20,4 +20,29 @@ class PointAction extends Model
     {
         return $this->hasMany(Point::class);
     }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopePositive($query)
+    {
+        return $query->where('type', 'positive');
+    }
+
+    public function scopeNegative($query)
+    {
+        return $query->where('type', 'negative');
+    }
+
+    public function isPositive(): bool
+    {
+        return $this->type === 'positive';
+    }
+
+    public function isNegative(): bool
+    {
+        return $this->type === 'negative';
+    }
 }

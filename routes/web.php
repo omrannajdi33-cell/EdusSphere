@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ExamController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\LessonDocumentController;
+use App\Http\Controllers\Admin\PointController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ScheduleController;
@@ -62,6 +63,9 @@ Route::prefix('admin')
 
         Route::get('/students/{student}/avatar', [StudentController::class, 'showAvatar'])->name('students.avatar.show');
         Route::resource('students', StudentController::class)->except(['show']);
+
+        Route::get('/points', [PointController::class, 'index'])->name('points.index');
+        Route::post('/points', [PointController::class, 'store'])->name('points.store');
 
         Route::resource('subjects', SubjectController::class)->except(['show']);
         Route::resource('subjects.skills', SkillController::class)->except(['show']);

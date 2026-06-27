@@ -881,6 +881,70 @@
         color: transparent;
     }
 
+    .es-behavior-student-hero {
+        @apply rounded-[1.25rem] p-8 text-center;
+        background: linear-gradient(180deg, rgb(238 242 255 / 0.95), rgb(255 255 255 / 0.9));
+        border: 1px solid rgb(99 102 241 / 0.15);
+        box-shadow: var(--shadow-es);
+    }
+
+    .es-behavior-student-card {
+        @apply rounded-[1.25rem] p-5 transition-all duration-200 cursor-pointer;
+        background: rgb(255 255 255 / 0.88);
+        border: 2px solid rgb(231 229 228 / 0.9);
+        box-shadow: var(--shadow-es);
+    }
+
+    .es-behavior-student-card:hover {
+        @apply -translate-y-0.5;
+        border-color: rgb(99 102 241 / 0.35);
+        box-shadow: var(--shadow-es-lg);
+    }
+
+    .es-behavior-total {
+        @apply text-2xl font-black;
+    }
+
+    .es-behavior-modal {
+        @apply p-6 sm:p-8;
+    }
+
+    .es-behavior-section-title {
+        @apply text-sm font-black uppercase tracking-wide px-3 py-2 rounded-xl;
+    }
+
+    .es-behavior-section-good {
+        @apply text-emerald-800 bg-emerald-50;
+    }
+
+    .es-behavior-section-bad {
+        @apply text-red-800 bg-red-50;
+    }
+
+    .es-behavior-action {
+        @apply flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-150 disabled:opacity-50;
+    }
+
+    .es-behavior-action-good {
+        @apply bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-100;
+    }
+
+    .es-behavior-action-bad {
+        @apply bg-red-50 text-red-900 hover:bg-red-100 border border-red-100;
+    }
+
+    .es-behavior-history-badge {
+        @apply inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-xl text-lg font-black;
+    }
+
+    .es-behavior-history-badge-good {
+        @apply bg-emerald-100 text-emerald-800;
+    }
+
+    .es-behavior-history-badge-bad {
+        @apply bg-red-100 text-red-800;
+    }
+
     /* ── Wizard activités ── */
     .es-wizard-page {
         @apply max-w-6xl;
