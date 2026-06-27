@@ -62,6 +62,5 @@ RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 ENV HOME=/tmp
 ENV LIBREOFFICE_DISABLED=true
 
-EXPOSE 8080
-
-ENTRYPOINT ["/start.sh"]
+# Ne pas EXPOSE un port fixe — Railway utilise la variable PORT injectée.
+CMD ["/bin/sh", "-c", "exec /start.sh"]

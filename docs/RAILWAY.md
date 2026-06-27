@@ -43,7 +43,8 @@ Puis ajoute manuellement (Raw Editor) :
 | `SESSION_DRIVER` | `file` |
 | `CACHE_STORE` | `file` |
 | `QUEUE_CONNECTION` | `sync` |
-| `RUN_SEED` | `true` (première fois seulement) |
+| `RUN_SEED` | `false` (après la 1re fois ; `true` seulement pour créer les comptes démo) |
+| `PORT` | `8080` (fixe le port public Railway — **obligatoire** si 502) |
 
 **APP_KEY** (sur ton PC) :
 
@@ -83,8 +84,12 @@ Safari → URL Railway → **Partager** → **Sur l’écran d’accueil**
 
 ### 502 — « Application failed to respond »
 
-1. **Settings → Deploy → Custom Start Command** : doit être **vide** (pas de commande personnalisée).
-2. **Variables** : `RUN_SEED=false` (après la 1re fois), `APP_KEY` et `DB_*` remplis.
-3. **Deploy Logs** : cherche `Starting HTTP server on 0.0.0.0:XXXX` — le port doit correspondre à `PORT=`.
-4. **Console** (onglet Railway) : teste `curl -s http://127.0.0.1:$PORT/railway-health.txt` → doit afficher `ok`.
-5. Attends 30 s après le deploy **Active**, puis rafraîchis l’URL.
+Cause la plus fréquente : **le port public Railway ≠ port de l’app**.
+
+1. **Variables** → ajoute `PORT=8080` → Save → Redeploy
+2. **Settings → Networking → Public Networking** → port cible = **8080** (pas 3000)
+3. **Settings → Deploy → Custom Start Command** : **vide** (railway.toml gère `/start.sh`)
+4. **Deploy Logs** : cherche `Starting HTTP server on 0.0.0.0:8080`
+5. **Console** : `curl -s http://127.0.0.1:8080/railway-health.txt` → `ok`
+
+Réf. : [Railway — Application failed to respond](https://docs.railway.com/networking/troubleshooting/application-failed-to-respond)
