@@ -11,12 +11,23 @@ class NotificationMessage
 
     public static function body(string $type, array $data): string
     {
-        $resolver = config("notifications.messages.{$type}");
-
-        if (is_callable($resolver)) {
-            return $resolver($data);
+        if (isset($data['message']) && is_string($data['message'])) {
+            return $data['message'];
         }
 
-        return $data['message'] ?? self::label($type);
+        return match ($type) {
+            'activity_submitted' => ($data['student_name'] ?? 'Un élève').' a soumis « '.($data['activity_title'] ?? '').' »',
+            'activity_corrected' => '« '.($data['activity_title'] ?? 'Ton activité').' » a été corrigée'.self::scoreSuffix($data),
+            'activity_returned' => '« '.($data['activity_title'] ?? 'Ton activité').' » a été renvoyée — tu peux la modifier',
+            'exam_submitted' => ($data['student_name'] ?? 'Un élève').' a soumis « '.($data['exam_title'] ?? '').' »',
+            'exam_corrected' => '« '.($data['exam_title'] ?? 'Ton examen').' » a été corrigé'.self::scoreSuffix($data),
+            'exam_hand_raise' => ($data['student_name'] ?? 'Un élève').' lève la main pendant « '.($data['exam_title'] ?? 'examen').' »',
+            default => self::label($type),
+        };
+    }
+
+    private static function scoreSuffix(array $data): string
+    {
+        return isset($data['score']) ? ' · '.$data['score'].' %' : '';
     }
 }
