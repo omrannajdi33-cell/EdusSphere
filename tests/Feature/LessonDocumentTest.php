@@ -25,7 +25,7 @@ class LessonDocumentTest extends TestCase
         parent::setUp();
         $this->seed([SubjectSeeder::class, SkillSeeder::class]);
         $this->teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
-        Storage::fake('local');
+        Storage::fake('private');
     }
 
     private function makeLesson(): Lesson

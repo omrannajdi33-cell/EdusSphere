@@ -87,7 +87,7 @@ class ActivityEngineTest extends TestCase
 
     public function test_teacher_can_create_pdf_worksheet_step(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
         $activity = $this->makeDraftActivity();
 
         $this->actingAs($this->teacher)
@@ -268,7 +268,7 @@ class ActivityEngineTest extends TestCase
 
     public function test_student_can_upload_oral_recording(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $activity = $this->makeDraftActivity();
         $page = ActivityPage::create([
@@ -296,13 +296,13 @@ class ActivityEngineTest extends TestCase
 
     public function test_teacher_can_view_student_oral_recording(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $activity = $this->makeDraftActivity();
         $activity->publishTo([$this->student->id]);
 
         $path = 'activities/'.$activity->id.'/students/'.$this->student->id.'/test-recording.webm';
-        Storage::disk('local')->put($path, 'fake-webm-content');
+        Storage::disk('private')->put($path, 'fake-webm-content');
 
         $this->actingAs($this->teacher)
             ->get(route('activities.recording.show', [$activity, $this->student], absolute: false).'?path='.urlencode($path))
@@ -315,7 +315,7 @@ class ActivityEngineTest extends TestCase
 
     public function test_teacher_correction_page_uses_shared_recording_route(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $activity = $this->makeDraftActivity();
         $page = ActivityPage::create([
@@ -328,7 +328,7 @@ class ActivityEngineTest extends TestCase
         $activity->publishTo([$this->student->id]);
 
         $path = 'activities/'.$activity->id.'/students/'.$this->student->id.'/clip.webm';
-        Storage::disk('local')->put($path, 'fake-webm-content');
+        Storage::disk('private')->put($path, 'fake-webm-content');
 
         \App\Models\Answer::create([
             'student_id' => $this->student->id,

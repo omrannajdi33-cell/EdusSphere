@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Lesson;
 use App\Models\MediaFile;
+use App\Support\PrivateStorage;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use ZipArchive;
 
@@ -24,7 +24,7 @@ class LessonDocumentService
 
         $storedName = Str::uuid().'.'.$ext;
         $directory = 'lessons/'.$lesson->id.'/documents';
-        $path = $file->storeAs($directory, $storedName, 'local');
+        $path = $file->storeAs($directory, $storedName, PrivateStorage::DISK);
 
         $displayLabel = trim((string) $label) !== '' ? trim((string) $label) : $file->getClientOriginalName();
 
@@ -56,12 +56,14 @@ class LessonDocumentService
 
     public function delete(MediaFile $media): void
     {
-        if ($media->path && Storage::disk('local')->exists($media->path)) {
-            Storage::disk('local')->delete($media->path);
+        $disk = PrivateStorage::disk();
+
+        if ($media->path && $disk->exists($media->path)) {
+            $disk->delete($media->path);
         }
 
-        if ($media->display_path && $media->display_path !== $media->path && Storage::disk('local')->exists($media->display_path)) {
-            Storage::disk('local')->delete($media->display_path);
+        if ($media->display_path && $media->display_path !== $media->path && $disk->exists($media->display_path)) {
+            $disk->delete($media->display_path);
         }
 
         $media->delete();
@@ -98,11 +100,11 @@ class LessonDocumentService
 
     protected function estimatePdfPages(string $pdfPath): ?int
     {
-        if (! Storage::disk('local')->exists($pdfPath)) {
+        if (! PrivateStorage::exists($pdfPath)) {
             return null;
         }
 
-        $content = Storage::disk('local')->get($pdfPath);
+        $content = PrivateStorage::disk()->get($pdfPath);
         if (! is_string($content)) {
             return null;
         }
@@ -114,12 +116,12 @@ class LessonDocumentService
 
     protected function estimatePptxSlides(string $pptxPath): ?int
     {
-        if (! Storage::disk('local')->exists($pptxPath)) {
+        if (! PrivateStorage::exists($pptxPath)) {
             return null;
         }
 
         $zip = new ZipArchive;
-        if ($zip->open(Storage::disk('local')->path($pptxPath)) !== true) {
+        if ($zip->open(PrivateStorage::disk()->path($pptxPath)) !== true) {
             return null;
         }
 

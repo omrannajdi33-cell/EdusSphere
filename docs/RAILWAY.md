@@ -84,7 +84,21 @@ APP_ENV=production
 
 Redeploy une fois, puis remets `RUN_FRESH_SEED=false`.
 
-## 6. iPad (PWA)
+| **PDF/PPTX 404 en leçon** | Fichiers effacés à chaque deploy (disque éphémère) | **Volume Railway** (ci-dessous) + remettre les documents en ligne |
+
+## 7. Volume Railway (PDF, PPTX, enregistrements, avatars)
+
+Sans volume, **tous les fichiers uploadés disparaissent** à chaque redéploiement. La base garde les références → erreur 404 dans le lecteur.
+
+1. Projet Railway → **+ New** → **Volume**
+2. Attache le volume au service **EdusSphere**
+3. **Mount path** : `/var/www/html/storage/app/private`
+4. Redeploy
+5. Admin → **Leçons** → éditer chaque leçon → **remettre en ligne** les PDF/PPTX (bandeau orange si fichier absent)
+
+Les logs au démarrage affichent `Private storage: N file(s)` — si `0` après upload, le volume n’est pas monté correctement.
+
+## 8. iPad (PWA)
 
 Safari → URL Railway → **Partager** → **Sur l’écran d’accueil**
 

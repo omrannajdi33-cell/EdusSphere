@@ -156,7 +156,7 @@ function showLoadError(wrap, kind, reason = '') {
         return;
     }
 
-    wrap.innerHTML = '<p class="text-red-600 bg-red-50 rounded-xl p-4 text-sm font-semibold">Impossible de charger le document. Vérifie ta connexion ou demande au professeur de remettre le fichier en ligne.</p>';
+    wrap.innerHTML = '<p class="text-red-600 bg-red-50 rounded-xl p-4 text-sm font-semibold">Impossible de charger le document (fichier introuvable sur le serveur). Le professeur doit remettre le PDF ou PowerPoint en ligne depuis l’admin leçons.</p>';
 }
 
 async function renderPage(el, state, wrap, pageLabel) {

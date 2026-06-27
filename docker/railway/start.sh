@@ -45,5 +45,12 @@ elif [ "$RUN_SEED" = "true" ]; then
     php artisan db:seed --force --no-interaction 2>&1 || echo "seed: skipped or failed"
 fi
 
+PRIVATE_ROOT="storage/app/private"
+FILE_COUNT=$(find "$PRIVATE_ROOT" -type f 2>/dev/null | wc -l | tr -d ' ')
+echo "Private storage: $FILE_COUNT file(s) in $PRIVATE_ROOT"
+if [ "${APP_ENV:-production}" = "production" ] && [ "$FILE_COUNT" = "0" ]; then
+    echo "WARNING: Aucun fichier dans le stockage privé. Sur Railway, attachez un Volume sur /var/www/html/storage/app/private puis remettez les PDF/PPTX en ligne."
+fi
+
 echo "=== Starting HTTP server on 0.0.0.0:${PORT} ==="
 exec php artisan serve --host=0.0.0.0 --port="${PORT}" --no-reload

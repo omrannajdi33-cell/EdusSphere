@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\Report;
+use App\Support\PrivateStorage;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Illuminate\Support\Facades\Storage;
 
 class BulletinPdfService
 {
@@ -34,14 +34,14 @@ class BulletinPdfService
             $report->id ?: time(),
         );
 
-        Storage::disk('local')->put($path, $dompdf->output());
+        PrivateStorage::disk()->put($path, $dompdf->output());
 
         return $path;
     }
 
     public function downloadResponse(Report $report)
     {
-        abort_unless($report->pdf_path && Storage::disk('local')->exists($report->pdf_path), 404);
+        abort_unless($report->pdf_path && PrivateStorage::exists($report->pdf_path), 404);
 
         $filename = sprintf(
             'bulletin-%s-%s.pdf',
@@ -49,7 +49,7 @@ class BulletinPdfService
             str($report->period_label)->slug(),
         );
 
-        return Storage::disk('local')->download($report->pdf_path, $filename, [
+        return PrivateStorage::disk()->download($report->pdf_path, $filename, [
             'Content-Type' => 'application/pdf',
         ]);
     }

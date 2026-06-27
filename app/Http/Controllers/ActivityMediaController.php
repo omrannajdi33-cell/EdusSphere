@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\MediaFile;
-use Illuminate\Support\Facades\Storage;
+use App\Support\PrivateStorage;
 
 class ActivityMediaController extends Controller
 {
@@ -19,10 +19,10 @@ class ActivityMediaController extends Controller
             abort(404);
         }
 
-        if (! Storage::disk('local')->exists($media->path)) {
+        if (! PrivateStorage::exists($media->path)) {
             abort(404);
         }
 
-        return Storage::disk('local')->response($media->path, $media->filename);
+        return PrivateStorage::disk()->response($media->path, $media->filename);
     }
 }

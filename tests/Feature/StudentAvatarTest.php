@@ -15,12 +15,12 @@ class StudentAvatarTest extends TestCase
 
     public function test_admin_can_view_student_avatar(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
         $student = $this->makeStudent();
 
-        $path = UploadedFile::fake()->create('photo.jpg', 20, 'image/jpeg')->store('avatars/'.$student->id, 'local');
+        $path = UploadedFile::fake()->create('photo.jpg', 20, 'image/jpeg')->store('avatars/'.$student->id, 'private');
         $student->update(['avatar_path' => $path]);
 
         $this->actingAs($teacher)
@@ -31,7 +31,7 @@ class StudentAvatarTest extends TestCase
 
     public function test_student_can_view_own_avatar(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $user = User::factory()->create(['role' => User::ROLE_STUDENT]);
         $student = Student::create([
@@ -40,7 +40,7 @@ class StudentAvatarTest extends TestCase
             'last_name' => 'Test',
         ]);
 
-        $path = UploadedFile::fake()->create('photo.jpg', 20, 'image/jpeg')->store('avatars/'.$student->id, 'local');
+        $path = UploadedFile::fake()->create('photo.jpg', 20, 'image/jpeg')->store('avatars/'.$student->id, 'private');
         $student->update(['avatar_path' => $path]);
 
         $this->actingAs($user)
@@ -50,7 +50,7 @@ class StudentAvatarTest extends TestCase
 
     public function test_missing_avatar_file_returns_placeholder_and_clears_stale_path(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
 
         $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
         $student = $this->makeStudent();

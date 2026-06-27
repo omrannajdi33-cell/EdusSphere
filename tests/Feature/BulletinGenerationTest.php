@@ -35,7 +35,7 @@ class BulletinGenerationTest extends TestCase
     {
         parent::setUp();
         $this->seed([SubjectSeeder::class, SkillSeeder::class]);
-        Storage::fake('local');
+        Storage::fake('private');
 
         $this->teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
         $this->student = Student::create([
@@ -79,7 +79,7 @@ class BulletinGenerationTest extends TestCase
         $this->assertNotNull($report->pdf_path);
         $this->assertSame('Trimestre 1', $report->period_label);
         $this->assertArrayHasKey('subjects', $report->payload);
-        Storage::disk('local')->assertExists($report->pdf_path);
+        Storage::disk('private')->assertExists($report->pdf_path);
 
         $this->actingAs($this->teacher)
             ->get(route('admin.reports.show', $report))

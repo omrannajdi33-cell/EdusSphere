@@ -64,6 +64,14 @@
     </x-card>
 
     @if ($isEdit)
+        @php
+            $missingMedia = $lesson->mediaFiles->filter(fn ($media) => ! $media->fileExists());
+        @endphp
+        @if ($missingMedia->isNotEmpty())
+            <x-alert type="warning" class="mt-8 mb-0" title="Fichiers absents du serveur">
+                {{ $missingMedia->count() }} document(s) référencé(s) en base mais introuvable(s) sur le disque (souvent après un redéploiement Railway sans volume). Remettez-les en ligne ci-dessous.
+            </x-alert>
+        @endif
         <x-card class="mt-8">
             <h2 class="text-lg font-extrabold mb-2">Documents (PDF, PowerPoint)</h2>
             <p class="text-sm text-es-muted mb-4">PDF et PPTX s’ouvrent directement dans le lecteur EduSphere — les élèves peuvent annoter dessus. (Format .ppt : enregistrez en .pptx ou PDF.)</p>
@@ -80,6 +88,9 @@
                                 </form>
                                 <p class="text-xs text-es-muted mt-1">{{ $media->filename }} · {{ strtoupper($media->source_kind ?? 'PDF') }}
                                     @if ($media->page_count) · {{ $media->page_count }} p. @endif
+                                    @unless ($media->fileExists())
+                                        · <span class="text-amber-700 font-bold">Fichier absent — remettre en ligne</span>
+                                    @endunless
                                 </p>
                             </div>
                             <form method="POST" action="{{ route('admin.lessons.documents.destroy', [$lesson, $media]) }}" onsubmit="return confirm('Supprimer ce document ?')">

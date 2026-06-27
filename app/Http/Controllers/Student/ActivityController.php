@@ -11,7 +11,7 @@ use App\Services\ActivityCorrectionService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Support\PrivateStorage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -185,7 +185,7 @@ class ActivityController extends Controller
         $path = $file->storeAs(
             'activities/'.$activity->id.'/students/'.$student->id,
             Str::uuid().'.'.$ext,
-            'local',
+            PrivateStorage::DISK,
         );
 
         return response()->json([

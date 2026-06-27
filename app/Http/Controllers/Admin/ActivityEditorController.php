@@ -17,7 +17,7 @@ use App\Services\ActivityCorrectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Support\PrivateStorage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -52,8 +52,8 @@ class ActivityEditorController extends Controller
     {
         abort_unless($page->activity_id === $activity->id, 404);
 
-        if ($page->mediaFile && Storage::disk('local')->exists($page->mediaFile->path)) {
-            Storage::disk('local')->delete($page->mediaFile->path);
+        if ($page->mediaFile && PrivateStorage::exists($page->mediaFile->path)) {
+            PrivateStorage::disk()->delete($page->mediaFile->path);
         }
 
         $page->delete();
@@ -197,7 +197,7 @@ class ActivityEditorController extends Controller
     protected function storePagePdf($file, Activity $activity, ActivityPage $page): void
     {
         $filename = Str::uuid().'.pdf';
-        $path = $file->storeAs('activities/'.$activity->id.'/pages/'.$page->id, $filename, 'local');
+        $path = $file->storeAs('activities/'.$activity->id.'/pages/'.$page->id, $filename, PrivateStorage::DISK);
 
         MediaFile::create([
             'activity_id' => $activity->id,
@@ -213,7 +213,7 @@ class ActivityEditorController extends Controller
     {
         $ext = $file->getClientOriginalExtension() ?: 'mp3';
         $filename = Str::uuid().'.'.$ext;
-        $path = $file->storeAs('activities/'.$activity->id.'/pages/'.$page->id, $filename, 'local');
+        $path = $file->storeAs('activities/'.$activity->id.'/pages/'.$page->id, $filename, PrivateStorage::DISK);
 
         MediaFile::create([
             'activity_id' => $activity->id,

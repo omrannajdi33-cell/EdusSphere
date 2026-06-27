@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Models\Student;
+use App\Support\PrivateStorage;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class StudentAvatarService
@@ -18,7 +17,7 @@ class StudentAvatarService
         $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $filename = Str::uuid().'.'.$ext;
 
-        $path = $file->storeAs('avatars/'.$student->id, $filename, 'local');
+        $path = $file->storeAs('avatars/'.$student->id, $filename, PrivateStorage::DISK);
         $student->update(['avatar_path' => $path]);
 
         return $path;
@@ -30,13 +29,13 @@ class StudentAvatarService
         $student->update(['avatar_path' => null]);
     }
 
-    public function response(Student $student): BinaryFileResponse|Response
+    public function response(Student $student): Response
     {
-        if ($student->avatar_path && Storage::disk('local')->exists($student->avatar_path)) {
-            $disk = Storage::disk('local');
+        if ($student->avatar_path && PrivateStorage::exists($student->avatar_path)) {
+            $disk = PrivateStorage::disk();
             $mime = $disk->mimeType($student->avatar_path) ?: $this->guessMimeType($student->avatar_path);
 
-            return response()->file($disk->path($student->avatar_path), [
+            return $disk->response($student->avatar_path, 'avatar', [
                 'Content-Type' => $mime,
                 'Content-Disposition' => 'inline; filename="avatar"',
                 'Cache-Control' => 'private, max-age=86400',
@@ -66,7 +65,6 @@ class StudentAvatarService
 
     protected function svgPlaceholderResponse(string $initial): Response
     {
-
         $svg = <<<SVG
         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="Avatar">
             <defs>
@@ -88,8 +86,8 @@ class StudentAvatarService
 
     protected function deleteFile(?string $path): void
     {
-        if ($path && Storage::disk('local')->exists($path)) {
-            Storage::disk('local')->delete($path);
+        if ($path && PrivateStorage::exists($path)) {
+            PrivateStorage::disk()->delete($path);
         }
     }
 

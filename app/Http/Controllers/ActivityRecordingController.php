@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Student;
+use App\Support\PrivateStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityRecordingController extends Controller
@@ -26,8 +26,8 @@ class ActivityRecordingController extends Controller
         $prefix = 'activities/'.$activity->id.'/students/'.$student->id.'/';
 
         abort_unless($path !== '' && str_starts_with($path, $prefix), 403);
-        abort_unless(Storage::disk('local')->exists($path), 404);
+        abort_unless(PrivateStorage::exists($path), 404);
 
-        return Storage::disk('local')->response($path);
+        return PrivateStorage::disk()->response($path);
     }
 }

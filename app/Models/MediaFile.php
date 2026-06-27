@@ -40,4 +40,14 @@ class MediaFile extends Model
     {
         return $this->belongsTo(ActivityPage::class);
     }
+
+    public function storagePath(): ?string
+    {
+        return $this->display_path ?: $this->path;
+    }
+
+    public function fileExists(): bool
+    {
+        return \App\Support\PrivateStorage::exists($this->storagePath());
+    }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use App\Models\MediaFile;
 use App\Services\LessonDocumentService;
-use Illuminate\Support\Facades\Storage;
+use App\Support\PrivateStorage;
 
 class LessonMediaController extends Controller
 {
@@ -20,11 +20,11 @@ class LessonMediaController extends Controller
 
         $path = $documents->viewerPath($media);
 
-        if (! Storage::disk('local')->exists($path)) {
-            abort(404);
+        if (! PrivateStorage::exists($path)) {
+            abort(404, 'Fichier introuvable sur le serveur. Remettez le document en ligne depuis l’admin.');
         }
 
-        return Storage::disk('local')->response($path, $media->filename, [
+        return PrivateStorage::disk()->response($path, $media->filename, [
             'Content-Type' => $documents->viewerMimeType($media),
             'Content-Disposition' => 'inline',
         ]);
