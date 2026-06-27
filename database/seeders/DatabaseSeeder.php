@@ -11,6 +11,18 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->call([
+                SchoolLevelSeeder::class,
+                PointActionSeeder::class,
+                SubjectSeeder::class,
+                SkillSeeder::class,
+                ProductionAdminSeeder::class,
+            ]);
+
+            return;
+        }
+
         $this->call([
             SchoolLevelSeeder::class,
             ClassGroupSeeder::class,

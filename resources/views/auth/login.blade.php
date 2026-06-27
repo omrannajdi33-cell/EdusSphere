@@ -52,7 +52,7 @@
                         name="email"
                         type="email"
                         value="{{ old('email') }}"
-                        placeholder="eleve1@edusphere.fr"
+                        placeholder="{{ config('edusphere.login_email_placeholder') }}"
                         required
                         autofocus
                         class="es-input"

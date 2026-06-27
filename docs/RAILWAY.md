@@ -43,8 +43,12 @@ Puis ajoute manuellement (Raw Editor) :
 | `SESSION_DRIVER` | `file` |
 | `CACHE_STORE` | `file` |
 | `QUEUE_CONNECTION` | `sync` |
-| `RUN_SEED` | `false` (après la 1re fois ; `true` seulement pour créer les comptes démo) |
+| `RUN_SEED` | `false` (ne pas re-seeder à chaque deploy) |
+| `RUN_FRESH_SEED` | `true` **une seule fois** pour effacer la démo et créer l’admin prod |
 | `PORT` | `8080` (fixe le port public Railway — **obligatoire** si 502) |
+| `ADMIN_EMAIL` | `admin@ontech.com` |
+| `ADMIN_PASSWORD` | `123` |
+| `ADMIN_NAME` | `Administrateur` |
 
 **APP_KEY** (sur ton PC) :
 
@@ -63,9 +67,22 @@ Après le push GitHub, Railway rebuild automatiquement. Vérifie **Deploy Logs**
 
 ## 5. Tester
 
-Ouvre `https://TON-DOMAINE.up.railway.app` → tu dois voir la **page de connexion**.
+Ouvre `https://TON-DOMAINE.up.railway.app/login` → connexion **admin** :
 
-Comptes démo (si `RUN_SEED=true`) : `eleve1@edusphere.fr` / `password`
+- Email : `admin@ontech.com`
+- Mot de passe : `123`
+
+### Réinitialiser la prod (effacer la démo)
+
+Variables temporaires :
+
+```
+RUN_FRESH_SEED=true
+RUN_SEED=false
+APP_ENV=production
+```
+
+Redeploy une fois, puis remets `RUN_FRESH_SEED=false`.
 
 ## 6. iPad (PWA)
 

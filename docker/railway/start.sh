@@ -38,7 +38,10 @@ echo "DB_HOST=${DB_HOST:-<not set>}"
 echo "APP_ENV=${APP_ENV:-production}"
 
 php artisan migrate --force --no-interaction 2>&1 || echo "migrate: skipped or failed"
-if [ "$RUN_SEED" = "true" ]; then
+if [ "$RUN_FRESH_SEED" = "true" ]; then
+    echo "=== Production fresh install (migrate:fresh --seed) ==="
+    php artisan migrate:fresh --force --seed --no-interaction 2>&1 || echo "fresh seed: failed"
+elif [ "$RUN_SEED" = "true" ]; then
     php artisan db:seed --force --no-interaction 2>&1 || echo "seed: skipped or failed"
 fi
 
