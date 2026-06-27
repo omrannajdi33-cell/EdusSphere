@@ -22,8 +22,14 @@ class EnsureSessionIsActive
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            $message = 'Session expirée après inactivité. Reconnecte-toi.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 419);
+            }
+
             return redirect()->route('login')->withErrors([
-                'email' => 'Session expirée après inactivité. Reconnecte-toi.',
+                'email' => $message,
             ]);
         }
 

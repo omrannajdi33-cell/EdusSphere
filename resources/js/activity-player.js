@@ -1,5 +1,5 @@
 import { initSubjectWorkspaces, collectWorkspaceData } from './subject-workspaces';
-import { csrfFetch, csrfToken } from './csrf-fetch';
+import { csrfFetch, csrfToken, readErrorMessage } from './csrf-fetch';
 function initActivityPlayer(root) {
     if (!root || root.dataset.initialized === '1') {
         return;
@@ -526,8 +526,11 @@ function initActivityPlayer(root) {
             if (res.status === 419) {
                 throw new Error('session expired');
             }
+            if (res.status === 423) {
+                throw new Error('locked');
+            }
             if (!res.ok) {
-                throw new Error('save failed');
+                throw new Error(await readErrorMessage(res, 'save failed'));
             }
             isDirty = false;
             lastError = false;
@@ -539,7 +542,11 @@ function initActivityPlayer(root) {
                 'error',
                 err?.message === 'session expired'
                     ? 'Session expirée — recharge la page'
-                    : 'Erreur de synchronisation',
+                    : err?.message === 'locked'
+                        ? 'Activité déjà soumise'
+                        : err?.message && err.message !== 'save failed'
+                            ? err.message
+                            : 'Erreur de synchronisation',
             );
         } finally {
             isSaving = false;
@@ -562,8 +569,11 @@ function initActivityPlayer(root) {
             if (res.status === 419) {
                 throw new Error('session expired');
             }
+            if (res.status === 423) {
+                throw new Error('locked');
+            }
             if (!res.ok) {
-                throw new Error('submit failed');
+                throw new Error(await readErrorMessage(res, 'submit failed'));
             }
             if (saveStatus) {
                 saveStatus.textContent = 'Activité soumise ✓';
@@ -576,7 +586,11 @@ function initActivityPlayer(root) {
                 'error',
                 err?.message === 'session expired'
                     ? 'Session expirée — recharge la page'
-                    : 'Erreur de soumission',
+                    : err?.message === 'locked'
+                        ? 'Activité déjà soumise'
+                        : err?.message && err.message !== 'submit failed'
+                            ? err.message
+                            : 'Erreur de soumission',
             );
         }
     }

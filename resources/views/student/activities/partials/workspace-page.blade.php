@@ -6,7 +6,7 @@
     $textHidden = (bool) ($workspaceData['text_hidden'] ?? false);
     $recordingUrl = $workspaceData['recording_url'] ?? (
         ! empty($workspaceData['recording_path'])
-            ? route('student.activities.recording', $activity).'?path='.urlencode($workspaceData['recording_path'])
+            ? route('student.activities.recording', $activity, absolute: false).'?path='.urlencode($workspaceData['recording_path'])
             : null
     );
 @endphp
@@ -16,7 +16,7 @@
         <div class="es-reading-panel" data-reading-panel data-text-hidden="{{ $textHidden ? '1' : '0' }}">
             <div class="flex flex-wrap items-center gap-2 mb-3">
                 @if ($audio)
-                    <audio controls class="es-reading-audio max-w-full h-9" src="{{ route('activity-media.show', [$activity, $audio]) }}" preload="metadata"></audio>
+                    <audio controls class="es-reading-audio max-w-full h-9" src="{{ route('activity-media.show', [$activity, $audio], false) }}" preload="metadata"></audio>
                 @endif
                 <button type="button" class="es-btn es-btn-secondary es-btn-sm workspace-toggle-text" data-label-show="📖 Afficher le texte" data-label-hide="🙈 Masquer le texte">
                     {{ $textHidden ? '📖 Afficher le texte' : '🙈 Masquer le texte' }}

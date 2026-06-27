@@ -175,7 +175,7 @@ class ActivityController extends Controller
         $data = $request->validate([
             'page_id' => ['required', 'exists:activity_pages,id'],
             'kind' => ['required', 'in:audio,video'],
-            'recording' => ['required', 'file', 'max:51200', 'mimetypes:video/webm,audio/webm,audio/ogg,audio/wav,audio/mpeg,video/mp4'],
+            'recording' => ['required', 'file', 'max:51200'],
         ]);
 
         abort_unless($activity->pages()->where('id', $data['page_id'])->exists(), 404);
@@ -191,7 +191,7 @@ class ActivityController extends Controller
         return response()->json([
             'path' => $path,
             'kind' => $data['kind'],
-            'url' => route('student.activities.recording', $activity).'?path='.urlencode($path),
+            'url' => route('student.activities.recording', $activity, absolute: false).'?path='.urlencode($path),
         ]);
     }
 

@@ -52,7 +52,7 @@ export async function refreshCsrfToken() {
     return data.token ?? null;
 }
 
-export async function csrfFetch(url, options = {}, { retry419 = true } = {}) {
+function buildHeaders(options, token) {
     const headers = new Headers(options.headers ?? {});
 
     if (!headers.has('Accept')) {
@@ -63,10 +63,23 @@ export async function csrfFetch(url, options = {}, { retry419 = true } = {}) {
         headers.set('X-Requested-With', 'XMLHttpRequest');
     }
 
-    const token = csrfToken();
+    const body = options.body;
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+    if (!isFormData && !headers.has('Content-Type') && body && typeof body === 'string') {
+        headers.set('Content-Type', 'application/json');
+    }
+
     if (token) {
         headers.set('X-CSRF-TOKEN', token);
     }
+
+    return headers;
+}
+
+export async function csrfFetch(url, options = {}, { retry419 = true } = {}) {
+    const token = csrfToken();
+    const headers = buildHeaders(options, token);
 
     const response = await fetch(url, {
         ...options,
@@ -77,14 +90,10 @@ export async function csrfFetch(url, options = {}, { retry419 = true } = {}) {
     if (response.status === 419 && retry419) {
         try {
             await refreshCsrfToken();
-            const retryToken = csrfToken();
-            if (retryToken) {
-                headers.set('X-CSRF-TOKEN', retryToken);
-            }
-
+            const retryHeaders = buildHeaders(options, csrfToken());
             return fetch(url, {
                 ...options,
-                headers,
+                headers: retryHeaders,
                 credentials: options.credentials ?? 'same-origin',
             });
         } catch {
@@ -93,4 +102,21 @@ export async function csrfFetch(url, options = {}, { retry419 = true } = {}) {
     }
 
     return response;
+}
+
+export async function readErrorMessage(response, fallback = 'Une erreur est survenue.') {
+    try {
+        const data = await response.clone().json();
+        if (typeof data?.message === 'string' && data.message !== '') {
+            return data.message;
+        }
+        const firstError = data?.errors ? Object.values(data.errors).flat()?.[0] : null;
+        if (typeof firstError === 'string' && firstError !== '') {
+            return firstError;
+        }
+    } catch {
+        // ignore
+    }
+
+    return fallback;
 }

@@ -2,7 +2,7 @@
  * EduSphere — espaces de travail par matière (lecture, oral, écriture, maths)
  */
 
-import { csrfFetch } from './csrf-fetch';
+import { csrfFetch, readErrorMessage } from './csrf-fetch';
 
 const workspaceState = new WeakMap();
 
@@ -96,7 +96,7 @@ function initOralPanel(panel, root) {
                 }
             };
             mediaRecorder.onstop = () => uploadRecording();
-            mediaRecorder.start();
+            mediaRecorder.start(250);
             if (statusEl) {
                 statusEl.textContent = useVideo ? 'Enregistrement vidéo…' : 'Enregistrement audio…';
             }
@@ -135,7 +135,7 @@ function initOralPanel(panel, root) {
                 body: form,
             });
             if (! res.ok) {
-                throw new Error('upload failed');
+                throw new Error(await readErrorMessage(res, 'upload failed'));
             }
             const data = await res.json();
             workspaceState.set(panel, {
@@ -153,9 +153,11 @@ function initOralPanel(panel, root) {
                 statusEl.textContent = 'Enregistrement sauvegardé ✓';
             }
             markPlayerDirty(panel);
-        } catch {
+        } catch (err) {
             if (statusEl) {
-                statusEl.textContent = 'Erreur lors de l\'envoi.';
+                statusEl.textContent = err?.message && err.message !== 'upload failed'
+                    ? err.message
+                    : 'Erreur lors de l\'envoi.';
             }
         }
     }

@@ -266,6 +266,33 @@ class ActivityEngineTest extends TestCase
             ->assertOk();
     }
 
+    public function test_student_can_upload_oral_recording(): void
+    {
+        Storage::fake('local');
+
+        $activity = $this->makeDraftActivity();
+        $page = ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Oral',
+            'type' => 'oral_record',
+            'content' => ['prompt' => 'Enregistre ta lecture'],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $file = UploadedFile::fake()->create('audio.webm', 200, 'audio/webm');
+
+        $response = $this->actingAs($this->studentUser)
+            ->post(route('student.activities.recording.upload', $activity), [
+                'page_id' => $page->id,
+                'kind' => 'audio',
+                'recording' => $file,
+            ]);
+
+        $response->assertOk()->assertJsonStructure(['path', 'kind', 'url']);
+        $this->assertStringStartsWith('/student/activities/', $response->json('url'));
+    }
+
     public function test_student_cannot_play_draft_activity(): void
     {
         $activity = $this->makeDraftActivity();

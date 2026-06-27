@@ -27,7 +27,7 @@ if [ -z "$DB_HOST" ] && [ -n "$MYSQLHOST" ]; then
 fi
 
 export DB_CONNECTION="${DB_CONNECTION:-mysql}"
-export SESSION_DRIVER="${SESSION_DRIVER:-file}"
+export SESSION_DRIVER="${SESSION_DRIVER:-database}"
 export CACHE_STORE="${CACHE_STORE:-file}"
 export QUEUE_CONNECTION="${QUEUE_CONNECTION:-sync}"
 export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
