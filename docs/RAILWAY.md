@@ -79,3 +79,12 @@ Safari → URL Railway → **Partager** → **Sur l’écran d’accueil**
 | Database not reachable | MySQL pas lié | Vérifier `DB_HOST` etc. avec références `${{MySQL...}}` |
 | Unexposed service | Pas de domaine | Generate Domain dans Networking |
 | Healthcheck failure | Variables manquantes ou nginx pas démarré | Vérifier `APP_KEY` + références MySQL, puis Redeploy |
+| **Application failed to respond (502)** | Serveur arrêté ou mauvaise config | Voir ci-dessous |
+
+### 502 — « Application failed to respond »
+
+1. **Settings → Deploy → Custom Start Command** : doit être **vide** (pas de commande personnalisée).
+2. **Variables** : `RUN_SEED=false` (après la 1re fois), `APP_KEY` et `DB_*` remplis.
+3. **Deploy Logs** : cherche `Starting HTTP server on 0.0.0.0:XXXX` — le port doit correspondre à `PORT=`.
+4. **Console** (onglet Railway) : teste `curl -s http://127.0.0.1:$PORT/railway-health.txt` → doit afficher `ok`.
+5. Attends 30 s après le deploy **Active**, puis rafraîchis l’URL.

@@ -3,7 +3,11 @@ set -e
 
 cd /var/www/html
 
-export PORT="${PORT:-8080}"
+if [ -z "$PORT" ]; then
+    echo "WARNING: PORT not set, using 8080"
+    PORT=8080
+fi
+export PORT
 
 mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views \
     storage/app/tmp bootstrap/cache
@@ -26,33 +30,17 @@ export DB_CONNECTION="${DB_CONNECTION:-mysql}"
 export SESSION_DRIVER="${SESSION_DRIVER:-file}"
 export CACHE_STORE="${CACHE_STORE:-file}"
 export QUEUE_CONNECTION="${QUEUE_CONNECTION:-sync}"
+export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
 
-echo "EduSphere — PORT=${PORT} DB_HOST=${DB_HOST:-<not set>}"
+echo "=== EduSphere boot ==="
+echo "PORT=${PORT}"
+echo "DB_HOST=${DB_HOST:-<not set>}"
+echo "APP_ENV=${APP_ENV:-production}"
 
-echo "Waiting for database..."
-for i in $(seq 1 60); do
-    if php -r "
-        require 'vendor/autoload.php';
-        \$app = require 'bootstrap/app.php';
-        \$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-        Illuminate\Support\Facades\DB::connection()->getPdo();
-    " >/dev/null 2>&1; then
-        echo "Database connected."
-        break
-    fi
-    if [ "$i" -eq 60 ]; then
-        echo "ERROR: Database not reachable."
-        exit 1
-    fi
-    echo "Waiting for database ($i/60)..."
-    sleep 3
-done
-
-php artisan migrate --force --no-interaction
+php artisan migrate --force --no-interaction 2>&1 || echo "migrate: skipped or failed"
 if [ "$RUN_SEED" = "true" ]; then
-    php artisan db:seed --force --no-interaction
+    php artisan db:seed --force --no-interaction 2>&1 || echo "seed: skipped or failed"
 fi
-php artisan config:cache --no-interaction || echo "config:cache skipped"
 
-echo "Starting server on 0.0.0.0:${PORT}..."
+echo "=== Starting HTTP server on 0.0.0.0:${PORT} ==="
 exec php artisan serve --host=0.0.0.0 --port="${PORT}" --no-reload
