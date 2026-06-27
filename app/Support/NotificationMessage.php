@@ -22,6 +22,7 @@ class NotificationMessage
             'exam_submitted' => ($data['student_name'] ?? 'Un élève').' a soumis « '.($data['exam_title'] ?? '').' »',
             'exam_corrected' => '« '.($data['exam_title'] ?? 'Ton examen').' » a été corrigé'.self::scoreSuffix($data),
             'exam_hand_raise' => ($data['student_name'] ?? 'Un élève').' lève la main pendant « '.($data['exam_title'] ?? 'examen').' »',
+            'reward_redeemed' => ($data['student_name'] ?? 'Un élève').' a utilisé '.($data['reward_cost'] ?? '?').' pts pour « '.($data['reward_name'] ?? 'récompense').' »',
             default => self::label($type),
         };
     }

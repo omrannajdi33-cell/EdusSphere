@@ -2,11 +2,10 @@
  * EduSphere — lecteur document intégré (PDF + PPTX + annotations)
  */
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { loadPresentation, renderSlideToElement } from 'pptx-viewer';
 import { csrfFetch } from './csrf-fetch';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const viewerState = new WeakMap();
 
@@ -49,9 +48,14 @@ function initDocumentViewer(el) {
 
     viewerState.set(el, state);
 
-    loadDocument(fileUrl, docKind, pagesWrap, state).then(() => {
+    loadDocument(fileUrl, docKind, state).then(() => {
+        if (state.pageCount < 1) {
+            showLoadError(pagesWrap, docKind, 'empty');
+            return;
+        }
         renderPage(el, state, pagesWrap, pageLabel);
-    }).catch(() => {
+    }).catch((err) => {
+        console.error('[document-viewer]', err);
         showLoadError(pagesWrap, docKind);
     });
 
@@ -81,23 +85,63 @@ function initDocumentViewer(el) {
     });
 }
 
-async function loadDocument(url, kind, wrap, state) {
+async function fetchDocumentBytes(url) {
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,*/*' },
+    });
+
+    if (!response.ok) {
+        throw new Error(`fetch failed ${response.status}`);
+    }
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('text/html')) {
+        throw new Error('unexpected html response');
+    }
+
+    return response.arrayBuffer();
+}
+
+async function loadDocument(url, kind, state) {
+    if (!url) {
+        throw new Error('missing url');
+    }
+
     if (kind === 'ppt') {
         throw new Error('legacy ppt');
     }
 
+    const bytes = await withTimeout(fetchDocumentBytes(url), 60000, 'download timeout');
+
     if (kind === 'pptx') {
-        state.presentation = await loadPresentation(url);
-        state.pageCount = state.presentation.slides.length;
+        state.presentation = await loadPresentation(bytes);
+        state.pageCount = state.presentation?.slides?.length ?? 0;
         return;
     }
 
-    const loading = pdfjsLib.getDocument(url);
-    state.pdf = await loading.promise;
-    state.pageCount = state.pdf.numPages;
+    const loading = pdfjsLib.getDocument({ data: bytes });
+    state.pdf = await withTimeout(loading.promise, 90000, 'pdf parse timeout');
+    state.pageCount = state.pdf?.numPages ?? 0;
 }
 
-function showLoadError(wrap, kind) {
+function withTimeout(promise, ms, message = 'timeout') {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error(message)), ms);
+        Promise.resolve(promise).then(
+            (value) => {
+                clearTimeout(timer);
+                resolve(value);
+            },
+            (error) => {
+                clearTimeout(timer);
+                reject(error);
+            },
+        );
+    });
+}
+
+function showLoadError(wrap, kind, reason = '') {
     if (!wrap) {
         return;
     }
@@ -107,7 +151,12 @@ function showLoadError(wrap, kind) {
         return;
     }
 
-    wrap.innerHTML = '<p class="text-red-600 p-4">Impossible de charger le document.</p>';
+    if (reason === 'empty') {
+        wrap.innerHTML = '<p class="text-amber-700 bg-amber-50 rounded-xl p-4 text-sm font-semibold">Le fichier est introuvable ou vide. Demande au professeur de le remettre en ligne.</p>';
+        return;
+    }
+
+    wrap.innerHTML = '<p class="text-red-600 bg-red-50 rounded-xl p-4 text-sm font-semibold">Impossible de charger le document. Vérifie ta connexion ou demande au professeur de remettre le fichier en ligne.</p>';
 }
 
 async function renderPage(el, state, wrap, pageLabel) {
@@ -180,6 +229,8 @@ async function renderPptxPage(el, state, wrap, pageLabel) {
     wrap.appendChild(stage);
 
     renderSlideToElement(state.presentation, slideIndex, slideHost);
+
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const slideBox = slideHost.querySelector('svg, canvas, img') ?? slideHost.firstElementChild ?? slideHost;
     const width = Math.max(slideBox?.clientWidth || slideHost.clientWidth || 960, 320);
@@ -354,5 +405,14 @@ function parseJson(raw, fallback) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => initDocumentViewers());
+function bootDocumentViewers() {
+    initDocumentViewers();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootDocumentViewers);
+} else {
+    bootDocumentViewers();
+}
+
 window.initDocumentViewers = initDocumentViewers;

@@ -48,6 +48,11 @@ class Student extends Model
         return $this->hasMany(Point::class);
     }
 
+    public function pointRedemptions(): HasMany
+    {
+        return $this->hasMany(PointRedemption::class);
+    }
+
     public function avatarUrl(string $context = 'admin'): ?string
     {
         if (! $this->exists) {

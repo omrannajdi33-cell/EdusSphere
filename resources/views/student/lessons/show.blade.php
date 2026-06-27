@@ -52,7 +52,3 @@
     @endforelse
 </div>
 @endsection
-
-@push('head')
-    @vite('resources/js/document-viewer.js')
-@endpush

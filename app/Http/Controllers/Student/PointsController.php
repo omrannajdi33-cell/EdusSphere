@@ -14,10 +14,14 @@ class PointsController extends Controller
 
         abort_unless($student, 403);
 
+        $total = $points->totalFor($student);
+        $rewards = $points->activeRewards();
+
         return view('student.points.index', [
             'activeNav' => 'points',
-            'total' => $points->totalFor($student),
-            'history' => $points->recentFor($student),
+            'total' => $total,
+            'history' => $points->historyFor($student),
+            'rewards' => $rewards,
         ]);
     }
 }

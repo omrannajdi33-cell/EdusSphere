@@ -15,6 +15,7 @@
             <h1 class="es-page-title">Points comportement</h1>
             <p class="es-page-subtitle">Attribue des bons ou mauvais points à chaque élève</p>
         </div>
+        <x-button href="{{ route('admin.points.settings') }}" variant="secondary">Paramètres actions & récompenses</x-button>
     </div>
 
     @if (session('success'))
@@ -42,7 +43,7 @@
 
     @if ($positiveActions->isEmpty() && $negativeActions->isEmpty())
         <x-alert type="warning" title="Aucune action configurée">
-            Les actions de points sont créées au déploiement (participation, respect, retard…).
+            Configure les actions dans les <a href="{{ route('admin.points.settings') }}" class="underline font-bold">paramètres</a>.
         </x-alert>
     @endif
 
@@ -50,7 +51,7 @@
         @forelse ($students as $student)
             <button
                 type="button"
-                class="es-behavior-student-card text-left"
+                class="es-behavior-student-card"
                 @click="openStudent(@js([
                     'id' => $student->id,
                     'name' => $student->full_name,

@@ -20,7 +20,6 @@ class PointController extends Controller
     {
         $query = Student::query()
             ->with(['user', 'schoolLevel', 'classGroup'])
-            ->withSum('points as points_total', 'value')
             ->orderBy('first_name')
             ->orderBy('last_name');
 
@@ -42,9 +41,15 @@ class PointController extends Controller
         $positiveActions = PointAction::active()->positive()->orderBy('name')->get();
         $negativeActions = PointAction::active()->negative()->orderBy('name')->get();
 
+        $students = $query->get();
+        $students->each(fn (Student $student) => $student->setAttribute(
+            'points_total',
+            app(BehaviorPointService::class)->totalFor($student),
+        ));
+
         return view('admin.points.index', [
             'adminNav' => 'points',
-            'students' => $query->get(),
+            'students' => $students,
             'levels' => SchoolLevel::orderBy('display_order')->get(),
             'classGroups' => ClassGroup::with('schoolLevel')->orderBy('name')->get(),
             'positiveActions' => $positiveActions,

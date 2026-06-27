@@ -42,9 +42,3 @@
         <p class="text-sm text-es-muted p-4">Chargement du document…</p>
     </div>
 </div>
-
-@once
-    @push('head')
-        @vite('resources/js/document-viewer.js')
-    @endpush
-@endonce

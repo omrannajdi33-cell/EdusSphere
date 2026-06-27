@@ -7,6 +7,7 @@ return [
         'activity_returned' => 'Travail renvoyé',
         'exam_submitted' => 'Examen soumis',
         'exam_corrected' => 'Examen corrigé',
-        'exam_hand_raise' => 'Main levée en examen',
-    ],
+            'exam_hand_raise' => 'Main levée en examen',
+            'reward_redeemed' => 'Récompense utilisée',
+        ],
 ];

@@ -50,9 +50,22 @@ class StudentAvatarService
         return $this->placeholderResponse($student);
     }
 
+    public function placeholderForName(string $name): Response
+    {
+        $initial = htmlspecialchars(mb_strtoupper(mb_substr(trim($name) ?: '?', 0, 1)), ENT_QUOTES | ENT_XML1);
+
+        return $this->svgPlaceholderResponse($initial);
+    }
+
     public function placeholderResponse(Student $student): Response
     {
         $initial = htmlspecialchars(mb_strtoupper(mb_substr($student->full_name ?: '?', 0, 1)), ENT_QUOTES | ENT_XML1);
+
+        return $this->svgPlaceholderResponse($initial);
+    }
+
+    protected function svgPlaceholderResponse(string $initial): Response
+    {
 
         $svg = <<<SVG
         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="Avatar">
@@ -69,7 +82,6 @@ class StudentAvatarService
 
         return response($svg, 200, [
             'Content-Type' => 'image/svg+xml',
-            'Content-Disposition' => 'inline; filename="avatar.svg"',
             'Cache-Control' => 'private, max-age=300',
         ]);
     }

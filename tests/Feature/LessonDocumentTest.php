@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Lesson;
 use App\Models\Skill;
+use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
 use Database\Seeders\SkillSeeder;
@@ -117,5 +118,29 @@ class LessonDocumentTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('Support révisé', $media->fresh()->label);
+    }
+
+    public function test_student_lesson_page_loads_document_viewer_assets(): void
+    {
+        $lesson = $this->makeLesson();
+        $file = UploadedFile::fake()->create('cours.pdf', 100, 'application/pdf');
+
+        $this->actingAs($this->teacher)
+            ->post(route('admin.lessons.documents.store', $lesson), ['documents' => [$file]]);
+
+        $lesson->update(['status' => 'published', 'published_at' => now()]);
+
+        $studentUser = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        Student::create([
+            'user_id' => $studentUser->id,
+            'first_name' => 'Lina',
+            'last_name' => 'Test',
+        ]);
+
+        $this->actingAs($studentUser)
+            ->get(route('student.lessons.show', $lesson))
+            ->assertOk()
+            ->assertSee('data-document-viewer', false)
+            ->assertSee('document-viewer', false);
     }
 }

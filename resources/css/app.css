@@ -895,7 +895,7 @@
     }
 
     .es-behavior-student-card {
-        @apply rounded-[1.25rem] p-5 transition-all duration-200 cursor-pointer;
+        @apply flex flex-col items-center text-center rounded-[1.25rem] p-5 transition-all duration-200 cursor-pointer;
         background: rgb(255 255 255 / 0.88);
         border: 2px solid rgb(231 229 228 / 0.9);
         box-shadow: var(--shadow-es);
@@ -993,6 +993,29 @@
 
     .es-behavior-history-badge-bad {
         @apply bg-red-100 text-red-800;
+    }
+
+    .es-behavior-history-badge-reward {
+        @apply bg-indigo-100 text-indigo-800;
+    }
+
+    .es-behavior-reward-card {
+        @apply rounded-2xl p-5;
+        background: linear-gradient(180deg, rgb(238 242 255 / 0.9), rgb(255 255 255 / 0.95));
+        border: 1px solid rgb(199 210 254 / 0.8);
+        box-shadow: var(--shadow-es);
+    }
+
+    .es-behavior-reward-cost {
+        @apply inline-flex items-center justify-center px-3 py-1 rounded-xl text-sm font-black text-indigo-800 bg-indigo-100;
+    }
+
+    .es-point-settings-row {
+        @apply rounded-xl border border-stone-100 bg-stone-50/50 p-3;
+    }
+
+    .es-point-settings-add {
+        @apply rounded-xl border border-dashed border-stone-200 p-4 bg-white/60;
     }
 
     .doc-pptx-slide-host {

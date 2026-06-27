@@ -44,3 +44,9 @@
     <x-student-bottom-nav :active="$activeNav ?? 'home'" />
 </div>
 @endsection
+
+@once('document-viewer-assets')
+@push('scripts')
+    @vite('resources/js/document-viewer.js')
+@endpush
+@endonce

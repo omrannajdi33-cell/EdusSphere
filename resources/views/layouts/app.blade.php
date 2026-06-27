@@ -10,6 +10,7 @@
     <link href="https://fonts.bunny.net/css?family=nunito:600,700,800&display=swap" rel="stylesheet">
     <title>@yield('title', config('app.name'))</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('head')
 </head>
 <body class="es-app-bg">
     <div class="es-bg-orbs" aria-hidden="true">

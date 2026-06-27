@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 SchoolLevelSeeder::class,
                 PointActionSeeder::class,
+                PointRewardSeeder::class,
                 SubjectSeeder::class,
                 SkillSeeder::class,
                 ProductionAdminSeeder::class,
@@ -27,6 +28,7 @@ class DatabaseSeeder extends Seeder
             SchoolLevelSeeder::class,
             ClassGroupSeeder::class,
             PointActionSeeder::class,
+            PointRewardSeeder::class,
             SubjectSeeder::class,
             SkillSeeder::class,
             DemoUserSeeder::class,

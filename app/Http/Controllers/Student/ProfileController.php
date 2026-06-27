@@ -69,10 +69,11 @@ class ProfileController extends Controller
 
     public function showAvatar(StudentAvatarService $avatars)
     {
-        $student = auth()->user()->student;
+        $user = auth()->user();
+        $student = $user->student;
 
         if (! $student) {
-            abort(404);
+            return $avatars->placeholderForName($user->name ?? '?');
         }
 
         return $avatars->response($student);

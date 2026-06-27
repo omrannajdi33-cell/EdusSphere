@@ -11,7 +11,10 @@ use App\Http\Controllers\Admin\ExamController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\LessonDocumentController;
+use App\Http\Controllers\Admin\PointActionController;
 use App\Http\Controllers\Admin\PointController;
+use App\Http\Controllers\Admin\PointRewardController;
+use App\Http\Controllers\Admin\PointSettingsController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ScheduleController;
@@ -26,8 +29,10 @@ use App\Http\Controllers\Student\ActivityController as StudentActivityController
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\ExamHandRaiseController;
 use App\Http\Controllers\Student\ExamController as StudentExamController;
+use App\Http\Controllers\Student\LessonAnnotationController;
 use App\Http\Controllers\Student\LessonController as StudentLessonController;
 use App\Http\Controllers\Student\BulletinController;
+use App\Http\Controllers\Student\PointRedemptionController;
 use App\Http\Controllers\Student\PointsController;
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
 use App\Http\Controllers\Student\ProfileController as StudentProfileController;
@@ -66,6 +71,13 @@ Route::prefix('admin')
 
         Route::get('/points', [PointController::class, 'index'])->name('points.index');
         Route::post('/points', [PointController::class, 'store'])->name('points.store');
+        Route::get('/points/settings', [PointSettingsController::class, 'index'])->name('points.settings');
+        Route::post('/point-actions', [PointActionController::class, 'store'])->name('point-actions.store');
+        Route::put('/point-actions/{action}', [PointActionController::class, 'update'])->name('point-actions.update');
+        Route::delete('/point-actions/{action}', [PointActionController::class, 'destroy'])->name('point-actions.destroy');
+        Route::post('/point-rewards', [PointRewardController::class, 'store'])->name('point-rewards.store');
+        Route::put('/point-rewards/{reward}', [PointRewardController::class, 'update'])->name('point-rewards.update');
+        Route::delete('/point-rewards/{reward}', [PointRewardController::class, 'destroy'])->name('point-rewards.destroy');
 
         Route::resource('subjects', SubjectController::class)->except(['show']);
         Route::resource('subjects.skills', SkillController::class)->except(['show']);
@@ -159,6 +171,7 @@ Route::prefix('student')
         Route::get('/bulletin/{report}', [BulletinController::class, 'show'])->name('bulletin.show');
         Route::get('/bulletin/{report}/pdf', [BulletinController::class, 'pdf'])->name('bulletin.pdf');
         Route::get('/points', PointsController::class)->name('points.index');
+        Route::post('/points/redeem', [PointRedemptionController::class, 'store'])->name('points.redeem');
 
         Route::get('/notifications', [StudentNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [StudentNotificationController::class, 'markAllRead'])->name('notifications.read-all');

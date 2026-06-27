@@ -79,6 +79,16 @@ class StudentAvatarTest extends TestCase
         $this->assertStringContainsString('?v=', $url);
     }
 
+    public function test_student_without_profile_still_gets_avatar_placeholder(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_STUDENT, 'name' => 'Zoe']);
+
+        $this->actingAs($user)
+            ->get(route('student.profile.avatar.show', absolute: false))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/svg+xml');
+    }
+
     private function makeStudent(): Student
     {
         $user = User::factory()->create(['role' => User::ROLE_STUDENT]);
