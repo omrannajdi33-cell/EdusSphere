@@ -244,7 +244,8 @@
                 <div class="mb-6">
                     <p class="text-sm font-bold text-es-muted mb-2">{{ $media->displayName() }}</p>
                     <x-document-viewer
-                        :pdf-url="route('lesson-media.show', [$linkedLesson, $media])"
+                        :file-url="route('lesson-media.show', [$linkedLesson, $media])"
+                        :doc-kind="$media->source_kind ?? 'pdf'"
                         :save-url="route('student.lessons.annotations.save', $linkedLesson)"
                         :read-only="$readOnly"
                         :initial-annotations="$annPages"

@@ -25,7 +25,7 @@ class LessonMediaController extends Controller
         }
 
         return Storage::disk('local')->response($path, $media->filename, [
-            'Content-Type' => 'application/pdf',
+            'Content-Type' => $documents->viewerMimeType($media),
             'Content-Disposition' => 'inline',
         ]);
     }

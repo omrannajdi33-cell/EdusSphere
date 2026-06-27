@@ -967,6 +967,17 @@
         @apply bg-red-100 text-red-800;
     }
 
+    .doc-pptx-slide-host {
+        @apply w-full;
+    }
+
+    .doc-pptx-slide-host svg {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto;
+    }
+
     /* ── Wizard activités ── */
     .es-wizard-page {
         @apply max-w-6xl;

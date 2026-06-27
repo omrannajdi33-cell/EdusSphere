@@ -1,8 +1,9 @@
 /**
- * EduSphere — lecteur document intégré (PDF multi-pages + annotations)
+ * EduSphere — lecteur document intégré (PDF + PPTX + annotations)
  */
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { loadPresentation, renderSlideToElement } from 'pptx-viewer';
 import { csrfFetch } from './csrf-fetch';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -19,7 +20,8 @@ function initDocumentViewer(el) {
     }
     el.dataset.initialized = '1';
 
-    const pdfUrl = el.dataset.pdfUrl;
+    const fileUrl = el.dataset.fileUrl || el.dataset.pdfUrl;
+    const docKind = (el.dataset.docKind || 'pdf').toLowerCase();
     const saveUrl = el.dataset.saveUrl || '';
     const readOnly = el.dataset.readonly === '1';
     const initial = parseJson(el.dataset.initialAnnotations, {});
@@ -32,7 +34,10 @@ function initDocumentViewer(el) {
     const clearBtn = el.querySelector('[data-doc-clear]');
 
     const state = {
+        kind: docKind,
+        fileUrl,
         pdf: null,
+        presentation: null,
         pageCount: 0,
         currentPage: 1,
         pages: { ...initial },
@@ -44,12 +49,10 @@ function initDocumentViewer(el) {
 
     viewerState.set(el, state);
 
-    loadPdf(pdfUrl, pagesWrap, state).then(() => {
+    loadDocument(fileUrl, docKind, pagesWrap, state).then(() => {
         renderPage(el, state, pagesWrap, pageLabel);
     }).catch(() => {
-        if (pagesWrap) {
-            pagesWrap.innerHTML = '<p class="text-red-600 p-4">Impossible de charger le document.</p>';
-        }
+        showLoadError(pagesWrap, docKind);
     });
 
     prevBtn?.addEventListener('click', () => {
@@ -78,14 +81,50 @@ function initDocumentViewer(el) {
     });
 }
 
-async function loadPdf(url, wrap, state) {
+async function loadDocument(url, kind, wrap, state) {
+    if (kind === 'ppt') {
+        throw new Error('legacy ppt');
+    }
+
+    if (kind === 'pptx') {
+        state.presentation = await loadPresentation(url);
+        state.pageCount = state.presentation.slides.length;
+        return;
+    }
+
     const loading = pdfjsLib.getDocument(url);
     state.pdf = await loading.promise;
     state.pageCount = state.pdf.numPages;
 }
 
+function showLoadError(wrap, kind) {
+    if (!wrap) {
+        return;
+    }
+
+    if (kind === 'ppt') {
+        wrap.innerHTML = '<p class="text-amber-700 bg-amber-50 rounded-xl p-4 text-sm font-semibold">Ce fichier est au format PowerPoint ancien (.ppt). Enregistrez-le en <strong>.pptx</strong> ou en PDF pour l’afficher dans le lecteur EduSphere.</p>';
+        return;
+    }
+
+    wrap.innerHTML = '<p class="text-red-600 p-4">Impossible de charger le document.</p>';
+}
+
 async function renderPage(el, state, wrap, pageLabel) {
-    if (!state.pdf || !wrap) {
+    if (!wrap || state.pageCount < 1) {
+        return;
+    }
+
+    if (state.kind === 'pptx') {
+        await renderPptxPage(el, state, wrap, pageLabel);
+        return;
+    }
+
+    await renderPdfPage(el, state, wrap, pageLabel);
+}
+
+async function renderPdfPage(el, state, wrap, pageLabel) {
+    if (!state.pdf) {
         return;
     }
 
@@ -98,10 +137,7 @@ async function renderPage(el, state, wrap, pageLabel) {
     const baseScale = 1.35;
     const viewport = page.getViewport({ scale: baseScale });
 
-    const stage = document.createElement('div');
-    stage.className = 'doc-page-stage relative mx-auto bg-white shadow-es rounded-xl overflow-hidden';
-    stage.style.width = `${viewport.width}px`;
-    stage.style.height = `${viewport.height}px`;
+    const stage = createStage(viewport.width, viewport.height);
 
     const pdfCanvas = document.createElement('canvas');
     pdfCanvas.width = viewport.width;
@@ -109,13 +145,7 @@ async function renderPage(el, state, wrap, pageLabel) {
     pdfCanvas.className = 'absolute inset-0 w-full h-full';
     pdfCanvas.setAttribute('aria-hidden', 'true');
 
-    const drawCanvas = document.createElement('canvas');
-    drawCanvas.width = viewport.width;
-    drawCanvas.height = viewport.height;
-    drawCanvas.className = 'doc-annotation-canvas absolute inset-0 w-full h-full touch-none z-10';
-    if (state.readOnly) {
-        drawCanvas.classList.add('pointer-events-none');
-    }
+    const drawCanvas = createDrawCanvas(viewport.width, viewport.height, state.readOnly);
 
     stage.appendChild(pdfCanvas);
     stage.appendChild(drawCanvas);
@@ -127,8 +157,68 @@ async function renderPage(el, state, wrap, pageLabel) {
     redrawCanvas(drawCanvas, pageData.strokes ?? []);
     bindDrawing(drawCanvas, pageKey, state, el);
 
+    updatePageLabel(pageLabel, state, 'Page');
+}
+
+async function renderPptxPage(el, state, wrap, pageLabel) {
+    if (!state.presentation) {
+        return;
+    }
+
+    wrap.innerHTML = '';
+    const pageKey = String(state.currentPage);
+    const pageData = state.pages[pageKey] ?? { strokes: [] };
+    state.pages[pageKey] = pageData;
+    const slideIndex = state.currentPage - 1;
+
+    const stage = document.createElement('div');
+    stage.className = 'doc-page-stage relative mx-auto bg-white shadow-es rounded-xl overflow-hidden';
+
+    const slideHost = document.createElement('div');
+    slideHost.className = 'doc-pptx-slide-host relative';
+    stage.appendChild(slideHost);
+    wrap.appendChild(stage);
+
+    renderSlideToElement(state.presentation, slideIndex, slideHost);
+
+    const slideBox = slideHost.querySelector('svg, canvas, img') ?? slideHost.firstElementChild ?? slideHost;
+    const width = Math.max(slideBox?.clientWidth || slideHost.clientWidth || 960, 320);
+    const height = Math.max(slideBox?.clientHeight || slideHost.clientHeight || 540, 240);
+
+    stage.style.width = `${width}px`;
+    stage.style.minHeight = `${height}px`;
+
+    const drawCanvas = createDrawCanvas(width, height, state.readOnly);
+    stage.appendChild(drawCanvas);
+
+    redrawCanvas(drawCanvas, pageData.strokes ?? []);
+    bindDrawing(drawCanvas, pageKey, state, el);
+
+    updatePageLabel(pageLabel, state, 'Diapositive');
+}
+
+function createStage(width, height) {
+    const stage = document.createElement('div');
+    stage.className = 'doc-page-stage relative mx-auto bg-white shadow-es rounded-xl overflow-hidden';
+    stage.style.width = `${width}px`;
+    stage.style.height = `${height}px`;
+    return stage;
+}
+
+function createDrawCanvas(width, height, readOnly) {
+    const drawCanvas = document.createElement('canvas');
+    drawCanvas.width = width;
+    drawCanvas.height = height;
+    drawCanvas.className = 'doc-annotation-canvas absolute inset-0 w-full h-full touch-none z-10';
+    if (readOnly) {
+        drawCanvas.classList.add('pointer-events-none');
+    }
+    return drawCanvas;
+}
+
+function updatePageLabel(pageLabel, state, prefix) {
     if (pageLabel) {
-        pageLabel.textContent = `Page ${state.currentPage} / ${state.pageCount}`;
+        pageLabel.textContent = `${prefix} ${state.currentPage} / ${state.pageCount}`;
     }
 }
 
@@ -168,7 +258,7 @@ function bindDrawing(canvas, pageKey, state, root) {
         drawStroke(ctx, stroke);
     });
 
-    const end = (e) => {
+    const end = () => {
         if (!drawing || !stroke) {
             return;
         }

@@ -37,7 +37,8 @@
                 @endif
             </div>
             <x-document-viewer
-                :pdf-url="route('lesson-media.show', [$lesson, $media])"
+                :file-url="route('lesson-media.show', [$lesson, $media])"
+                :doc-kind="$media->source_kind ?? 'pdf'"
                 :save-url="route('student.lessons.annotations.save', $lesson)"
                 :read-only="false"
                 :initial-annotations="$annPages"

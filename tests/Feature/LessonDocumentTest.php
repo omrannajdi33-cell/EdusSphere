@@ -78,6 +78,30 @@ class LessonDocumentTest extends TestCase
         $this->assertSame(2, $lesson->mediaFiles()->count());
     }
 
+    public function test_teacher_can_upload_pptx_without_conversion(): void
+    {
+        $lesson = $this->makeLesson();
+        $file = UploadedFile::fake()->create(
+            'cours.pptx',
+            100,
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        );
+
+        $this->actingAs($this->teacher)
+            ->post(route('admin.lessons.documents.store', $lesson), [
+                'documents' => [$file],
+                'labels' => ['Présentation'],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $media = $lesson->mediaFiles()->firstOrFail();
+
+        $this->assertSame('pptx', $media->source_kind);
+        $this->assertSame($media->path, $media->display_path);
+        $this->assertStringEndsWith('.pptx', $media->path);
+    }
+
     public function test_teacher_can_rename_document(): void
     {
         $lesson = $this->makeLesson();

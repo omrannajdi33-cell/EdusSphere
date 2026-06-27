@@ -66,7 +66,7 @@
     @if ($isEdit)
         <x-card class="mt-8">
             <h2 class="text-lg font-extrabold mb-2">Documents (PDF, PowerPoint)</h2>
-            <p class="text-sm text-es-muted mb-4">Les élèves les consultent dans le lecteur EduSphere et peuvent annoter dessus.</p>
+            <p class="text-sm text-es-muted mb-4">PDF et PPTX s’ouvrent directement dans le lecteur EduSphere — les élèves peuvent annoter dessus. (Format .ppt : enregistrez en .pptx ou PDF.)</p>
 
             @if ($lesson->mediaFiles->isNotEmpty())
                 <ul class="space-y-2 mb-4">

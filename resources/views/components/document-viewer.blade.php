@@ -1,5 +1,7 @@
 @props([
+    'fileUrl' => '',
     'pdfUrl' => '',
+    'docKind' => 'pdf',
     'saveUrl' => '',
     'readOnly' => false,
     'initialAnnotations' => [],
@@ -8,12 +10,15 @@
 
 @php
     $pages = $initialAnnotations['pages'] ?? $initialAnnotations;
+    $resolvedUrl = $fileUrl ?: $pdfUrl;
+    $kind = strtolower($docKind ?: 'pdf');
 @endphp
 
 <div
     class="es-document-viewer"
     data-document-viewer
-    data-pdf-url="{{ $pdfUrl }}"
+    data-file-url="{{ $resolvedUrl }}"
+    data-doc-kind="{{ $kind }}"
     data-save-url="{{ $saveUrl }}"
     data-readonly="{{ $readOnly ? '1' : '0' }}"
     data-initial-annotations="@json($pages)"
@@ -22,7 +27,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2 mb-3 p-2 bg-stone-100 rounded-xl">
         <div class="flex gap-2">
             <button type="button" class="es-btn es-btn-secondary es-btn-sm" data-doc-prev aria-label="Page précédente">←</button>
-            <span class="es-btn es-btn-secondary es-btn-sm pointer-events-none tabular-nums" data-doc-page-label>Page 1</span>
+            <span class="es-btn es-btn-secondary es-btn-sm pointer-events-none tabular-nums" data-doc-page-label>{{ $kind === 'pptx' ? 'Diapositive 1' : 'Page 1' }}</span>
             <button type="button" class="es-btn es-btn-secondary es-btn-sm" data-doc-next aria-label="Page suivante">→</button>
         </div>
         @unless ($readOnly)

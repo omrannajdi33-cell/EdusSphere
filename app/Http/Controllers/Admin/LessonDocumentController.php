@@ -34,31 +34,15 @@ class LessonDocumentController extends Controller
         }
 
         $uploaded = 0;
-        $errors = [];
 
-        foreach ($items as $index => $item) {
-            try {
-                $documents->store($lesson, $item['file'], $item['label']);
-                $uploaded++;
-            } catch (\RuntimeException $e) {
-                $name = $item['label'] ?: $item['file']->getClientOriginalName();
-                $errors[] = $name.': '.$e->getMessage();
-            }
-        }
-
-        if ($uploaded === 0) {
-            return back()->withErrors(['documents' => implode(' ', $errors) ?: 'Aucun document n’a pu être ajouté.']);
+        foreach ($items as $item) {
+            $documents->store($lesson, $item['file'], $item['label']);
+            $uploaded++;
         }
 
         $message = $uploaded === 1
             ? 'Document ajouté à la leçon.'
             : $uploaded.' documents ajoutés à la leçon.';
-
-        if ($errors !== []) {
-            return back()
-                ->with('success', $message)
-                ->withErrors(['documents' => implode(' · ', $errors)]);
-        }
 
         return back()->with('success', $message);
     }

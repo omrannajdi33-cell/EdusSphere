@@ -5,10 +5,9 @@ namespace App\Services;
 use App\Models\Lesson;
 use App\Models\MediaFile;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use ZipArchive;
 
 class LessonDocumentService
 {
@@ -27,17 +26,6 @@ class LessonDocumentService
         $directory = 'lessons/'.$lesson->id.'/documents';
         $path = $file->storeAs($directory, $storedName, 'local');
 
-        $displayPath = $ext === 'pdf' ? $path : $this->convertToPdf($path);
-
-        if ($displayPath === null && $ext !== 'pdf') {
-            Storage::disk('local')->delete($path);
-
-            throw new \RuntimeException(
-                'Impossible de convertir le PowerPoint. Reconstruis l’image Docker (`docker compose build app --no-cache`) pour installer LibreOffice, ou exporte le fichier en PDF.'
-            );
-        }
-
-        $pageCount = $this->estimatePdfPages($displayPath ?? $path);
         $displayLabel = trim((string) $label) !== '' ? trim((string) $label) : $file->getClientOriginalName();
 
         return MediaFile::create([
@@ -45,11 +33,11 @@ class LessonDocumentService
             'filename' => $file->getClientOriginalName(),
             'label' => $displayLabel,
             'path' => $path,
-            'display_path' => $displayPath ?? $path,
+            'display_path' => $path,
             'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
             'source_kind' => $ext,
             'size_bytes' => $file->getSize(),
-            'page_count' => $pageCount,
+            'page_count' => $this->estimatePageCount($path, $ext),
         ]);
     }
 
@@ -68,10 +56,12 @@ class LessonDocumentService
 
     public function delete(MediaFile $media): void
     {
-        foreach (array_unique(array_filter([$media->path, $media->display_path])) as $filePath) {
-            if (Storage::disk('local')->exists($filePath)) {
-                Storage::disk('local')->delete($filePath);
-            }
+        if ($media->path && Storage::disk('local')->exists($media->path)) {
+            Storage::disk('local')->delete($media->path);
+        }
+
+        if ($media->display_path && $media->display_path !== $media->path && Storage::disk('local')->exists($media->display_path)) {
+            Storage::disk('local')->delete($media->display_path);
         }
 
         $media->delete();
@@ -87,78 +77,23 @@ class LessonDocumentService
         return $media->label ?: $media->filename;
     }
 
-    protected function convertToPdf(string $sourcePath): ?string
+    public function viewerMimeType(MediaFile $media): string
     {
-        $binary = $this->libreOfficeBinary();
-        if ($binary === null) {
-            Log::warning('LibreOffice introuvable — conversion PowerPoint impossible.');
-
-            return null;
-        }
-
-        $disk = Storage::disk('local');
-        $fullSource = $disk->path($sourcePath);
-        $outputDir = $disk->path(dirname($sourcePath));
-        $homeDir = storage_path('app/libreoffice-home');
-        $tmpDir = storage_path('app/tmp');
-
-        foreach ([$homeDir, $tmpDir, $outputDir] as $dir) {
-            if (! is_dir($dir)) {
-                mkdir($dir, 0775, true);
-            }
-        }
-
-        $result = Process::timeout(180)
-            ->env([
-                'HOME' => $homeDir,
-                'TMPDIR' => $tmpDir,
-            ])
-            ->run([
-                $binary,
-                '--headless',
-                '--nologo',
-                '--nofirststartwizard',
-                '-env:UserInstallation=file:///'.str_replace('\\', '/', $homeDir.'/profile'),
-                '--convert-to',
-                'pdf',
-                '--outdir',
-                $outputDir,
-                $fullSource,
-            ]);
-
-        if (! $result->successful()) {
-            Log::warning('Échec conversion LibreOffice', [
-                'exit' => $result->exitCode(),
-                'error' => $result->errorOutput(),
-                'output' => $result->output(),
-            ]);
-
-            return null;
-        }
-
-        $pdfName = pathinfo($fullSource, PATHINFO_FILENAME).'.pdf';
-        $pdfRelative = dirname($sourcePath).'/'.$pdfName;
-
-        return $disk->exists($pdfRelative) ? $pdfRelative : null;
+        return match ($media->source_kind) {
+            'pdf' => 'application/pdf',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            default => $media->mime_type ?: 'application/octet-stream',
+        };
     }
 
-    protected function libreOfficeBinary(): ?string
+    protected function estimatePageCount(string $path, string $ext): ?int
     {
-        foreach (['/usr/bin/soffice', '/usr/bin/libreoffice'] as $candidate) {
-            if (is_executable($candidate)) {
-                return $candidate;
-            }
-        }
-
-        $which = Process::run(['sh', '-c', 'command -v soffice || command -v libreoffice']);
-        if ($which->successful()) {
-            $path = trim($which->output());
-            if ($path !== '' && is_executable($path)) {
-                return $path;
-            }
-        }
-
-        return null;
+        return match ($ext) {
+            'pdf' => $this->estimatePdfPages($path),
+            'pptx' => $this->estimatePptxSlides($path),
+            default => null,
+        };
     }
 
     protected function estimatePdfPages(string $pdfPath): ?int
@@ -173,6 +108,29 @@ class LessonDocumentService
         }
 
         $count = preg_match_all('/\/Type\s*\/Page[^s]/', $content);
+
+        return $count > 0 ? $count : null;
+    }
+
+    protected function estimatePptxSlides(string $pptxPath): ?int
+    {
+        if (! Storage::disk('local')->exists($pptxPath)) {
+            return null;
+        }
+
+        $zip = new ZipArchive;
+        if ($zip->open(Storage::disk('local')->path($pptxPath)) !== true) {
+            return null;
+        }
+
+        $count = 0;
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (is_string($name) && preg_match('#^ppt/slides/slide\d+\.xml$#', $name)) {
+                $count++;
+            }
+        }
+        $zip->close();
 
         return $count > 0 ? $count : null;
     }
