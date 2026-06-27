@@ -50,7 +50,7 @@ class Student extends Model
 
     public function avatarUrl(string $context = 'admin'): ?string
     {
-        if (! $this->avatar_path) {
+        if (! $this->exists) {
             return null;
         }
 

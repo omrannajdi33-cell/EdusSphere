@@ -48,6 +48,22 @@ class StudentAvatarTest extends TestCase
             ->assertOk();
     }
 
+    public function test_missing_avatar_file_returns_placeholder_and_clears_stale_path(): void
+    {
+        Storage::fake('local');
+
+        $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $student = $this->makeStudent();
+        $student->update(['avatar_path' => 'avatars/'.$student->id.'/missing.jpg']);
+
+        $this->actingAs($teacher)
+            ->get(route('admin.students.avatar.show', $student, absolute: false))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/svg+xml');
+
+        $this->assertNull($student->fresh()->avatar_path);
+    }
+
     public function test_avatar_url_is_relative_with_cache_buster(): void
     {
         $student = Student::create([
