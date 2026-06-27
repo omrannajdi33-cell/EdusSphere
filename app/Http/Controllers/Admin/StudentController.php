@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStudentRequest;
 use App\Http\Requests\Admin\UpdateStudentRequest;
-use App\Models\ClassGroup;
 use App\Models\SchoolLevel;
 use App\Models\Student;
 use App\Models\User;
@@ -51,7 +50,6 @@ class StudentController extends Controller
             'student' => new Student,
             'user' => new User(['role' => User::ROLE_STUDENT, 'status' => 'active']),
             'levels' => SchoolLevel::orderBy('display_order')->get(),
-            'classGroups' => ClassGroup::with('schoolLevel')->orderBy('name')->get(),
         ]);
     }
 
@@ -74,7 +72,6 @@ class StudentController extends Controller
                 'last_name' => $data['last_name'],
                 'birth_date' => $data['birth_date'] ?? null,
                 'school_level_id' => $data['school_level_id'] ?? null,
-                'class_group_id' => $data['class_group_id'] ?? null,
             ]);
 
             if ($request->hasFile('avatar')) {
@@ -98,7 +95,6 @@ class StudentController extends Controller
             'student' => $student,
             'user' => $student->user,
             'levels' => SchoolLevel::orderBy('display_order')->get(),
-            'classGroups' => ClassGroup::with('schoolLevel')->orderBy('name')->get(),
         ]);
     }
 
@@ -122,7 +118,6 @@ class StudentController extends Controller
                 'last_name' => $data['last_name'],
                 'birth_date' => $data['birth_date'] ?? null,
                 'school_level_id' => $data['school_level_id'] ?? null,
-                'class_group_id' => $data['class_group_id'] ?? null,
             ]);
 
             if ($request->hasFile('avatar')) {

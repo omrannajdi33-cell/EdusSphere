@@ -43,7 +43,7 @@
                 <x-input label="Nom" name="last_name" value="{{ old('last_name', $student->last_name) }}" required :error="$errors->first('last_name')"/>
             </div>
 
-            <x-input label="Email" name="email" type="email" value="{{ old('email', $user->email) }}" required :error="$errors->first('email')"/>
+            <x-input label="Email" name="email" type="email" value="{{ old('email', $isEdit ? $user->email : '') }}" required :error="$errors->first('email')"/>
 
             <div>
                 <label for="school_level_id" class="es-label">Niveau scolaire</label>
@@ -51,16 +51,6 @@
                     <option value="">— Choisir —</option>
                     @foreach ($levels as $level)
                         <option value="{{ $level->id }}" @selected(old('school_level_id', $student->school_level_id) == $level->id)>{{ $level->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label for="class_group_id" class="es-label">Classe</label>
-                <select id="class_group_id" name="class_group_id" class="es-select">
-                    <option value="">— Choisir —</option>
-                    @foreach ($classGroups as $group)
-                        <option value="{{ $group->id }}" @selected(old('class_group_id', $student->class_group_id) == $group->id)>{{ $group->display_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -86,6 +76,7 @@
                 name="password"
                 type="password"
                 :required="! $isEdit"
+                placeholder="Minimum 3 caractères"
                 :error="$errors->first('password')"
             />
             <x-input label="Confirmer le mot de passe" name="password_confirmation" type="password" :required="! $isEdit"/>

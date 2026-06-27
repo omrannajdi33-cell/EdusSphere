@@ -4,7 +4,6 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UpdateStudentRequest extends FormRequest
 {
@@ -23,13 +22,25 @@ class UpdateStudentRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($student->user_id)],
-            'password' => ['nullable', 'confirmed', Password::defaults()],
+            'password' => ['nullable', 'confirmed', 'string', 'min:3', 'max:255'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'school_level_id' => ['nullable', 'exists:school_levels,id'],
-            'class_group_id' => ['nullable', 'exists:class_groups,id'],
             'status' => ['required', 'in:active,inactive'],
             'avatar' => ['nullable', 'file', 'max:'.$maxKb, 'mimes:'.implode(',', $mimes)],
             'remove_avatar' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'first_name.required' => 'Le prénom est obligatoire.',
+            'last_name.required' => 'Le nom est obligatoire.',
+            'email.required' => 'L\'email est obligatoire.',
+            'email.email' => 'L\'email n\'est pas valide.',
+            'email.unique' => 'Cet email est déjà utilisé.',
+            'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
         ];
     }
 }

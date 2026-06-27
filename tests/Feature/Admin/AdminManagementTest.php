@@ -48,6 +48,39 @@ class AdminManagementTest extends TestCase
         $this->assertDatabaseHas('students', ['first_name' => 'Nadia']);
     }
 
+    public function test_teacher_can_create_student_with_short_password(): void
+    {
+        $this->actingAs($this->teacher)
+            ->post(route('admin.students.store'), [
+                'first_name' => 'Karim',
+                'last_name' => 'Test',
+                'email' => 'karim@test.fr',
+                'password' => '123',
+                'password_confirmation' => '123',
+                'status' => 'active',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['email' => 'karim@test.fr']);
+    }
+
+    public function test_duplicate_student_email_shows_french_error(): void
+    {
+        User::factory()->create(['email' => 'dup@test.fr']);
+
+        $this->actingAs($this->teacher)
+            ->from(route('admin.students.create'))
+            ->post(route('admin.students.store'), [
+                'first_name' => 'Test',
+                'last_name' => 'Dup',
+                'email' => 'dup@test.fr',
+                'password' => '123',
+                'password_confirmation' => '123',
+                'status' => 'active',
+            ])
+            ->assertInvalid(['email' => 'Cet email est déjà utilisé.']);
+    }
+
     public function test_teacher_can_manage_subjects(): void
     {
         $this->actingAs($this->teacher)
