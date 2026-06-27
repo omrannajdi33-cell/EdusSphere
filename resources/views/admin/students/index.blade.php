@@ -29,7 +29,7 @@
                 <div class="flex items-center gap-4 mb-4">
                     <x-avatar
                         :name="$student->full_name"
-                        :src="$student->avatar_path ? route('admin.students.avatar.show', $student) : null"
+                        :src="$student->avatarUrl('admin')"
                         size="lg"
                     />
                     <div class="min-w-0 flex-1">

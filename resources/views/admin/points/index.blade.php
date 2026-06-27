@@ -86,90 +86,103 @@
         @endforelse
     </div>
 
-    {{-- Modal attribution --}}
-    <div
-        x-show="open"
-        x-cloak
-        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6"
-        @keydown.escape.window="close()"
-    >
-        <div class="es-modal-backdrop" @click="close()"></div>
+    <template x-teleport="body">
         <div
-            class="es-modal-panel es-behavior-modal relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             x-show="open"
-            x-transition
+            x-cloak
+            class="es-behavior-modal-wrap"
+            @keydown.escape.window="close()"
+            role="dialog"
+            aria-modal="true"
+            :aria-label="selected ? 'Points pour ' + selected.name : 'Attribuer des points'"
         >
-            <template x-if="selected">
-                <div>
-                    <div class="flex items-center gap-4 mb-6 pb-4 border-b border-stone-100">
-                        <img
-                            x-show="selected.avatar"
-                            :src="selected.avatar"
-                            :alt="selected.name"
-                            class="es-avatar es-avatar-xl object-cover"
-                        >
-                        <span
-                            x-show="!selected.avatar"
-                            class="es-avatar es-avatar-xl"
-                            x-text="selected.name?.charAt(0) ?? '?'"
-                        ></span>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-2xl font-black text-es-ink truncate" x-text="selected.name"></h3>
-                            <p class="text-lg font-bold mt-1" :class="currentTotal < 0 ? 'text-red-600' : 'text-emerald-600'" x-text="formatTotal(currentTotal)"></p>
-                        </div>
-                        <button type="button" class="es-btn-secondary es-btn-sm" @click="close()">Fermer</button>
-                    </div>
-
-                    <p x-show="feedback" x-text="feedback" class="mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-2"></p>
-
-                    <div class="es-behavior-columns">
-                        <div class="es-behavior-column es-behavior-column-good">
-                            <h4 class="es-behavior-column-title text-emerald-800">Bons points</h4>
-                            <ul class="space-y-2 flex-1">
-                                <template x-for="action in positive" :key="action.id">
-                                    <li>
-                                        <button
-                                            type="button"
-                                            class="es-behavior-action es-behavior-action-good w-full"
-                                            :disabled="loading"
-                                            @click="award(action.id)"
-                                        >
-                                            <span class="font-extrabold shrink-0" x-text="'+' + action.value"></span>
-                                            <span class="flex-1 min-w-0 text-left">
-                                                <span class="block font-bold" x-text="action.name"></span>
-                                                <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
-                                            </span>
-                                        </button>
-                                    </li>
+            <div class="es-behavior-modal-backdrop" @click="close()"></div>
+            <div
+                x-show="open"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                class="es-behavior-modal-panel"
+            >
+                <template x-if="selected">
+                    <div class="es-behavior-modal-body">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="shrink-0">
+                                <template x-if="selected.avatar">
+                                    <img
+                                        :src="selected.avatar"
+                                        :alt="selected.name"
+                                        class="es-avatar es-avatar-xl object-cover ring-4 ring-white shadow-es"
+                                    >
                                 </template>
-                            </ul>
-                        </div>
-                        <div class="es-behavior-column es-behavior-column-bad">
-                            <h4 class="es-behavior-column-title text-red-800">Points à retirer</h4>
-                            <ul class="space-y-2 flex-1">
-                                <template x-for="action in negative" :key="action.id">
-                                    <li>
-                                        <button
-                                            type="button"
-                                            class="es-behavior-action es-behavior-action-bad w-full"
-                                            :disabled="loading"
-                                            @click="award(action.id)"
-                                        >
-                                            <span class="font-extrabold shrink-0" x-text="action.value"></span>
-                                            <span class="flex-1 min-w-0 text-left">
-                                                <span class="block font-bold" x-text="action.name"></span>
-                                                <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
-                                            </span>
-                                        </button>
-                                    </li>
+                                <template x-if="!selected.avatar">
+                                    <span
+                                        class="es-avatar es-avatar-xl ring-4 ring-white shadow-es"
+                                        x-text="selected.name?.charAt(0) ?? '?'"
+                                    ></span>
                                 </template>
-                            </ul>
+                            </div>
+                            <div class="flex-1 min-w-0 pt-1">
+                                <h3 class="text-2xl font-black text-es-ink truncate" x-text="selected.name"></h3>
+                                <p class="text-lg font-bold mt-1" :class="currentTotal < 0 ? 'text-red-600' : 'text-emerald-600'" x-text="formatTotal(currentTotal)"></p>
+                            </div>
+                            <button type="button" class="es-btn es-btn-secondary es-btn-sm shrink-0" @click="close()">Fermer</button>
+                        </div>
+
+                        <p x-show="feedback" x-text="feedback" class="mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-2"></p>
+
+                        <div class="es-behavior-columns">
+                            <div class="es-behavior-column es-behavior-column-good">
+                                <h4 class="es-behavior-column-title text-emerald-800">Bons points</h4>
+                                <ul class="space-y-2 flex-1">
+                                    <template x-for="action in positive" :key="action.id">
+                                        <li>
+                                            <button
+                                                type="button"
+                                                class="es-behavior-action es-behavior-action-good w-full"
+                                                :disabled="loading"
+                                                @click="award(action.id)"
+                                            >
+                                                <span class="font-extrabold shrink-0" x-text="'+' + action.value"></span>
+                                                <span class="flex-1 min-w-0 text-left">
+                                                    <span class="block font-bold" x-text="action.name"></span>
+                                                    <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
+                                                </span>
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                            <div class="es-behavior-column es-behavior-column-bad">
+                                <h4 class="es-behavior-column-title text-red-800">Points à retirer</h4>
+                                <ul class="space-y-2 flex-1">
+                                    <template x-for="action in negative" :key="action.id">
+                                        <li>
+                                            <button
+                                                type="button"
+                                                class="es-behavior-action es-behavior-action-bad w-full"
+                                                :disabled="loading"
+                                                @click="award(action.id)"
+                                            >
+                                                <span class="font-extrabold shrink-0" x-text="action.value"></span>
+                                                <span class="flex-1 min-w-0 text-left">
+                                                    <span class="block font-bold" x-text="action.name"></span>
+                                                    <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
+                                                </span>
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </template>
+                </template>
+            </div>
         </div>
-    </div>
+    </template>
 </div>
 @endsection
 

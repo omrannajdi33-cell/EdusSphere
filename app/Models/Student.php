@@ -54,9 +54,13 @@ class Student extends Model
             return null;
         }
 
-        return $context === 'student'
-            ? route('student.profile.avatar.show')
-            : route('admin.students.avatar.show', $this);
+        $path = $context === 'student'
+            ? route('student.profile.avatar.show', [], false)
+            : route('admin.students.avatar.show', $this, false);
+
+        $version = $this->updated_at?->timestamp ?? time();
+
+        return $path.'?v='.$version;
     }
 
     public function activities(): BelongsToMany

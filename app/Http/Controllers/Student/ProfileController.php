@@ -6,9 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Profile\UpdateAvatarRequest;
 use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
+use App\Services\StudentAvatarService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -40,7 +39,7 @@ class ProfileController extends Controller
         return back()->with('success', 'Mot de passe modifié.');
     }
 
-    public function uploadAvatar(UpdateAvatarRequest $request): RedirectResponse
+    public function uploadAvatar(UpdateAvatarRequest $request, StudentAvatarService $avatars): RedirectResponse
     {
         $student = $request->user()->student;
 
@@ -48,20 +47,12 @@ class ProfileController extends Controller
             abort(403);
         }
 
-        if ($student->avatar_path) {
-            Storage::disk('local')->delete($student->avatar_path);
-        }
-
-        $file = $request->file('avatar');
-        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
-        $path = $file->storeAs('avatars/'.$student->id, $filename, 'local');
-
-        $student->update(['avatar_path' => $path]);
+        $avatars->store($student, $request->file('avatar'));
 
         return back()->with('success', 'Photo mise à jour.');
     }
 
-    public function deleteAvatar(): RedirectResponse
+    public function deleteAvatar(StudentAvatarService $avatars): RedirectResponse
     {
         $student = auth()->user()->student;
 
@@ -70,21 +61,20 @@ class ProfileController extends Controller
         }
 
         if ($student->avatar_path) {
-            Storage::disk('local')->delete($student->avatar_path);
-            $student->update(['avatar_path' => null]);
+            $avatars->deleteFor($student);
         }
 
         return back()->with('success', 'Photo supprimée.');
     }
 
-    public function showAvatar()
+    public function showAvatar(StudentAvatarService $avatars)
     {
         $student = auth()->user()->student;
 
-        if (! $student?->avatar_path || ! Storage::disk('local')->exists($student->avatar_path)) {
+        if (! $student) {
             abort(404);
         }
 
-        return Storage::disk('local')->response($student->avatar_path);
+        return $avatars->response($student);
     }
 }

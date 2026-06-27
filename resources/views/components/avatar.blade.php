@@ -15,7 +15,7 @@ $initial = mb_strtoupper(mb_substr($name, 0, 1));
 @endphp
 
 @if ($src)
-    <img {{ $attributes->merge(['class' => "$sizeClass object-cover", 'style' => 'box-shadow: 0 0 0 3px white;', 'src' => $src, 'alt' => $name]) }}>
+    <img {{ $attributes->merge(['class' => "$sizeClass object-cover shrink-0", 'src' => $src, 'alt' => $name, 'loading' => 'lazy', 'decoding' => 'async']) }}>
 @else
     <span {{ $attributes->merge(['class' => $sizeClass]) }}>
         {{ $initial }}

@@ -10,7 +10,7 @@ fi
 export PORT
 
 mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views \
-    storage/app/tmp bootstrap/cache
+    storage/app/tmp storage/app/private storage/app/public bootstrap/cache
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then

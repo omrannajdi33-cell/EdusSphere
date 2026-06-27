@@ -29,7 +29,7 @@
                 <a href="{{ route('student.profile') }}" class="rounded-full p-0.5 transition hover:scale-105 active:scale-95" aria-label="Mon profil">
                 <x-avatar
                     :name="auth()->user()->student?->full_name ?? auth()->user()->name"
-                    :src="auth()->user()->student?->avatar_path ? route('student.profile.avatar.show') : null"
+                    :src="auth()->user()->student?->avatarUrl('student')"
                     size="sm"
                 />
             </a>

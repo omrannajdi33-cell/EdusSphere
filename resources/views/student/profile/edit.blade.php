@@ -10,7 +10,11 @@
     <div class="space-y-6 max-w-2xl">
         <x-card>
             <div class="flex items-center gap-5 mb-8">
-                <x-avatar :name="$student?->full_name ?? $user->name" size="lg" />
+                <x-avatar
+                    :name="$student?->full_name ?? $user->name"
+                    :src="$student?->avatarUrl('student')"
+                    size="lg"
+                />
                 <div>
                     <p class="text-xl font-extrabold text-es-ink">{{ $student?->full_name ?? $user->name }}</p>
                     <p class="text-base font-medium text-es-muted">{{ $student?->schoolLevel?->name ?? 'Niveau non défini' }}</p>

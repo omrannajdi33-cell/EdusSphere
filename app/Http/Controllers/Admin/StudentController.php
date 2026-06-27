@@ -8,12 +8,11 @@ use App\Http\Requests\Admin\UpdateStudentRequest;
 use App\Models\SchoolLevel;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\StudentAvatarService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class StudentController extends Controller
@@ -75,7 +74,7 @@ class StudentController extends Controller
             ]);
 
             if ($request->hasFile('avatar')) {
-                $this->storeAvatar($student, $request->file('avatar'));
+                app(StudentAvatarService::class)->store($student, $request->file('avatar'));
             }
 
             return $student;
@@ -121,12 +120,11 @@ class StudentController extends Controller
             ]);
 
             if ($request->hasFile('avatar')) {
-                $this->storeAvatar($student, $request->file('avatar'));
+                app(StudentAvatarService::class)->store($student, $request->file('avatar'));
             }
 
             if ($request->boolean('remove_avatar') && $student->avatar_path) {
-                Storage::disk('local')->delete($student->avatar_path);
-                $student->update(['avatar_path' => null]);
+                app(StudentAvatarService::class)->deleteFor($student);
             }
         });
 
@@ -138,7 +136,7 @@ class StudentController extends Controller
         $user = $student->user;
 
         if ($student->avatar_path) {
-            Storage::disk('local')->delete($student->avatar_path);
+            app(StudentAvatarService::class)->deleteFor($student);
         }
 
         $user?->delete();
@@ -148,23 +146,8 @@ class StudentController extends Controller
             ->with('success', 'Élève supprimé.');
     }
 
-    public function showAvatar(Student $student)
+    public function showAvatar(Student $student, StudentAvatarService $avatars)
     {
-        if (! $student->avatar_path || ! Storage::disk('local')->exists($student->avatar_path)) {
-            abort(404);
-        }
-
-        return Storage::disk('local')->response($student->avatar_path);
-    }
-
-    protected function storeAvatar(Student $student, $file): void
-    {
-        if ($student->avatar_path) {
-            Storage::disk('local')->delete($student->avatar_path);
-        }
-
-        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
-        $path = $file->storeAs('avatars/'.$student->id, $filename, 'local');
-        $student->update(['avatar_path' => $path]);
+        return $avatars->response($student);
     }
 }
