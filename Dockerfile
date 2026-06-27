@@ -1,5 +1,5 @@
-# Production image for Railway (includes app code + nginx + PHP-FPM).
-# Local dev uses Dockerfile.dev + docker-compose volumes.
+# Production Railway — image légère (sans LibreOffice/nginx, ~500 Mo).
+# Dev local : Dockerfile.dev + docker-compose.
 
 FROM node:22-alpine AS assets
 
@@ -34,16 +34,12 @@ RUN composer install \
     --no-interaction \
     --optimize-autoloader
 
-FROM php:8.4-fpm AS production
+FROM php:8.4-cli-bookworm AS production
 
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip libzip-dev libicu-dev \
-    libreoffice libreoffice-writer libreoffice-impress libreoffice-common fonts-liberation \
-    nginx gettext-base \
+    libpng-dev libonig-dev libxml2-dev libzip-dev libicu-dev \
     --no-install-recommends \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && docker-php-ext-install pdo_mysql mbstring gd zip intl opcache \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -55,19 +51,16 @@ COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 
 RUN composer dump-autoload --optimize --no-interaction \
-    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
-COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-edusphere.conf
-COPY docker/railway/nginx.conf.template /etc/nginx/conf.d/default.conf.template
 COPY docker/railway/start.sh /start.sh
 
-RUN chmod +x /start.sh \
-    && rm -f /etc/nginx/sites-enabled/default
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
-ENV HOME=/var/www/html/storage/app/libreoffice-home
+ENV HOME=/tmp
+ENV LIBREOFFICE_DISABLED=true
 
 EXPOSE 8080
 
