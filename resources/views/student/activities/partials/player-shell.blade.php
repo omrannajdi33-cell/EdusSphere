@@ -147,6 +147,7 @@
                             'canvasAnswer' => $canvasAnswer,
                             'readOnly' => $readOnly,
                             'correctionMode' => $correctionMode,
+                            'student' => $student ?? auth()->user()?->student,
                         ])
                     @endif
 

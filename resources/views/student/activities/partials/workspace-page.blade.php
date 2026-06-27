@@ -4,11 +4,14 @@
     $audio = $page->audioMediaFile;
     $rtl = $page->isRtl();
     $textHidden = (bool) ($workspaceData['text_hidden'] ?? false);
-    $recordingUrl = $workspaceData['recording_url'] ?? (
-        ! empty($workspaceData['recording_path'])
-            ? route('student.activities.recording', $activity, absolute: false).'?path='.urlencode($workspaceData['recording_path'])
-            : null
-    );
+    $recordingStudent = $student ?? auth()->user()?->student;
+    $recordingUrl = null;
+
+    if (! empty($workspaceData['recording_path']) && $recordingStudent) {
+        $recordingUrl = route('activities.recording.show', [$activity, $recordingStudent], absolute: false).'?path='.urlencode($workspaceData['recording_path']);
+    } elseif (! empty($workspaceData['recording_url']) && ! ($correctionMode ?? false)) {
+        $recordingUrl = $workspaceData['recording_url'];
+    }
 @endphp
 
 <div class="es-subject-workspace" data-workspace-root>
@@ -42,7 +45,7 @@
         <div class="es-oral-panel space-y-4" data-oral-panel data-recording-path="{{ $workspaceData['recording_path'] ?? '' }}" data-recording-kind="{{ $workspaceData['recording_kind'] ?? 'audio' }}">
             <p class="text-sm text-es-muted">Enregistre ta réponse orale (audio ou courte vidéo).</p>
 
-            @unless ($readOnly && ! $correctionMode)
+            @unless ($correctionMode ?? false)
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-record-audio">🎤 Audio</button>
                     <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-record-video">📹 Vidéo</button>

@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\ActivityMediaController;
+use App\Http\Controllers\ActivityRecordingController;
 use App\Http\Controllers\LessonMediaController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
@@ -59,6 +60,8 @@ Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))-
 Route::middleware('auth')->get('/lesson-media/{lesson}/{media}', LessonMediaController::class)->name('lesson-media.show');
 
 Route::middleware('auth')->get('/activity-media/{activity}/{media}', ActivityMediaController::class)->name('activity-media.show');
+
+Route::middleware('auth')->get('/activities/{activity}/students/{student}/recording', ActivityRecordingController::class)->name('activities.recording.show');
 
 Route::prefix('admin')
     ->middleware(['auth', 'role:'.User::ROLE_TEACHER])

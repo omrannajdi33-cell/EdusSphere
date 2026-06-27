@@ -191,7 +191,7 @@ class ActivityController extends Controller
         return response()->json([
             'path' => $path,
             'kind' => $data['kind'],
-            'url' => route('student.activities.recording', $activity, absolute: false).'?path='.urlencode($path),
+            'url' => route('activities.recording.show', [$activity, $student], absolute: false).'?path='.urlencode($path),
         ]);
     }
 
@@ -200,12 +200,9 @@ class ActivityController extends Controller
         $student = auth()->user()->student;
         abort_unless($student, 403);
 
-        $path = (string) $request->query('path', '');
-        $prefix = 'activities/'.$activity->id.'/students/'.$student->id.'/';
-        abort_unless($path !== '' && str_starts_with($path, $prefix), 403);
-        abort_unless(Storage::disk('local')->exists($path), 404);
-
-        return Storage::disk('local')->response($path);
+        return redirect()->to(
+            route('activities.recording.show', [$activity, $student], absolute: false).'?path='.urlencode((string) $request->query('path', ''))
+        );
     }
 
     public function submit(Activity $activity, ActivityCorrectionService $corrections): JsonResponse

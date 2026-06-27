@@ -290,7 +290,70 @@ class ActivityEngineTest extends TestCase
             ]);
 
         $response->assertOk()->assertJsonStructure(['path', 'kind', 'url']);
-        $this->assertStringStartsWith('/student/activities/', $response->json('url'));
+        $this->assertStringStartsWith('/activities/', $response->json('url'));
+        $this->assertStringContainsString('/students/', $response->json('url'));
+    }
+
+    public function test_teacher_can_view_student_oral_recording(): void
+    {
+        Storage::fake('local');
+
+        $activity = $this->makeDraftActivity();
+        $activity->publishTo([$this->student->id]);
+
+        $path = 'activities/'.$activity->id.'/students/'.$this->student->id.'/test-recording.webm';
+        Storage::disk('local')->put($path, 'fake-webm-content');
+
+        $this->actingAs($this->teacher)
+            ->get(route('activities.recording.show', [$activity, $this->student], absolute: false).'?path='.urlencode($path))
+            ->assertOk();
+
+        $this->actingAs($this->studentUser)
+            ->get(route('activities.recording.show', [$activity, $this->student], absolute: false).'?path='.urlencode($path))
+            ->assertOk();
+    }
+
+    public function test_teacher_correction_page_uses_shared_recording_route(): void
+    {
+        Storage::fake('local');
+
+        $activity = $this->makeDraftActivity();
+        $page = ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Oral',
+            'type' => 'oral_recording',
+            'content' => ['body' => 'Enregistre'],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $path = 'activities/'.$activity->id.'/students/'.$this->student->id.'/clip.webm';
+        Storage::disk('local')->put($path, 'fake-webm-content');
+
+        \App\Models\Answer::create([
+            'student_id' => $this->student->id,
+            'activity_page_id' => $page->id,
+            'content' => [
+                'workspace' => [
+                    'recording_path' => $path,
+                    'recording_kind' => 'video',
+                ],
+            ],
+        ]);
+
+        \App\Models\Progression::create([
+            'student_id' => $this->student->id,
+            'activity_id' => $activity->id,
+            'workflow_status' => 'submitted',
+            'submitted_at' => now(),
+        ]);
+
+        $expected = route('activities.recording.show', [$activity, $this->student], absolute: false).'?path='.urlencode($path);
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.activities.corrections.show', [$activity, $this->student]))
+            ->assertOk()
+            ->assertSee($expected, false);
     }
 
     public function test_student_cannot_play_draft_activity(): void
