@@ -95,7 +95,7 @@
     >
         <div class="es-modal-backdrop" @click="close()"></div>
         <div
-            class="es-modal-panel es-behavior-modal relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            class="es-modal-panel es-behavior-modal relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             x-show="open"
             x-transition
         >
@@ -122,10 +122,10 @@
 
                     <p x-show="feedback" x-text="feedback" class="mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-2"></p>
 
-                    <div class="grid sm:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="es-behavior-section-title es-behavior-section-good">Bons points</h4>
-                            <ul class="space-y-2 mt-3">
+                    <div class="es-behavior-columns">
+                        <div class="es-behavior-column es-behavior-column-good">
+                            <h4 class="es-behavior-column-title text-emerald-800">Bons points</h4>
+                            <ul class="space-y-2 flex-1">
                                 <template x-for="action in positive" :key="action.id">
                                     <li>
                                         <button
@@ -134,8 +134,8 @@
                                             :disabled="loading"
                                             @click="award(action.id)"
                                         >
-                                            <span class="font-extrabold" x-text="'+' + action.value"></span>
-                                            <span class="flex-1 text-left">
+                                            <span class="font-extrabold shrink-0" x-text="'+' + action.value"></span>
+                                            <span class="flex-1 min-w-0 text-left">
                                                 <span class="block font-bold" x-text="action.name"></span>
                                                 <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
                                             </span>
@@ -144,9 +144,9 @@
                                 </template>
                             </ul>
                         </div>
-                        <div>
-                            <h4 class="es-behavior-section-title es-behavior-section-bad">Points à retirer</h4>
-                            <ul class="space-y-2 mt-3">
+                        <div class="es-behavior-column es-behavior-column-bad">
+                            <h4 class="es-behavior-column-title text-red-800">Points à retirer</h4>
+                            <ul class="space-y-2 flex-1">
                                 <template x-for="action in negative" :key="action.id">
                                     <li>
                                         <button
@@ -155,8 +155,8 @@
                                             :disabled="loading"
                                             @click="award(action.id)"
                                         >
-                                            <span class="font-extrabold" x-text="action.value"></span>
-                                            <span class="flex-1 text-left">
+                                            <span class="font-extrabold shrink-0" x-text="action.value"></span>
+                                            <span class="flex-1 min-w-0 text-left">
                                                 <span class="block font-bold" x-text="action.name"></span>
                                                 <span class="block text-xs opacity-80" x-text="action.description" x-show="action.description"></span>
                                             </span>

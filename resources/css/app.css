@@ -909,6 +909,28 @@
         @apply p-6 sm:p-8;
     }
 
+    .es-behavior-columns {
+        @apply grid gap-4 sm:grid-cols-2 items-stretch;
+    }
+
+    .es-behavior-column {
+        @apply flex flex-col rounded-2xl p-4 min-h-[12rem] h-full;
+    }
+
+    .es-behavior-column-good {
+        background: rgb(236 253 245 / 0.85);
+        border: 1px solid rgb(167 243 208 / 0.8);
+    }
+
+    .es-behavior-column-bad {
+        background: rgb(254 242 242 / 0.85);
+        border: 1px solid rgb(254 202 202 / 0.8);
+    }
+
+    .es-behavior-column-title {
+        @apply text-sm font-black uppercase tracking-wide mb-3 shrink-0;
+    }
+
     .es-behavior-section-title {
         @apply text-sm font-black uppercase tracking-wide px-3 py-2 rounded-xl;
     }
@@ -926,11 +948,11 @@
     }
 
     .es-behavior-action-good {
-        @apply bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-100;
+        @apply bg-white text-emerald-900 hover:bg-emerald-50 border border-emerald-200/80 shadow-sm;
     }
 
     .es-behavior-action-bad {
-        @apply bg-red-50 text-red-900 hover:bg-red-100 border border-red-100;
+        @apply bg-white text-red-900 hover:bg-red-50 border border-red-200/80 shadow-sm;
     }
 
     .es-behavior-history-badge {
