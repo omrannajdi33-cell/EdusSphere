@@ -37,13 +37,8 @@ export SESSION_DRIVER="${SESSION_DRIVER:-file}"
 export CACHE_STORE="${CACHE_STORE:-file}"
 export QUEUE_CONNECTION="${QUEUE_CONNECTION:-sync}"
 
-echo "Starting EduSphere on port ${PORT}..."
+echo "Starting EduSphere on 0.0.0.0:${PORT}..."
 echo "DB_HOST=${DB_HOST:-<not set>} DB_DATABASE=${DB_DATABASE:-<not set>}"
-
-envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-
-php-fpm -D
-echo "Web server ready."
 
 bootstrap_database() {
     echo "Bootstrapping database..."
@@ -74,4 +69,4 @@ bootstrap_database() {
 
 bootstrap_database &
 
-exec nginx -g 'daemon off;'
+exec php artisan serve --host=0.0.0.0 --port="${PORT}" --no-reload

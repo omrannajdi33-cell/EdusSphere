@@ -71,4 +71,4 @@ ENV HOME=/var/www/html/storage/app/libreoffice-home
 
 EXPOSE 8080
 
-CMD ["/start.sh"]
+ENTRYPOINT ["/start.sh"]
