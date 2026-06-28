@@ -8,6 +8,16 @@
         <div class="es-header-inner">
             <x-logo subtitle="Mon espace" />
             <div class="flex items-center gap-2">
+                @if (auth()->user()->student)
+                    <a
+                        href="{{ route('student.points.index') }}"
+                        class="es-header-points-pill"
+                        aria-label="Mes points : {{ ($pointsTotal ?? 0) >= 0 ? '+' : '' }}{{ $pointsTotal ?? 0 }}"
+                    >
+                        <span class="es-header-points-star" aria-hidden="true">⭐</span>
+                        <span class="tabular-nums font-black">{{ ($pointsTotal ?? 0) >= 0 ? '+' : '' }}{{ $pointsTotal ?? 0 }}</span>
+                    </a>
+                @endif
                 @php
                     $unreadCount = \App\Models\Notification::query()
                         ->where('user_id', auth()->id())
@@ -27,21 +37,21 @@
                     @endif
                 </a>
                 <a href="{{ route('student.profile') }}" class="rounded-full p-0.5 transition hover:scale-105 active:scale-95" aria-label="Mon profil">
-                <x-avatar
-                    :name="auth()->user()->student?->full_name ?? auth()->user()->name"
-                    :src="auth()->user()->student?->avatarUrl('student')"
-                    size="sm"
-                />
-            </a>
+                    <x-avatar
+                        :name="auth()->user()->student?->full_name ?? auth()->user()->name"
+                        :src="auth()->user()->student?->avatarUrl('student')"
+                        size="sm"
+                    />
+                </a>
             </div>
         </div>
     </header>
 
+    <x-student-bottom-nav :active="$activeNav ?? 'home'" />
+
     <main class="flex-1 es-container py-6 md:py-10">
         @yield('student-content')
     </main>
-
-    <x-student-bottom-nav :active="$activeNav ?? 'home'" />
 </div>
 @endsection
 

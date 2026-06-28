@@ -2,13 +2,53 @@
 
 @section('student-content')
 <div class="es-page-enter">
-    <div class="mb-8">
+    <div class="mb-6">
         <h1 class="es-page-title">Salut {{ $firstName }} ! 👋</h1>
         <p class="es-page-subtitle">Prêt à apprendre aujourd'hui ?</p>
     </div>
 
+    @if (auth()->user()->student)
+        <div class="mb-8">
+            <x-student-points-hero :total="$pointsTotal" :rewards-count="$rewardsCount" />
+        </div>
+
+        @if ($recentPoints->isNotEmpty())
+            <div class="mb-10">
+                <div class="flex items-center justify-between gap-4 mb-3">
+                    <h2 class="es-section-title !mb-0">Derniers points</h2>
+                    <a href="{{ route('student.points.index') }}" class="es-link text-sm font-bold">Tout voir →</a>
+                </div>
+                <ul class="es-points-recent-list">
+                    @foreach ($recentPoints as $entry)
+                        @php
+                            $positive = $entry['value'] > 0;
+                            $isReward = ($entry['kind'] ?? '') === 'redemption';
+                        @endphp
+                        <li class="es-points-recent-item">
+                            <span @class([
+                                'es-behavior-history-badge shrink-0',
+                                'es-behavior-history-badge-good' => $positive && ! $isReward,
+                                'es-behavior-history-badge-bad' => ! $positive && ! $isReward,
+                                'es-behavior-history-badge-reward' => $isReward,
+                            ])>{{ $positive ? '+' : '' }}{{ $entry['value'] }}</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-extrabold text-es-ink truncate">{{ $entry['label'] }}</p>
+                                <p class="text-xs font-bold text-es-muted">{{ $entry['at']?->translatedFormat('d M · H:i') }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    @endif
+
     {{-- Accès rapide --}}
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-10">
+        <a href="{{ route('student.points.index') }}" class="es-quick-link group es-quick-link-points">
+            <span class="text-2xl block mb-1">⭐</span>
+            <span class="text-sm font-extrabold text-es-ink group-hover:text-amber-600">Mes points</span>
+            <span class="text-xs font-bold text-amber-600 mt-1 block">{{ $pointsTotal >= 0 ? '+' : '' }}{{ $pointsTotal ?? 0 }} pts</span>
+        </a>
         <a href="{{ route('student.schedule.index') }}" class="es-quick-link group">
             <span class="text-2xl block mb-1">📅</span>
             <span class="text-sm font-extrabold text-es-ink group-hover:text-es-primary">Mon horaire</span>

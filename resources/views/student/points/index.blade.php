@@ -2,77 +2,104 @@
 
 @section('student-content')
 <div
-    class="es-page-enter"
+    class="es-page-enter es-points-page"
     x-data="studentRewards({
         redeemUrl: @js(route('student.points.redeem')),
         csrf: @js(csrf_token()),
         total: @js($total),
     })"
 >
-    <div class="mb-8">
-        <h1 class="es-page-title">Mes points</h1>
-        <p class="es-page-subtitle">Gagne des points et échange-les contre des récompenses</p>
-    </div>
+    <x-student-points-hero :total="$total" :rewards-count="$rewards->count()" class="mb-8" />
 
     @if (session('success'))
-        <x-alert type="success" class="mb-6">{{ session('success') }}</x-alert>
+        <x-alert type="success" class="mb-6 es-points-success-pop">{{ session('success') }}</x-alert>
     @endif
 
-    <div class="es-behavior-student-hero mb-8">
-        <p class="text-base font-extrabold text-es-muted uppercase tracking-wide">Solde disponible</p>
-        <p
-            class="es-points-value"
-            :class="total >= 0 ? 'text-emerald-600' : 'text-red-600'"
-            x-text="formatTotal(total)"
-        >
-            {{ $total >= 0 ? '+' : '' }}{{ $total }}
-        </p>
-        <p class="text-sm font-bold text-es-muted mt-2">points comportement</p>
-    </div>
+    <section class="mb-10">
+        <div class="flex items-center gap-3 mb-5">
+            <span class="es-points-section-emoji" aria-hidden="true">🎁</span>
+            <div>
+                <h2 class="text-2xl font-black text-es-ink">Récompenses</h2>
+                <p class="text-sm font-bold text-es-muted">Échange tes points contre des surprises</p>
+            </div>
+        </div>
 
-    <x-card title="Récompenses" class="mb-8">
         @if ($rewards->isEmpty())
-            <p class="text-es-muted">Aucune récompense disponible pour le moment.</p>
+            <div class="es-points-empty-bubble">
+                <p class="text-lg font-extrabold text-es-ink">Pas encore de récompenses</p>
+                <p class="text-sm text-es-muted mt-2">Continue à gagner des points — ton prof va en ajouter bientôt !</p>
+            </div>
         @else
-            <p x-show="feedback" x-text="feedback" class="mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-2"></p>
+            <p x-show="feedback" x-text="feedback" x-transition class="mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-2xl px-4 py-3 border border-emerald-200"></p>
             <ul class="grid gap-4 sm:grid-cols-2">
                 @foreach ($rewards as $reward)
-                    <li class="es-behavior-reward-card flex flex-col">
-                        <div class="flex items-start justify-between gap-3 mb-3">
+                    @php
+                        $canAfford = $total >= $reward->cost;
+                        $emoji = match (true) {
+                            str_contains(mb_strtolower($reward->name), 'jeu') => '🎮',
+                            str_contains(mb_strtolower($reward->name), 'bonbon') || str_contains(mb_strtolower($reward->name), 'surprise') => '🍬',
+                            str_contains(mb_strtolower($reward->name), 'autocollant') => '🏷️',
+                            str_contains(mb_strtolower($reward->name), 'privilège') => '👑',
+                            default => '🎁',
+                        };
+                    @endphp
+                    <li @class([
+                        'es-reward-bubble',
+                        'es-reward-bubble-ready' => $canAfford,
+                    ])>
+                        <div class="flex items-start gap-4">
+                            <span class="es-reward-bubble-emoji" aria-hidden="true">{{ $emoji }}</span>
                             <div class="flex-1 min-w-0">
-                                <p class="font-extrabold text-lg text-es-ink">{{ $reward->name }}</p>
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="font-black text-xl text-es-ink">{{ $reward->name }}</p>
+                                    <span class="es-behavior-reward-cost shrink-0">{{ $reward->cost }} pts</span>
+                                </div>
                                 @if ($reward->description)
                                     <p class="text-sm text-es-muted mt-1">{{ $reward->description }}</p>
                                 @endif
                             </div>
-                            <span class="es-behavior-reward-cost shrink-0">{{ $reward->cost }} pts</span>
                         </div>
                         <button
                             type="button"
-                            class="es-btn es-btn-primary es-btn-sm mt-auto w-full sm:w-auto"
+                            @class([
+                                'es-btn es-btn-sm w-full mt-4',
+                                'es-btn-primary es-reward-btn-glow' => $canAfford,
+                                'es-btn-secondary opacity-70 cursor-not-allowed' => ! $canAfford,
+                            ])
                             :disabled="loading || total < {{ $reward->cost }}"
                             @click="redeem({{ $reward->id }}, @js($reward->name), {{ $reward->cost }})"
                         >
-                            <span x-show="total >= {{ $reward->cost }}">Utiliser mes points</span>
-                            <span x-show="total < {{ $reward->cost }}">Pas assez de points</span>
+                            <span x-show="total >= {{ $reward->cost }}">✨ Utiliser mes points</span>
+                            <span x-show="total < {{ $reward->cost }}" x-text="'Encore ' + ({{ $reward->cost }} - total) + ' pt(s)'"></span>
                         </button>
                     </li>
                 @endforeach
             </ul>
         @endif
-    </x-card>
+    </section>
 
-    <x-card title="Historique">
+    <section>
+        <div class="flex items-center gap-3 mb-5">
+            <span class="es-points-section-emoji" aria-hidden="true">📜</span>
+            <div>
+                <h2 class="text-2xl font-black text-es-ink">Historique</h2>
+                <p class="text-sm font-bold text-es-muted">Tes bons points et rappels à l'ordre</p>
+            </div>
+        </div>
+
         @if ($history->isEmpty())
-            <p class="text-es-muted">Aucun mouvement pour le moment. Continue comme ça !</p>
+            <div class="es-points-empty-bubble">
+                <p class="text-lg font-extrabold text-es-ink">Aucun mouvement pour l'instant</p>
+                <p class="text-sm text-es-muted mt-2">Continue comme ça ! 🌟</p>
+            </div>
         @else
-            <ul class="divide-y divide-stone-100">
+            <ul class="es-points-timeline">
                 @foreach ($history as $entry)
                     @php
                         $positive = $entry['value'] > 0;
                         $isReward = ($entry['kind'] ?? '') === 'redemption';
                     @endphp
-                    <li class="py-4 flex items-start gap-4">
+                    <li class="es-points-timeline-item">
                         <span @class([
                             'es-behavior-history-badge shrink-0',
                             'es-behavior-history-badge-good' => $positive && ! $isReward,
@@ -81,7 +108,7 @@
                         ])>
                             {{ $positive ? '+' : '' }}{{ $entry['value'] }}
                         </span>
-                        <div class="flex-1 min-w-0">
+                        <div class="flex-1 min-w-0 es-points-timeline-body">
                             <p class="font-extrabold text-es-ink">
                                 {{ $entry['label'] }}
                                 @if ($isReward)
@@ -99,7 +126,7 @@
                 @endforeach
             </ul>
         @endif
-    </x-card>
+    </section>
 </div>
 @endsection
 
