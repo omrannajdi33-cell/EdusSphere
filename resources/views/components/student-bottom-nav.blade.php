@@ -60,15 +60,18 @@ $desktopItems = [
                 <a
                     href="{{ $item['href'] }}"
                     aria-current="{{ $isActive ? 'page' : 'false' }}"
+                    aria-label="Mes points"
                     @class([
                         'es-dock-star',
                         'es-dock-star-active' => $isActive,
                     ])
                 >
                     <span class="es-dock-star-bubble">
-                        <svg class="es-dock-star-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="{{ $item['icon'] }}"/>
-                        </svg>
+                        <x-avatar
+                            :name="auth()->user()->student?->full_name ?? auth()->user()->name"
+                            :src="auth()->user()->student?->avatarUrl('student')"
+                            class="es-dock-feature-avatar"
+                        />
                     </span>
                     <span class="es-dock-star-label">{{ $item['label'] }}</span>
                 </a>

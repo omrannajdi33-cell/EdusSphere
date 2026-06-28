@@ -501,7 +501,8 @@
     }
 
     .es-dock-inner {
-        @apply mx-auto flex max-w-2xl gap-0.5 overflow-x-auto rounded-2xl px-2 py-2 scrollbar-none;
+        @apply mx-auto flex max-w-2xl items-center gap-0.5 overflow-x-auto rounded-2xl px-2 py-2.5 scrollbar-none;
+        min-height: 4.25rem;
         background: rgb(255 255 255 / 0.88);
         backdrop-filter: blur(var(--blur-es-lg));
         -webkit-backdrop-filter: blur(var(--blur-es-lg));
@@ -1074,29 +1075,38 @@
     }
 
     .es-dock-star {
-        @apply flex min-w-[4.5rem] flex-col items-center gap-0.5 -mt-5 px-1;
+        @apply flex min-w-[3.75rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1;
     }
 
     .es-dock-star-bubble {
-        @apply flex items-center justify-center rounded-full text-white;
-        width: 3.25rem;
-        height: 3.25rem;
+        @apply flex shrink-0 items-center justify-center rounded-full overflow-hidden;
+        width: 2.875rem;
+        height: 2.875rem;
+        padding: 2px;
         background: linear-gradient(145deg, #fbbf24, #f97316, #ea580c);
-        box-shadow: 0 8px 24px -6px rgb(234 88 12 / 0.65);
-        animation: es-points-glow 2.5s ease-in-out infinite;
+        box-shadow: 0 4px 14px -4px rgb(234 88 12 / 0.5);
     }
 
     .es-dock-star-active .es-dock-star-bubble {
-        outline: 3px solid rgb(255 255 255 / 0.9);
+        outline: 2px solid rgb(249 115 22 / 0.45);
         outline-offset: 2px;
+        box-shadow: 0 4px 16px -2px rgb(234 88 12 / 0.55);
     }
 
-    .es-dock-star-icon {
-        @apply w-7 h-7;
+    .es-dock-feature-avatar {
+        @apply !w-full !h-full !rounded-full object-cover;
+        box-shadow: none !important;
+    }
+
+    .es-dock-star-bubble .es-avatar,
+    .es-dock-star-bubble img.es-avatar,
+    .es-dock-star-bubble span.es-avatar {
+        @apply !w-full !h-full !text-base;
     }
 
     .es-dock-star-label {
-        @apply text-[0.625rem] font-black text-amber-700;
+        @apply w-full truncate text-center font-black leading-tight text-amber-700;
+        font-size: 0.625rem;
     }
 
     .es-points-dashboard-hero {
