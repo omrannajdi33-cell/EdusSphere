@@ -50,6 +50,16 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-extrabold text-lg text-es-ink">{{ $slot['title'] }}</p>
                                 <p class="text-sm text-es-muted">{{ $slot['subject'] }} · {{ substr($slot['starts_at'], 0, 5) }}–{{ substr($slot['ends_at'], 0, 5) }}</p>
+                                @if (! empty($slot['activities']) || ! empty($slot['exams']))
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        @foreach ($slot['activities'] ?? [] as $activity)
+                                            <a href="{{ route('student.activities.play', $activity['id']) }}" class="es-schedule-student-link">✏️ {{ $activity['title'] }}</a>
+                                        @endforeach
+                                        @foreach ($slot['exams'] ?? [] as $exam)
+                                            <span class="es-schedule-student-link">📝 {{ $exam['title'] }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endif
@@ -81,7 +91,19 @@
                                     @if ($slot)
                                         <div class="flex items-center gap-3 rounded-xl px-3 py-2" style="background: color-mix(in srgb, {{ $slot['color'] }} 12%, white); border-left: 3px solid {{ $slot['color'] }}">
                                             <span class="text-xs font-bold text-es-muted w-16">{{ substr($slot['starts_at'], 0, 5) }}</span>
-                                            <span class="font-bold text-es-ink">{{ $slot['title'] }}</span>
+                                            <div class="min-w-0 flex-1">
+                                                <span class="font-bold text-es-ink">{{ $slot['title'] }}</span>
+                                                @if (! empty($slot['activities']) || ! empty($slot['exams']))
+                                                    <span class="text-xs text-es-muted block mt-0.5">
+                                                        @if (! empty($slot['activities']))
+                                                            {{ count($slot['activities']) }} activité(s)
+                                                        @endif
+                                                        @if (! empty($slot['exams']))
+                                                            · {{ count($slot['exams']) }} examen(s)
+                                                        @endif
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                     @endif
                                 @endforeach

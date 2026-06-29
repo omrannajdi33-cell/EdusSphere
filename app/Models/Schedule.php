@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Schedule extends Model
 {
@@ -15,6 +16,7 @@ class Schedule extends Model
         'period_number',
         'starts_at',
         'ends_at',
+        'uses_custom_time',
         'schedule_date',
         'materials',
         'plan',
@@ -24,7 +26,18 @@ class Schedule extends Model
     {
         return [
             'schedule_date' => 'date',
+            'uses_custom_time' => 'boolean',
         ];
+    }
+
+    public function activities(): BelongsToMany
+    {
+        return $this->belongsToMany(Activity::class)->withTimestamps();
+    }
+
+    public function exams(): BelongsToMany
+    {
+        return $this->belongsToMany(Exam::class)->withTimestamps();
     }
 
     public function subject(): BelongsTo
@@ -47,9 +60,36 @@ class Schedule extends Model
         return $this->schedule_date === null;
     }
 
-    public function hasNotes(): bool
+    public function hasPlanningDetails(): bool
     {
-        return filled($this->materials) || filled($this->plan);
+        if (filled($this->materials) || filled($this->plan) || $this->uses_custom_time) {
+            return true;
+        }
+
+        if ($this->relationLoaded('activities') && $this->activities->isNotEmpty()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('exams') && $this->exams->isNotEmpty()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function timeLabel(): string
+    {
+        return substr((string) $this->starts_at, 0, 5).'–'.substr((string) $this->ends_at, 0, 5);
+    }
+
+    public static function defaultTimesForPeriod(int $periodNumber): array
+    {
+        $period = config('schedule.periods.'.$periodNumber, []);
+
+        return [
+            'starts_at' => $period['starts_at'] ?? '08:30',
+            'ends_at' => $period['ends_at'] ?? '09:45',
+        ];
     }
 
     /** @return list<string> */

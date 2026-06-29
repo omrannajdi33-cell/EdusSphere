@@ -119,4 +119,36 @@ class ScheduleTest extends TestCase
             ->assertOk()
             ->assertSee('Mon horaire');
     }
+
+    public function test_teacher_can_set_custom_time_and_link_activity(): void
+    {
+        $activity = \App\Models\Activity::create([
+            'subject_id' => $this->francais->id,
+            'skill_id' => $this->francais->skills()->firstOrFail()->id,
+            'title' => 'Exercice lecture',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->post(route('admin.schedules.store'), [
+                'subject_id' => $this->francais->id,
+                'title' => 'Français spécial',
+                'period_number' => 1,
+                'mode' => 'specific',
+                'schedule_date' => now()->addDay()->toDateString(),
+                'use_custom_time' => '1',
+                'starts_at' => '09:15',
+                'ends_at' => '10:30',
+                'activity_ids' => [$activity->id],
+            ])
+            ->assertRedirect();
+
+        $schedule = Schedule::query()->where('title', 'Français spécial')->firstOrFail();
+
+        $this->assertTrue($schedule->uses_custom_time);
+        $this->assertStringStartsWith('09:15', (string) $schedule->starts_at);
+        $this->assertStringStartsWith('10:30', (string) $schedule->ends_at);
+        $this->assertTrue($schedule->activities()->where('activities.id', $activity->id)->exists());
+    }
 }

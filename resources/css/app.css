@@ -1730,6 +1730,18 @@
         border: 1px solid color-mix(in srgb, var(--slot-color, #4f46e5) 22%, transparent);
     }
 
+    .es-schedule-link-list {
+        @apply rounded-2xl border border-stone-200 bg-white divide-y divide-stone-100;
+    }
+
+    .es-schedule-link-item {
+        @apply flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors hover:bg-stone-50;
+    }
+
+    .es-schedule-student-link {
+        @apply inline-flex items-center rounded-lg bg-white/80 px-2 py-1 text-xs font-bold text-es-primary;
+    }
+
     .es-schedule-slot {
         @apply h-full rounded-lg p-3 transition-transform hover:-translate-y-0.5;
         background: color-mix(in srgb, var(--slot-color, #4f46e5) 14%, white);

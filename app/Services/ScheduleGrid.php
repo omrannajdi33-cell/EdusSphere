@@ -17,13 +17,13 @@ class ScheduleGrid
         $weekEnd = $weekStart->copy()->addDays($displayDays - 1);
 
         $recurring = Schedule::query()
-            ->with('subject')
+            ->with(['subject', 'activities', 'exams'])
             ->whereNull('schedule_date')
             ->get()
             ->groupBy(fn (Schedule $s) => $s->day_of_week.'-'.$s->period_number);
 
         $specific = Schedule::query()
-            ->with('subject')
+            ->with(['subject', 'activities', 'exams'])
             ->whereBetween('schedule_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
             ->get()
             ->groupBy(fn (Schedule $s) => $s->schedule_date->toDateString().'-'.$s->period_number);
@@ -70,13 +70,13 @@ class ScheduleGrid
         $dateKey = $date->toDateString();
 
         $specific = Schedule::query()
-            ->with('subject')
+            ->with(['subject', 'activities', 'exams'])
             ->whereDate('schedule_date', $dateKey)
             ->get()
             ->keyBy('period_number');
 
         $recurring = Schedule::query()
-            ->with('subject')
+            ->with(['subject', 'activities', 'exams'])
             ->whereNull('schedule_date')
             ->where('day_of_week', $date->dayOfWeekIso)
             ->get()
@@ -99,30 +99,35 @@ class ScheduleGrid
     /** @return array<string, mixed>|null */
     public function currentSlot(CarbonInterface $at): ?array
     {
-        $periodNumber = $this->currentPeriodNumber($at);
-        if ($periodNumber === null) {
-            return null;
-        }
-
+        $time = $at->format('H:i:s');
         $periods = $this->forDay($at);
 
-        return $periods[$periodNumber] ?? null;
-    }
+        foreach ($periods as $slot) {
+            if (! $slot) {
+                continue;
+            }
 
-    public function currentPeriodNumber(CarbonInterface $at): ?int
-    {
-        $time = $at->format('H:i:s');
-
-        foreach (config('schedule.periods', []) as $number => $def) {
-            $starts = strlen($def['starts_at']) === 5 ? $def['starts_at'].':00' : $def['starts_at'];
-            $ends = strlen($def['ends_at']) === 5 ? $def['ends_at'].':00' : $def['ends_at'];
+            $starts = $this->normalizeTime((string) $slot['starts_at']);
+            $ends = $this->normalizeTime((string) $slot['ends_at']);
 
             if ($time >= $starts && $time <= $ends) {
-                return (int) $number;
+                return $slot;
             }
         }
 
         return null;
+    }
+
+    public function currentPeriodNumber(CarbonInterface $at): ?int
+    {
+        $slot = $this->currentSlot($at);
+
+        return $slot['period_number'] ?? null;
+    }
+
+    private function normalizeTime(string $time): string
+    {
+        return strlen($time) === 5 ? $time.':00' : $time;
     }
 
     /** @return list<int> */
@@ -150,7 +155,7 @@ class ScheduleGrid
         $from = Carbon::parse($from ?? now())->startOfDay();
 
         return Schedule::query()
-            ->with('subject')
+            ->with(['subject', 'activities', 'exams'])
             ->whereNotNull('schedule_date')
             ->where('schedule_date', '>=', $from->toDateString())
             ->orderBy('schedule_date')
@@ -188,7 +193,21 @@ class ScheduleGrid
             'period_number' => $slot->period_number,
             'materials' => $slot->materials,
             'plan' => $slot->plan,
-            'has_notes' => $slot->hasNotes(),
+            'uses_custom_time' => (bool) $slot->uses_custom_time,
+            'time_label' => $slot->timeLabel(),
+            'has_notes' => $slot->hasPlanningDetails(),
+            'activity_ids' => $slot->relationLoaded('activities')
+                ? $slot->activities->pluck('id')->all()
+                : [],
+            'exam_ids' => $slot->relationLoaded('exams')
+                ? $slot->exams->pluck('id')->all()
+                : [],
+            'activities' => $slot->relationLoaded('activities')
+                ? $slot->activities->map(fn ($a) => ['id' => $a->id, 'title' => $a->title])->all()
+                : [],
+            'exams' => $slot->relationLoaded('exams')
+                ? $slot->exams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title])->all()
+                : [],
         ];
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreScheduleRequest;
 use App\Http\Requests\Admin\UpdateScheduleRequest;
+use App\Models\Activity;
+use App\Models\Exam;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Services\ScheduleGrid;
@@ -28,6 +30,16 @@ class ScheduleController extends Controller
             'subjects' => Subject::ordered()->get(),
             'dayLabels' => config('schedule.day_labels', []),
             'upcomingDates' => $grid->upcomingSpecificDates(),
+            'linkableActivities' => Activity::query()
+                ->with('subject')
+                ->where('status', 'published')
+                ->orderBy('title')
+                ->get(['id', 'title', 'subject_id']),
+            'linkableExams' => Exam::query()
+                ->with('subject')
+                ->where('status', '!=', 'draft')
+                ->orderBy('title')
+                ->get(['id', 'title', 'subject_id']),
             'prevWeek' => $reference->copy()->subWeek()->toDateString(),
             'nextWeek' => $reference->copy()->addWeek()->toDateString(),
         ]);
@@ -35,19 +47,23 @@ class ScheduleController extends Controller
 
     public function store(StoreScheduleRequest $request): RedirectResponse
     {
-        $data = $this->resolveSlotData($request->validated());
+        $validated = $request->validated();
+        $data = $this->resolveSlotData($validated);
         $this->removeConflictingSlot($data);
 
-        Schedule::create($data);
+        $schedule = Schedule::create($data);
+        $this->syncLinks($schedule, $validated);
 
         return $this->redirectBack($request, 'Créneau ajouté à l\'horaire.');
     }
 
     public function update(UpdateScheduleRequest $request, Schedule $schedule): RedirectResponse
     {
-        $data = $this->resolveSlotData($request->validated());
+        $validated = $request->validated();
+        $data = $this->resolveSlotData($validated);
         $this->removeConflictingSlot($data, $schedule->id);
         $schedule->update($data);
+        $this->syncLinks($schedule, $validated);
 
         return $this->redirectBack($request, 'Créneau mis à jour.');
     }
@@ -62,25 +78,34 @@ class ScheduleController extends Controller
     /** @param  array<string, mixed>  $validated */
     private function resolveSlotData(array $validated): array
     {
-        $period = config('schedule.periods.'.$validated['period_number'], []);
+        $periodNumber = (int) $validated['period_number'];
+        $defaults = Schedule::defaultTimesForPeriod($periodNumber);
         $subject = Subject::findOrFail($validated['subject_id']);
-
         $isRecurring = $validated['mode'] === 'recurring';
+        $useCustomTime = (bool) ($validated['use_custom_time'] ?? false);
 
         return [
             'subject_id' => $subject->id,
             'title' => $validated['title'] ?: $subject->name,
             'color' => $validated['color'] ?? $subject->color,
-            'period_number' => (int) $validated['period_number'],
+            'period_number' => $periodNumber,
             'day_of_week' => $isRecurring
                 ? (int) $validated['day_of_week']
                 : Carbon::parse($validated['schedule_date'])->dayOfWeekIso,
-            'starts_at' => $period['starts_at'] ?? '08:00',
-            'ends_at' => $period['ends_at'] ?? '09:00',
+            'starts_at' => $useCustomTime ? $validated['starts_at'] : $defaults['starts_at'],
+            'ends_at' => $useCustomTime ? $validated['ends_at'] : $defaults['ends_at'],
+            'uses_custom_time' => $useCustomTime,
             'schedule_date' => $isRecurring ? null : $validated['schedule_date'],
             'materials' => $validated['materials'] ?? null,
             'plan' => $validated['plan'] ?? null,
         ];
+    }
+
+    /** @param  array<string, mixed>  $validated */
+    private function syncLinks(Schedule $schedule, array $validated): void
+    {
+        $schedule->activities()->sync(collect($validated['activity_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values());
+        $schedule->exams()->sync(collect($validated['exam_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values());
     }
 
     /** @param  array<string, mixed>  $data */
