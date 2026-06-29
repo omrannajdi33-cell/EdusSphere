@@ -12,6 +12,9 @@ return [
 
     'school_days' => [1, 2, 3, 4, 5],
 
+    /** Nombre de jours affichés dans la grille hebdomadaire (7 = lun–dim). */
+    'week_display_days' => 7,
+
     'day_labels' => [
         1 => 'Lundi',
         2 => 'Mardi',

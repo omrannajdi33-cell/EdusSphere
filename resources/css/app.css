@@ -1638,7 +1638,22 @@
     .es-schedule-grid-head,
     .es-schedule-grid-row {
         @apply grid gap-2;
-        grid-template-columns: 7rem repeat(5, minmax(0, 1fr));
+        grid-template-columns: 7rem repeat(7, minmax(0, 1fr));
+    }
+
+    .es-schedule-day-weekend,
+    .es-schedule-cell-weekend {
+        background: rgb(250 245 255 / 0.55);
+    }
+
+    .es-schedule-slot-badge-recurring {
+        color: var(--color-es-primary);
+    }
+
+    .es-schedule-date-card {
+        @apply rounded-2xl border border-stone-200 p-4 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md;
+        border-left: 4px solid var(--slot-color, #4f46e5);
+        background: color-mix(in srgb, var(--slot-color, #4f46e5) 8%, white);
     }
 
     .es-schedule-grid-row {

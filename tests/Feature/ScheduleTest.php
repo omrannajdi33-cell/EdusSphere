@@ -7,6 +7,7 @@ use App\Models\Skill;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\ScheduleGrid;
+use Carbon\Carbon;
 use Database\Seeders\SkillSeeder;
 use Database\Seeders\SubjectSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,6 +74,40 @@ class ScheduleTest extends TestCase
 
         $this->assertNotNull($monday['periods'][2]);
         $this->assertSame('Lecture', $monday['periods'][2]['title']);
+    }
+
+    public function test_teacher_can_create_specific_date_on_weekend(): void
+    {
+        $saturday = now()->next(Carbon::SATURDAY)->toDateString();
+
+        $this->actingAs($this->teacher)
+            ->post(route('admin.schedules.store'), [
+                'subject_id' => $this->francais->id,
+                'title' => 'Atelier samedi',
+                'period_number' => 1,
+                'mode' => 'specific',
+                'schedule_date' => $saturday,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('schedules', [
+            'title' => 'Atelier samedi',
+        ]);
+        $this->assertTrue(
+            Schedule::where('title', 'Atelier samedi')->whereDate('schedule_date', $saturday)->exists()
+        );
+
+        $periods = app(ScheduleGrid::class)->forDay(Carbon::parse($saturday));
+        $this->assertSame('Atelier samedi', $periods[1]['title']);
+    }
+
+    public function test_schedule_grid_shows_seven_days(): void
+    {
+        $grid = app(ScheduleGrid::class)->forWeek(now()->startOfWeek());
+
+        $this->assertCount(7, $grid['days']);
+        $this->assertSame(6, $grid['days'][5]['day_of_week']);
+        $this->assertSame(7, $grid['days'][6]['day_of_week']);
     }
 
     public function test_student_can_view_schedule(): void

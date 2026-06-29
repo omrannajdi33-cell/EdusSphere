@@ -14,16 +14,20 @@
             <x-button href="{{ route('admin.schedules.index', ['week' => $prevWeek]) }}" variant="secondary" class="es-btn-sm">← Semaine</x-button>
             <x-button href="{{ route('admin.schedules.index', ['week' => now()->startOfWeek()->toDateString()]) }}" variant="secondary" class="es-btn-sm">Aujourd'hui</x-button>
             <x-button href="{{ route('admin.schedules.index', ['week' => $nextWeek]) }}" variant="secondary" class="es-btn-sm">Semaine →</x-button>
-            <x-button type="button" variant="secondary" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'recurring' })">+ Ajouter un créneau</x-button>
+            <x-button type="button" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Ajouter une date</x-button>
         </div>
     </div>
 
-    <x-card class="overflow-x-auto">
-        <div class="min-w-[720px]">
+    <x-card class="overflow-x-auto mb-8">
+        <div class="min-w-[960px]">
             <div class="es-schedule-grid-head">
                 <div class="es-schedule-time-col"></div>
                 @foreach ($grid['days'] as $day)
-                    <div @class(['es-schedule-day-head', 'es-schedule-day-today' => $day['is_today']])>
+                    <div @class([
+                        'es-schedule-day-head',
+                        'es-schedule-day-today' => $day['is_today'],
+                        'es-schedule-day-weekend' => $day['is_weekend'],
+                    ])>
                         <span class="font-extrabold capitalize">{{ $day['short_label'] }}</span>
                     </div>
                 @endforeach
@@ -37,7 +41,11 @@
                     </div>
                     @foreach ($grid['days'] as $day)
                         @php $slot = $day['periods'][$periodNumber] ?? null; @endphp
-                        <div @class(['es-schedule-cell', 'es-schedule-cell-today' => $day['is_today']])>
+                        <div @class([
+                            'es-schedule-cell',
+                            'es-schedule-cell-today' => $day['is_today'],
+                            'es-schedule-cell-weekend' => $day['is_weekend'],
+                        ])>
                             @if ($slot)
                                 <button
                                     type="button"
@@ -56,7 +64,9 @@
                                     <span class="es-schedule-slot-title">{{ $slot['title'] }}</span>
                                     <span class="es-schedule-slot-sub">{{ $slot['subject'] }}</span>
                                     @if ($slot['is_specific'])
-                                        <span class="es-schedule-slot-badge">Date précise</span>
+                                        <span class="es-schedule-slot-badge">Date choisie</span>
+                                    @else
+                                        <span class="es-schedule-slot-badge es-schedule-slot-badge-recurring">Chaque semaine</span>
                                     @endif
                                 </button>
                             @else
@@ -64,7 +74,7 @@
                                     type="button"
                                     class="es-schedule-empty"
                                     @click="$dispatch('open-schedule-modal', {
-                                        mode: 'recurring',
+                                        mode: 'specific',
                                         period_number: {{ $periodNumber }},
                                         day_of_week: {{ $day['day_of_week'] }},
                                         schedule_date: '{{ $day['date_key'] }}',
@@ -80,9 +90,49 @@
         </div>
     </x-card>
 
-    <p class="text-sm text-es-muted mt-4">
-        4 périodes par jour · Clique une case pour planifier · Les créneaux récurrents se répètent chaque semaine.
+    <p class="text-sm text-es-muted mb-8">
+        Clique une case pour ajouter un cours sur <strong>cette date précise</strong>, ou choisis « Chaque semaine » pour un créneau récurrent.
+        Tu peux planifier n'importe quel jour, y compris le week-end.
     </p>
+
+    @if ($upcomingDates->isNotEmpty())
+        <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="es-section-title !mb-0">Dates planifiées</h2>
+            <x-button type="button" variant="secondary" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Nouvelle date</x-button>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($upcomingDates as $entry)
+                @php
+                    $periodDef = $grid['period_defs'][$entry->period_number] ?? null;
+                @endphp
+                <button
+                    type="button"
+                    class="es-schedule-date-card text-left"
+                    style="--slot-color: {{ $entry->display_color }}"
+                    @click="$dispatch('open-schedule-modal', {
+                        id: {{ $entry->id }},
+                        mode: 'specific',
+                        subject_id: {{ $entry->subject_id }},
+                        title: @js($entry->display_title),
+                        period_number: {{ $entry->period_number }},
+                        day_of_week: {{ $entry->day_of_week }},
+                        schedule_date: '{{ $entry->schedule_date->toDateString() }}',
+                    })"
+                >
+                    <p class="text-xs font-bold uppercase tracking-wide text-es-muted">
+                        {{ $entry->schedule_date->translatedFormat('l j F Y') }}
+                    </p>
+                    <p class="font-extrabold text-es-ink mt-1">{{ $entry->display_title }}</p>
+                    <p class="text-sm text-es-muted mt-1">
+                        {{ $entry->subject?->name }}
+                        @if ($periodDef)
+                            · {{ $periodDef['label'] }} ({{ substr($periodDef['starts_at'], 0, 5) }}–{{ substr($periodDef['ends_at'], 0, 5) }})
+                        @endif
+                    </p>
+                </button>
+            @endforeach
+        </div>
+    @endif
 </div>
 
 <div
@@ -102,7 +152,7 @@
         <div class="es-modal-backdrop" @click="close()"></div>
         <div class="es-modal-panel relative w-full max-w-md" @click.outside="close()">
             <h2 class="text-xl font-black text-es-ink mb-1" x-text="editing ? 'Modifier le créneau' : 'Nouveau créneau'"></h2>
-            <p class="text-sm text-es-muted mb-5">Choisis la matière, la période et le type de planification.</p>
+            <p class="text-sm text-es-muted mb-5">Choisis la matière, la date et la période.</p>
 
             <form :action="formAction" method="POST" class="space-y-4">
                 @csrf
@@ -134,31 +184,30 @@
                 </div>
 
                 <div>
-                    <label class="es-label">Type</label>
+                    <label class="es-label">Planification</label>
                     <div class="flex flex-wrap gap-2">
-                        <label class="es-qtype-chip" :class="form.mode === 'recurring' ? 'es-qtype-chip-active' : ''">
-                            <input type="radio" name="mode" value="recurring" x-model="form.mode" class="sr-only"> Chaque semaine
-                        </label>
                         <label class="es-qtype-chip" :class="form.mode === 'specific' ? 'es-qtype-chip-active' : ''">
                             <input type="radio" name="mode" value="specific" x-model="form.mode" class="sr-only"> Date précise
+                        </label>
+                        <label class="es-qtype-chip" :class="form.mode === 'recurring' ? 'es-qtype-chip-active' : ''">
+                            <input type="radio" name="mode" value="recurring" x-model="form.mode" class="sr-only"> Chaque semaine
                         </label>
                     </div>
                 </div>
 
-                <div x-show="form.mode === 'recurring'" x-cloak>
-                    <label class="es-label">Jour</label>
-                    <select name="day_of_week" x-model="form.day_of_week" class="es-select">
-                        @foreach ($dayLabels as $dow => $label)
-                            @if ($dow <= 5)
-                                <option value="{{ $dow }}">{{ $label }}</option>
-                            @endif
-                        @endforeach
-                    </select>
+                <div x-show="form.mode === 'specific'" x-cloak>
+                    <label class="es-label">Date du cours</label>
+                    <input type="date" name="schedule_date" x-model="form.schedule_date" class="es-input" :required="form.mode === 'specific'">
+                    <p class="text-xs text-es-muted mt-1">Tu choisis librement le jour — lundi, samedi, vacances, etc.</p>
                 </div>
 
-                <div x-show="form.mode === 'specific'" x-cloak>
-                    <label class="es-label">Date</label>
-                    <input type="date" name="schedule_date" x-model="form.schedule_date" class="es-input">
+                <div x-show="form.mode === 'recurring'" x-cloak>
+                    <label class="es-label">Jour (chaque semaine)</label>
+                    <select name="day_of_week" x-model="form.day_of_week" class="es-select" :required="form.mode === 'recurring'">
+                        @foreach ($dayLabels as $dow => $label)
+                            <option value="{{ $dow }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="flex flex-wrap gap-2 pt-2">
@@ -190,7 +239,7 @@ function scheduleModal(config) {
             subject_id: '',
             title: '',
             period_number: '1',
-            mode: 'recurring',
+            mode: 'specific',
             day_of_week: '1',
             schedule_date: '',
         },
@@ -202,7 +251,7 @@ function scheduleModal(config) {
                 subject_id: detail.subject_id ? String(detail.subject_id) : '',
                 title: detail.title || '',
                 period_number: String(detail.period_number || 1),
-                mode: detail.mode || 'recurring',
+                mode: detail.mode || 'specific',
                 day_of_week: String(detail.day_of_week || 1),
                 schedule_date: detail.schedule_date || '',
             };

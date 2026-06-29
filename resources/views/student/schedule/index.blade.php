@@ -64,8 +64,16 @@
         <x-card class="overflow-x-auto">
             <div class="min-w-[640px] space-y-2">
                 @foreach ($weekGrid['days'] as $day)
-                    <div @class(['rounded-2xl p-4', 'bg-stone-50' => $day['is_today']])>
-                        <p @class(['font-extrabold capitalize mb-3', 'text-es-primary' => $day['is_today']])>{{ $day['label'] }}</p>
+                    <div @class([
+                        'rounded-2xl p-4',
+                        'bg-stone-50' => $day['is_today'],
+                        'opacity-90' => ($day['is_weekend'] ?? false) && ! $day['is_today'],
+                    ])>
+                        <p @class([
+                            'font-extrabold capitalize mb-3',
+                            'text-es-primary' => $day['is_today'],
+                            'text-es-muted' => ($day['is_weekend'] ?? false) && ! $day['is_today'],
+                        ])>{{ $day['label'] }}</p>
                         <div class="space-y-2">
                             @if (collect($day['periods'])->filter()->isNotEmpty())
                                 @foreach ($periodDefs as $periodNumber => $periodDef)

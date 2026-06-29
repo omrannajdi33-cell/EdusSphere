@@ -13,12 +13,12 @@ class ScheduleGrid
     public function forWeek(CarbonInterface $reference): array
     {
         $weekStart = Carbon::parse($reference)->startOfWeek(CarbonInterface::MONDAY);
-        $weekEnd = $weekStart->copy()->addDays(4);
+        $displayDays = max(1, (int) config('schedule.week_display_days', 7));
+        $weekEnd = $weekStart->copy()->addDays($displayDays - 1);
 
         $recurring = Schedule::query()
             ->with('subject')
             ->whereNull('schedule_date')
-            ->whereIn('day_of_week', config('schedule.school_days', [1, 2, 3, 4, 5]))
             ->get()
             ->groupBy(fn (Schedule $s) => $s->day_of_week.'-'.$s->period_number);
 
@@ -29,7 +29,7 @@ class ScheduleGrid
             ->groupBy(fn (Schedule $s) => $s->schedule_date->toDateString().'-'.$s->period_number);
 
         $days = [];
-        for ($offset = 0; $offset < 5; $offset++) {
+        for ($offset = 0; $offset < $displayDays; $offset++) {
             $date = $weekStart->copy()->addDays($offset);
             $dateKey = $date->toDateString();
             $periods = [];
@@ -50,6 +50,7 @@ class ScheduleGrid
                 'label' => $date->translatedFormat('l j M'),
                 'short_label' => $date->translatedFormat('D j'),
                 'is_today' => $date->isToday(),
+                'is_weekend' => $date->dayOfWeekIso >= 6,
                 'periods' => $periods,
             ];
         }
@@ -65,25 +66,39 @@ class ScheduleGrid
     /** @return list<array|null> */
     public function forDay(CarbonInterface $date): array
     {
-        $week = $this->forWeek($date);
-        $dateKey = Carbon::parse($date)->toDateString();
+        $date = Carbon::parse($date);
+        $dateKey = $date->toDateString();
 
-        foreach ($week['days'] as $day) {
-            if ($day['date_key'] === $dateKey) {
-                return $day['periods'];
-            }
+        $specific = Schedule::query()
+            ->with('subject')
+            ->whereDate('schedule_date', $dateKey)
+            ->get()
+            ->keyBy('period_number');
+
+        $recurring = Schedule::query()
+            ->with('subject')
+            ->whereNull('schedule_date')
+            ->where('day_of_week', $date->dayOfWeekIso)
+            ->get()
+            ->keyBy('period_number');
+
+        $periods = [];
+        foreach (array_keys(config('schedule.periods', [])) as $periodNumber) {
+            $slot = $specific->get($periodNumber) ?? $recurring->get($periodNumber);
+            $periods[$periodNumber] = $slot ? $this->formatSlot($slot) : null;
         }
 
-        return array_fill_keys(array_keys(config('schedule.periods', [])), null);
+        return $periods;
+    }
+
+    public function hasCoursesOn(CarbonInterface $date): bool
+    {
+        return collect($this->forDay($date))->filter()->isNotEmpty();
     }
 
     /** @return array<string, mixed>|null */
     public function currentSlot(CarbonInterface $at): ?array
     {
-        if ($at->dayOfWeekIso >= 6) {
-            return null;
-        }
-
         $periodNumber = $this->currentPeriodNumber($at);
         if ($periodNumber === null) {
             return null;
@@ -120,16 +135,28 @@ class ScheduleGrid
         $cursor = $start->copy();
 
         while ($cursor->lte($end)) {
-            if ($cursor->dayOfWeekIso <= 5) {
-                $periods = $this->forDay($cursor);
-                if (collect($periods)->filter()->isNotEmpty()) {
-                    $days[] = $cursor->day;
-                }
+            if ($this->hasCoursesOn($cursor)) {
+                $days[] = $cursor->day;
             }
             $cursor->addDay();
         }
 
         return array_values(array_unique($days));
+    }
+
+    /** @return Collection<int, Schedule> */
+    public function upcomingSpecificDates(?CarbonInterface $from = null, int $limit = 30): Collection
+    {
+        $from = Carbon::parse($from ?? now())->startOfDay();
+
+        return Schedule::query()
+            ->with('subject')
+            ->whereNotNull('schedule_date')
+            ->where('schedule_date', '>=', $from->toDateString())
+            ->orderBy('schedule_date')
+            ->orderBy('period_number')
+            ->limit($limit)
+            ->get();
     }
 
     /** @return Collection<int, Schedule> */

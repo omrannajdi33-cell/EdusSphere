@@ -18,7 +18,7 @@ class StudentScheduleThemeService
     {
         $at = Carbon::parse($at ?? now());
 
-        if ($this->isWeekend($at)) {
+        if ($this->isWeekend($at) && ! $this->grid->hasCoursesOn($at)) {
             return $this->buildWeekendTheme();
         }
 

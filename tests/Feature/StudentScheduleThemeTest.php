@@ -25,6 +25,31 @@ class StudentScheduleThemeTest extends TestCase
         $this->geographie = Subject::where('name', 'Géographie')->firstOrFail();
     }
 
+    public function test_weekend_with_scheduled_course_uses_subject_theme(): void
+    {
+        $saturday = Carbon::parse('next saturday')->startOfDay();
+
+        Schedule::create([
+            'subject_id' => $this->geographie->id,
+            'title' => 'Géographie — sortie',
+            'color' => $this->geographie->color,
+            'day_of_week' => 6,
+            'period_number' => 2,
+            'starts_at' => '10:00',
+            'ends_at' => '11:15',
+            'schedule_date' => $saturday->toDateString(),
+        ]);
+
+        Carbon::setTestNow($saturday->copy()->setTime(10, 30));
+
+        $theme = app(StudentScheduleThemeService::class)->resolve();
+
+        $this->assertSame('subject', $theme['mode']);
+        $this->assertSame('geographie', $theme['slug']);
+
+        Carbon::setTestNow();
+    }
+
     public function test_weekend_returns_rest_theme(): void
     {
         Carbon::setTestNow(Carbon::parse('next saturday 10:00'));
