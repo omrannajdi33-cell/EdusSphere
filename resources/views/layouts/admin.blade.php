@@ -58,7 +58,11 @@
                 <x-admin-nav :active="$adminNav ?? null"/>
             </div>
         </header>
-        <main id="admin-main" class="flex-1 p-6 md:p-10 max-w-6xl mx-auto w-full" tabindex="-1">
+        <main id="admin-main" @class([
+            'flex-1 p-6 md:p-10 w-full',
+            'max-w-none' => ($adminNav ?? null) === 'schedules',
+            'max-w-6xl mx-auto' => ($adminNav ?? null) !== 'schedules',
+        ]) tabindex="-1">
             @yield('admin-content')
         </main>
     </div>

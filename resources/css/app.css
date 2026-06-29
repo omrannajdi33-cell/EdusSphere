@@ -1634,11 +1634,33 @@
         display: none;
     }
 
-    /* ── Horaire ── */
+    /* ── Horaire admin ── */
+    .es-schedule-admin {
+        @apply w-full;
+    }
+
+    .es-schedule-grid-wrap {
+        @apply w-full min-w-[72rem];
+    }
+
     .es-schedule-grid-head,
     .es-schedule-grid-row {
-        @apply grid gap-2;
-        grid-template-columns: 7rem repeat(7, minmax(0, 1fr));
+        @apply grid gap-3;
+        grid-template-columns: 5.5rem repeat(7, minmax(6.5rem, 1fr));
+    }
+
+    .es-schedule-grid-row {
+        @apply mt-3;
+    }
+
+    .es-schedule-time-col {
+        @apply flex flex-col justify-center px-1 py-2;
+    }
+
+    .es-schedule-day-head {
+        @apply rounded-xl px-2 py-4 text-center capitalize;
+        font-size: 0.9375rem;
+        background: rgb(250 250 249 / 0.9);
     }
 
     .es-schedule-day-weekend,
@@ -1656,34 +1678,21 @@
         background: color-mix(in srgb, var(--slot-color, #4f46e5) 8%, white);
     }
 
-    .es-schedule-grid-row {
-        @apply mt-2;
-    }
-
-    .es-schedule-time-col {
-        @apply flex flex-col justify-center px-2 py-3;
-    }
-
-    .es-schedule-day-head {
-        @apply rounded-xl px-2 py-3 text-center text-sm capitalize;
-        background: rgb(250 250 249 / 0.9);
-    }
-
     .es-schedule-day-today,
     .es-schedule-cell-today {
         background: color-mix(in srgb, var(--color-es-primary) 8%, white);
     }
 
     .es-schedule-cell {
-        @apply min-h-[3.25rem] rounded-xl p-0.5;
+        @apply min-h-[5.5rem] rounded-xl p-1;
         background: rgb(255 255 255 / 0.7);
         border: 1px dashed rgb(214 211 209 / 0.65);
     }
 
     .es-schedule-slot-compact {
-        @apply relative flex h-full min-h-[2.75rem] items-center justify-center rounded-lg px-1.5 py-2 transition-all duration-150;
+        @apply relative flex h-full min-h-[5rem] items-center justify-center rounded-xl px-2 py-3 transition-all duration-150;
         background: color-mix(in srgb, var(--slot-color, #4f46e5) 18%, white);
-        border-left: 3px solid var(--slot-color, #4f46e5);
+        border-left: 4px solid var(--slot-color, #4f46e5);
     }
 
     .es-schedule-slot-compact:hover {
@@ -1692,21 +1701,21 @@
     }
 
     .es-schedule-slot-compact-label {
-        @apply block w-full text-center font-extrabold leading-tight text-es-ink;
-        font-size: 0.6875rem;
+        @apply block w-full text-center font-extrabold leading-snug text-es-ink;
+        font-size: 0.875rem;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
     .es-schedule-slot-note-dot {
-        @apply absolute top-1 right-1 h-1.5 w-1.5 rounded-full;
+        @apply absolute top-2 right-2 h-2 w-2 rounded-full;
         background: var(--slot-color, #4f46e5);
     }
 
     .es-schedule-empty {
-        @apply flex h-full min-h-[2.75rem] w-full items-center justify-center rounded-lg text-xl font-light text-stone-300 transition-colors hover:bg-stone-50 hover:text-es-primary;
+        @apply flex h-full min-h-[5rem] w-full items-center justify-center rounded-xl text-3xl font-light text-stone-300 transition-colors hover:bg-stone-50 hover:text-es-primary;
     }
 
     .es-schedule-modal {
@@ -1722,12 +1731,6 @@
 
     .es-schedule-preview-list {
         @apply list-disc pl-5 space-y-1 text-es-ink;
-    }
-
-    .es-schedule-date-pill {
-        @apply inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-150 hover:-translate-y-0.5;
-        background: color-mix(in srgb, var(--slot-color, #4f46e5) 10%, white);
-        border: 1px solid color-mix(in srgb, var(--slot-color, #4f46e5) 22%, transparent);
     }
 
     .es-schedule-link-list {

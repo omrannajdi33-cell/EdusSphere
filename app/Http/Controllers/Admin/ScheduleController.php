@@ -29,7 +29,6 @@ class ScheduleController extends Controller
             'grid' => $grid->forWeek($reference),
             'subjects' => Subject::ordered()->get(),
             'dayLabels' => config('schedule.day_labels', []),
-            'upcomingDates' => $grid->upcomingSpecificDates(),
             'linkableActivities' => Activity::query()
                 ->with('subject')
                 ->where('status', 'published')

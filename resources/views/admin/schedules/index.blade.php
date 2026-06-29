@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('admin-content')
-<div class="es-page-enter">
+<div class="es-page-enter es-schedule-admin">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div>
             <h1 class="es-page-title">Horaire</h1>
@@ -18,8 +18,8 @@
         </div>
     </div>
 
-    <x-card class="overflow-x-auto mb-6">
-        <div class="min-w-[880px]">
+    <x-card class="overflow-x-auto mb-4 !p-4 md:!p-6">
+        <div class="es-schedule-grid-wrap">
             <div class="es-schedule-grid-head">
                 <div class="es-schedule-time-col"></div>
                 @foreach ($grid['days'] as $day)
@@ -28,7 +28,7 @@
                         'es-schedule-day-today' => $day['is_today'],
                         'es-schedule-day-weekend' => $day['is_weekend'],
                     ])>
-                        <span class="font-extrabold capitalize">{{ $day['short_label'] }}</span>
+                        <span class="font-extrabold capitalize block">{{ $day['short_label'] }}</span>
                     </div>
                 @endforeach
             </div>
@@ -36,8 +36,8 @@
             @foreach ($grid['period_defs'] as $periodNumber => $periodDef)
                 <div class="es-schedule-grid-row">
                     <div class="es-schedule-time-col">
-                        <p class="font-bold text-es-ink text-xs">P{{ $periodNumber }}</p>
-                        <p class="text-[10px] text-es-muted leading-tight">{{ substr($periodDef['starts_at'], 0, 5) }}</p>
+                        <p class="font-extrabold text-es-ink text-sm">P{{ $periodNumber }}</p>
+                        <p class="text-xs text-es-muted leading-snug mt-0.5">{{ substr($periodDef['starts_at'], 0, 5) }}<br>{{ substr($periodDef['ends_at'], 0, 5) }}</p>
                     </div>
                     @foreach ($grid['days'] as $day)
                         @php $slot = $day['periods'][$periodNumber] ?? null; @endphp
@@ -94,39 +94,7 @@
         </div>
     </x-card>
 
-    <p class="text-sm text-es-muted mb-8">Clique un cours pour l'horaire, le matériel, les activités et examens liés.</p>
-
-    @if ($upcomingDates->isNotEmpty())
-        <h2 class="es-section-title">Dates à venir</h2>
-        <div class="flex flex-wrap gap-2 mb-4">
-            @foreach ($upcomingDates as $entry)
-                <button
-                    type="button"
-                    class="es-schedule-date-pill"
-                    style="--slot-color: {{ $entry->display_color }}"
-                    @click="$dispatch('open-schedule-modal', @js([
-                        'id' => $entry->id,
-                        'mode' => 'specific',
-                        'subject_id' => $entry->subject_id,
-                        'title' => $entry->display_title,
-                        'period_number' => $entry->period_number,
-                        'day_of_week' => $entry->day_of_week,
-                        'schedule_date' => $entry->schedule_date->toDateString(),
-                        'materials' => $entry->materials ?? '',
-                        'plan' => $entry->plan ?? '',
-                        'use_custom_time' => $entry->uses_custom_time,
-                        'starts_at' => substr((string) $entry->starts_at, 0, 5),
-                        'ends_at' => substr((string) $entry->ends_at, 0, 5),
-                        'activity_ids' => $entry->activities->pluck('id')->all(),
-                        'exam_ids' => $entry->exams->pluck('id')->all(),
-                    ]))"
-                >
-                    <span>{{ $entry->schedule_date->translatedFormat('D j M') }}</span>
-                    <span class="font-extrabold">{{ $entry->gridLabel() }}</span>
-                </button>
-            @endforeach
-        </div>
-    @endif
+    <p class="text-sm text-es-muted">Clique un cours pour l'horaire, le matériel, les activités et examens liés.</p>
 </div>
 
 <div
