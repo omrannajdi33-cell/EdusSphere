@@ -30,6 +30,11 @@ class ReportPeriod extends Model
         return $this->hasMany(Exam::class);
     }
 
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);

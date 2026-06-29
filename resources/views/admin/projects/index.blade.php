@@ -39,6 +39,12 @@
                     </div>
                     <p class="text-sm text-es-muted">
                         {{ $project->subject->name }}
+                        @if ($project->reportPeriod)
+                            · {{ $project->reportPeriod->label }}
+                        @endif
+                        @if ($project->weight_percent > 0)
+                            · Poids bulletin {{ number_format($project->weight_percent, 0) }}%
+                        @endif
                         · {{ $project->typeLabel() }}
                         · {{ $project->formatLabel() }}
                         @if ($project->due_at)

@@ -1,7 +1,9 @@
-function projectWorkspace(config) {
-    return {
-        tab: config.allowsWrite ? 'brief' : (config.allowsUpload ? 'files' : 'sources'),
+document.addEventListener('alpine:init', () => {
+    Alpine.data('projectWorkspace', (config) => ({
+        stepIndex: 0,
+        steps: [],
         content: config.content || '',
+        researchNotes: config.researchNotes || '',
         sources: config.sources || [],
         bibliography: config.bibliography || [],
         files: config.files || [],
@@ -11,7 +13,72 @@ function projectWorkspace(config) {
         submitting: false,
 
         init() {
-            this.saveLabel = this.canEdit ? 'Sauvegarde automatique' : '';
+            this.steps = this.buildSteps(config);
+            this.saveLabel = this.canEdit ? 'Sauvegarde auto' : '';
+        },
+
+        buildSteps(cfg) {
+            const steps = [
+                { id: 'brief', label: 'Consignes', icon: '📋' },
+                { id: 'research', label: 'Recherche', icon: '🔍' },
+            ];
+
+            if (cfg.requireSources) {
+                steps.push({ id: 'sources', label: 'Sources', icon: '📑' });
+            }
+
+            if (cfg.allowsWrite && cfg.allowsUpload) {
+                steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
+                steps.push({ id: 'upload', label: 'Fichier', icon: '📎' });
+            } elseif (cfg.allowsWrite) {
+                steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
+            } elseif (cfg.allowsUpload) {
+                steps.push({ id: 'upload', label: 'Téléversement', icon: '📎' });
+            }
+
+            if (cfg.requireBibliography) {
+                steps.push({ id: 'biblio', label: 'Bibliographie', icon: '📚' });
+            }
+
+            steps.push({ id: 'review', label: 'Révision', icon: '✅' });
+
+            return steps;
+        },
+
+        get currentStep() {
+            return this.steps[this.stepIndex] || this.steps[0];
+        },
+
+        get isFirstStep() {
+            return this.stepIndex === 0;
+        },
+
+        get isLastStep() {
+            return this.stepIndex >= this.steps.length - 1;
+        },
+
+        isStep(id) {
+            return this.currentStep?.id === id;
+        },
+
+        goNext() {
+            if (this.isLastStep) return;
+            this.save();
+            this.stepIndex += 1;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        goPrev() {
+            if (this.isFirstStep) return;
+            this.stepIndex -= 1;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        goToStep(index) {
+            if (index >= 0 && index < this.steps.length) {
+                this.stepIndex = index;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         },
 
         addSource() {
@@ -20,6 +87,18 @@ function projectWorkspace(config) {
 
         addBiblio() {
             this.bibliography.push({ type: 'book', title: '', author: '', year: '', publisher: '', url: '', notes: '' });
+        },
+
+        filledSources() {
+            return this.sources.filter(s => (s.title || '').trim() !== '');
+        },
+
+        filledBibliography() {
+            return this.bibliography.filter(b => (b.title || '').trim() !== '');
+        },
+
+        hasWorkContent() {
+            return (this.content || '').trim().length > 0;
         },
 
         async save() {
@@ -38,6 +117,7 @@ function projectWorkspace(config) {
                     },
                     body: JSON.stringify({
                         content: this.content,
+                        research_notes: this.researchNotes,
                         sources: this.sources,
                         bibliography: this.bibliography,
                     }),
@@ -49,7 +129,7 @@ function projectWorkspace(config) {
                 this.saveLabel = 'Enregistré ✓';
                 setTimeout(() => {
                     if (this.saveState === 'saved') {
-                        this.saveLabel = 'Sauvegarde automatique';
+                        this.saveLabel = 'Sauvegarde auto';
                         this.saveState = 'idle';
                     }
                 }, 2000);
@@ -76,6 +156,7 @@ function projectWorkspace(config) {
                 if (!res.ok) throw new Error(data.message || 'upload failed');
                 this.files.push(data.file);
                 event.target.value = '';
+                await this.save();
             } catch (e) {
                 alert(e.message || 'Impossible de téléverser le fichier.');
             }
@@ -118,9 +199,5 @@ function projectWorkspace(config) {
                 this.submitting = false;
             }
         },
-    };
-}
-
-window.projectWorkspace = projectWorkspace;
-
-export default projectWorkspace;
+    }));
+});

@@ -26,6 +26,13 @@
 
     <div class="es-correction-grid">
         <div class="space-y-4">
+            @if (filled($submission->research_notes))
+                <section class="es-card p-5">
+                    <h2 class="font-extrabold text-lg mb-3">Notes de recherche</h2>
+                    <div class="whitespace-pre-wrap text-es-ink leading-relaxed">{{ $submission->research_notes }}</div>
+                </section>
+            @endif
+
             @if ($project->allowsOnlineWrite() && filled($submission->content))
                 <section class="es-card p-5">
                     <h2 class="font-extrabold text-lg mb-3">Travail rédigé</h2>

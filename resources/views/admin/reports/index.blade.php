@@ -34,7 +34,7 @@
                         :percent="$filled"
                         :color="$subject->color"
                         :label="$filled >= 99.99 ? 'Poids complet' : 'Poids défini'"
-                        :sublabel="$missing > 0 ? 'Il manque '.$missing.'% à répartir' : '100% répartis entre les examens'"
+                        :sublabel="$missing > 0 ? 'Il manque '.$missing.'% à répartir' : '100% répartis entre examens et projets'"
                         class="my-4"
                     />
                 </article>

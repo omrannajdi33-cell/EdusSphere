@@ -15,12 +15,24 @@
     <x-project-wizard-nav :step="$step" :project="$project"/>
 
     @if ($step === 1)
-        <div class="es-wizard-panel max-w-2xl">
+        <div class="es-wizard-panel max-w-2xl" x-data="{
+            subjectId: '{{ old('subject_id', $project->subject_id) }}',
+            selectedSkills: @js(array_map('strval', old('skill_ids', $selectedSkillIds ?? []))),
+            toggleSkill(id) {
+                id = String(id);
+                if (this.selectedSkills.includes(id)) {
+                    this.selectedSkills = this.selectedSkills.filter(s => s !== id);
+                } else {
+                    this.selectedSkills.push(id);
+                }
+            },
+            isSelected(id) { return this.selectedSkills.includes(String(id)); }
+        }">
             <div class="es-wizard-panel-head">
                 <span class="es-wizard-panel-num">1</span>
                 <div>
-                    <h2 class="text-2xl font-black text-es-ink">Informations du projet</h2>
-                    <p class="text-es-muted mt-1">Titre, matière, type de projet et mode de rendu.</p>
+                    <h2 class="text-2xl font-black text-es-ink">Informations & bulletin</h2>
+                    <p class="text-es-muted mt-1">Titre, matière, poids dans le bulletin et compétences évaluées.</p>
                 </div>
             </div>
 
@@ -30,23 +42,63 @@
 
                 <x-input label="Titre du projet" name="title" value="{{ old('title', $project->title) }}" required :error="$errors->first('title')"/>
 
+                <div>
+                    <label for="subject_id" class="es-label">Matière</label>
+                    <select id="subject_id" name="subject_id" class="es-select" required x-model="subjectId" @change="selectedSkills = []">
+                        @foreach ($subjects as $subject)
+                            <option value="{{ $subject->id }}" @selected(old('subject_id', $project->subject_id) == $subject->id)>{{ $subject->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
-                        <label for="subject_id" class="es-label">Matière</label>
-                        <select id="subject_id" name="subject_id" class="es-select" required>
-                            @foreach ($subjects as $subject)
-                                <option value="{{ $subject->id }}" @selected(old('subject_id', $project->subject_id) == $subject->id)>{{ $subject->name }}</option>
+                        <label for="report_period_id" class="es-label">Période bulletin</label>
+                        <select id="report_period_id" name="report_period_id" class="es-select" required>
+                            @foreach ($periods as $period)
+                                <option value="{{ $period->id }}" @selected(old('report_period_id', $project->report_period_id) == $period->id)>
+                                    {{ $period->label }} ({{ $period->school_year }})
+                                </option>
                             @endforeach
                         </select>
+                        @error('report_period_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="skill_id" class="es-label">Compétence (optionnel)</label>
-                        <select id="skill_id" name="skill_id" class="es-select">
-                            <option value="">— Aucune —</option>
-                            @foreach ($skills as $skill)
-                                <option value="{{ $skill->id }}" @selected(old('skill_id', $project->skill_id) == $skill->id)>{{ $skill->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-input label="Poids dans le bulletin (%)" name="weight_percent" type="number" step="0.5" min="0" max="100"
+                            value="{{ old('weight_percent', $project->weight_percent ?? 0) }}" required :error="$errors->first('weight_percent')"/>
+                        <p class="text-xs text-es-muted mt-1">Comme un examen : la somme examens + projets = 100 % par matière.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="es-label">Compétences évaluées</label>
+                    <p class="text-xs text-es-muted mb-3">Sélectionne une ou plusieurs compétences. Si plusieurs, répartis le poids entre elles (total 100 %).</p>
+                    @error('skill_ids')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
+                    @error('skill_weights')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
+
+                    <div class="space-y-2 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                        @foreach ($skills as $skill)
+                            @php
+                                $oldWeight = old('skill_weights.'.$skill->id, $project->skills->firstWhere('id', $skill->id)?->pivot?->weight_percent);
+                            @endphp
+                            <div class="flex flex-wrap items-center gap-3 py-1" x-show="subjectId == '{{ $skill->subject_id }}'" x-cloak>
+                                <label class="flex items-center gap-2 text-sm font-semibold min-w-[12rem]">
+                                    <input type="checkbox" name="skill_ids[]" value="{{ $skill->id }}" class="es-checkbox"
+                                        @checked(in_array($skill->id, old('skill_ids', $selectedSkillIds ?? [])))
+                                        @change="toggleSkill({{ $skill->id }})">
+                                    {{ $skill->name }}
+                                </label>
+                                <div class="flex items-center gap-2" x-show="isSelected('{{ $skill->id }}') && selectedSkills.length > 1" x-cloak>
+                                    <input type="number" name="skill_weights[{{ $skill->id }}]" class="es-input w-24 es-input-sm"
+                                        step="0.5" min="0.01" max="100" placeholder="Part %"
+                                        value="{{ $oldWeight }}">
+                                    <span class="text-xs text-es-muted">% de la note du projet</span>
+                                </div>
+                            </div>
+                        @endforeach
+                        @if ($skills->isEmpty())
+                            <p class="text-sm text-es-muted">Choisis d'abord une matière pour voir les compétences.</p>
+                        @endif
                     </div>
                 </div>
 
@@ -121,7 +173,12 @@
                     @method('PUT')
                     <input type="hidden" name="title" value="{{ $project->title }}">
                     <input type="hidden" name="subject_id" value="{{ $project->subject_id }}">
-                    <input type="hidden" name="skill_id" value="{{ $project->skill_id }}">
+                    <input type="hidden" name="report_period_id" value="{{ $project->report_period_id }}">
+                    <input type="hidden" name="weight_percent" value="{{ $project->weight_percent }}">
+                    @foreach ($project->skills as $skill)
+                        <input type="hidden" name="skill_ids[]" value="{{ $skill->id }}">
+                        <input type="hidden" name="skill_weights[{{ $skill->id }}]" value="{{ $skill->pivot->weight_percent }}">
+                    @endforeach
                     <input type="hidden" name="project_type" value="{{ $project->project_type }}">
                     <input type="hidden" name="submission_format" value="{{ $project->submission_format }}">
                     <input type="hidden" name="due_at" value="{{ $project->due_at?->format('Y-m-d\TH:i') }}">
@@ -187,6 +244,18 @@
 
             <div class="es-card p-5 mt-6 space-y-2 text-sm">
                 <p><strong>Titre :</strong> {{ $project->title }}</p>
+                <p><strong>Bulletin :</strong>
+                    @if ($project->reportPeriod)
+                        {{ $project->reportPeriod->label }} · {{ number_format($project->weight_percent, 0) }}%
+                    @else
+                        —
+                    @endif
+                </p>
+                @if ($project->skills->isNotEmpty())
+                    <p><strong>Compétences :</strong>
+                        {{ $project->skills->map(fn ($s) => $s->name.($project->skills->count() > 1 ? ' ('.number_format($s->pivot->weight_percent, 0).'%)' : ''))->join(', ') }}
+                    </p>
+                @endif
                 <p><strong>Type :</strong> {{ $project->typeLabel() }}</p>
                 <p><strong>Rendu :</strong> {{ $project->formatLabel() }}</p>
                 <p><strong>Pièces jointes :</strong> {{ $project->attachments->count() }}</p>

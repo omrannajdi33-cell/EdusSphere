@@ -14,6 +14,7 @@ class ProjectSubmission extends Model
         'student_id',
         'workflow_status',
         'content',
+        'research_notes',
         'sources',
         'bibliography',
         'submitted_at',

@@ -6,12 +6,15 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamPage;
 use App\Models\ExamQuestion;
+use App\Models\Project;
+use App\Models\ProjectSubmission;
 use App\Models\Report;
 use App\Models\ReportPeriod;
 use App\Models\Skill;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Models\Correction;
 use App\Services\BulletinGeneratorService;
 use Database\Seeders\SkillSeeder;
 use Database\Seeders\SubjectSeeder;
@@ -110,6 +113,54 @@ class BulletinGenerationTest extends TestCase
         $skillPayload = $payload['subjects'][0]['skills'][0];
         $this->assertSame('Examen T1', $skillPayload['periods'][0]['exams'][0]['title']);
         $this->assertSame('Examen T2', $skillPayload['periods'][1]['exams'][0]['title']);
+    }
+
+    public function test_bulletin_includes_corrected_project_with_weight_and_skills(): void
+    {
+        $subject = Subject::where('name', 'Français')->firstOrFail();
+        $skill = Skill::where('subject_id', $subject->id)->firstOrFail();
+
+        $project = Project::create([
+            'subject_id' => $subject->id,
+            'skill_id' => $skill->id,
+            'report_period_id' => $this->periodT1->id,
+            'weight_percent' => 40,
+            'created_by' => $this->teacher->id,
+            'title' => 'Dossier de recherche',
+            'instructions' => 'Consignes',
+            'project_type' => 'research',
+            'submission_format' => 'online',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $project->skills()->sync([$skill->id => ['weight_percent' => 100]]);
+        $project->assignedStudents()->sync([$this->student->id]);
+
+        $submission = ProjectSubmission::create([
+            'project_id' => $project->id,
+            'student_id' => $this->student->id,
+            'workflow_status' => 'corrected',
+            'content' => 'Mon travail',
+            'submitted_at' => now(),
+        ]);
+
+        Correction::create([
+            'student_id' => $this->student->id,
+            'project_submission_id' => $submission->id,
+            'teacher_id' => $this->teacher->id,
+            'status' => 'validated',
+            'score' => 75,
+        ]);
+
+        $generator = app(BulletinGeneratorService::class);
+        $payload = $generator->buildPayload($this->student, $this->periodT1);
+
+        $evaluations = $payload['subjects'][0]['skills'][0]['periods'][0]['evaluations'];
+        $this->assertCount(1, $evaluations);
+        $this->assertSame('project', $evaluations[0]['type']);
+        $this->assertSame('Dossier de recherche', $evaluations[0]['title']);
+        $this->assertSame(40.0, $evaluations[0]['weight']);
+        $this->assertSame(75.0, $evaluations[0]['score']);
     }
 
     private function createExam(Subject $subject, Skill $skill, ReportPeriod $period, string $title, float $weight): Exam

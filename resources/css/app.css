@@ -1008,7 +1008,41 @@
     }
 
     .es-project-work textarea.es-textarea {
-        @apply min-h-[420px] leading-relaxed;
+        @apply min-h-[280px] leading-relaxed text-base;
+    }
+
+    .es-project-steps {
+        @apply w-full;
+    }
+
+    .es-project-step-pill {
+        @apply flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-2 min-w-[4.5rem] text-center transition-all;
+        @apply bg-white border border-stone-200 text-es-muted;
+    }
+
+    .es-project-step-pill-active {
+        @apply border-es-primary bg-es-primary/10 text-es-primary font-bold;
+        box-shadow: 0 0 0 2px rgb(79 70 229 / 0.2);
+    }
+
+    .es-project-step-pill-done {
+        @apply border-emerald-300 bg-emerald-50 text-emerald-800;
+    }
+
+    .es-project-step-num {
+        @apply text-xs font-black tabular-nums;
+    }
+
+    .es-project-step-label {
+        @apply text-[10px] font-bold leading-tight max-w-[4.5rem] truncate;
+    }
+
+    .es-project-nav {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    .es-project-nav .es-btn {
+        @apply min-h-[3rem] text-base;
     }
 
     .es-question-block {

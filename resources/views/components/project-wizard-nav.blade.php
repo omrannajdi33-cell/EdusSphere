@@ -4,7 +4,7 @@
 
 <nav class="es-wizard-nav mb-8" aria-label="Étapes du projet">
     <ol class="flex flex-wrap gap-2">
-        @foreach ([1 => 'Informations', 2 => 'Consignes & documents', 3 => 'Publication'] as $num => $label)
+        @foreach ([1 => 'Informations & bulletin', 2 => 'Consignes & documents', 3 => 'Publication'] as $num => $label)
             @php
                 $href = $isNew && $num > 1
                     ? null

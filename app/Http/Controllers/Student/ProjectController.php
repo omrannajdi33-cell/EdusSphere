@@ -70,6 +70,7 @@ class ProjectController extends Controller
 
         $data = $request->validate([
             'content' => ['nullable', 'string'],
+            'research_notes' => ['nullable', 'string'],
             'sources' => ['nullable', 'array'],
             'sources.*.type' => ['nullable', 'string', 'max:32'],
             'sources.*.title' => ['nullable', 'string', 'max:255'],
@@ -89,6 +90,7 @@ class ProjectController extends Controller
 
         $submission->update([
             'content' => $data['content'] ?? $submission->content,
+            'research_notes' => $data['research_notes'] ?? $submission->research_notes,
             'sources' => $this->cleanEntries($data['sources'] ?? []),
             'bibliography' => $this->cleanEntries($data['bibliography'] ?? []),
             'last_saved_at' => now(),

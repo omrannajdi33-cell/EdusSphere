@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\Project;
+use App\Models\ProjectSubmission;
 use App\Models\Report;
 use App\Models\ReportPeriod;
 use App\Models\Skill;
@@ -43,6 +45,12 @@ class BulletinGeneratorService
             ->where('status', '!=', 'draft')
             ->get();
 
+        $projects = Project::query()
+            ->with(['skills', 'subject'])
+            ->whereIn('report_period_id', $periodIds)
+            ->where('status', '!=', 'draft')
+            ->get();
+
         $attempts = ExamAttempt::query()
             ->where('student_id', $student->id)
             ->whereIn('exam_id', $exams->pluck('id'))
@@ -51,21 +59,35 @@ class BulletinGeneratorService
             ->get()
             ->groupBy('exam_id');
 
+        $projectScores = ProjectSubmission::query()
+            ->with('correction')
+            ->where('student_id', $student->id)
+            ->whereIn('project_id', $projects->pluck('id'))
+            ->where('workflow_status', 'corrected')
+            ->get()
+            ->mapWithKeys(function (ProjectSubmission $submission) {
+                $score = $submission->correction?->score;
+
+                return [$submission->project_id => $score !== null ? (float) $score : null];
+            });
+
+        $evaluationsBySubject = $this->collectEvaluationsBySubject($exams, $projects, $attempts, $projectScores);
+
         $subjects = [];
         $subjectAverages = [];
         $subjectGradeSum = 0.0;
         $subjectGradeCount = 0;
 
         foreach (Subject::with('skills')->ordered()->get() as $subject) {
-            $subjectExams = $exams->where('subject_id', $subject->id);
-            if ($subjectExams->isEmpty()) {
+            $subjectEvaluations = $evaluationsBySubject->get($subject->id, collect());
+            if ($subjectEvaluations->isEmpty()) {
                 continue;
             }
 
             $skillsPayload = [];
             $skillsWithGrades = [];
 
-            $skillIds = $subjectExams->pluck('skill_id')->filter()->unique();
+            $skillIds = $subjectEvaluations->pluck('skill_id')->filter()->unique();
             $skills = Skill::query()
                 ->whereIn('id', $skillIds)
                 ->orderBy('display_order')
@@ -76,11 +98,11 @@ class BulletinGeneratorService
             }
 
             foreach ($skills as $skill) {
-                $skillExams = $skill->id
-                    ? $subjectExams->where('skill_id', $skill->id)
-                    : $subjectExams;
+                $skillEvaluations = $skill->id
+                    ? $subjectEvaluations->where('skill_id', $skill->id)
+                    : $subjectEvaluations;
 
-                if ($skillExams->isEmpty()) {
+                if ($skillEvaluations->isEmpty()) {
                     continue;
                 }
 
@@ -88,19 +110,19 @@ class BulletinGeneratorService
                 $periodGrades = [];
 
                 foreach ($includedPeriods as $includedPeriod) {
-                    $periodExams = $skillExams->where('report_period_id', $includedPeriod->id);
-                    $examRows = [];
+                    $periodEvaluations = $skillEvaluations->where('report_period_id', $includedPeriod->id);
+                    $rows = [];
                     $earned = 0.0;
                     $weightDone = 0.0;
 
-                    foreach ($periodExams as $exam) {
-                        $best = $attempts->get($exam->id)?->sortByDesc('final_score')->first();
-                        $score = $best?->final_score !== null ? (float) $best->final_score : null;
-                        $weight = (float) $exam->weight_percent;
+                    foreach ($periodEvaluations as $evaluation) {
+                        $score = $evaluation['score'];
+                        $weight = (float) $evaluation['weight'];
 
-                        $examRows[] = [
-                            'id' => $exam->id,
-                            'title' => $exam->title,
+                        $rows[] = [
+                            'id' => $evaluation['id'],
+                            'title' => $evaluation['title'],
+                            'type' => $evaluation['type'],
                             'weight' => $weight,
                             'score' => $score,
                             'done' => $score !== null,
@@ -122,7 +144,8 @@ class BulletinGeneratorService
                         'period_id' => $includedPeriod->id,
                         'label' => $includedPeriod->label,
                         'sort_order' => $includedPeriod->sort_order,
-                        'exams' => $examRows,
+                        'evaluations' => $rows,
+                        'exams' => $rows,
                         'average' => $periodAverage,
                         'weight_done' => round($weightDone, 2),
                     ];
@@ -191,6 +214,63 @@ class BulletinGeneratorService
             'subjects' => $subjects,
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * @param  Collection<int, Collection<int, ExamAttempt>>  $attempts
+     * @param  Collection<int, float|null>  $projectScores
+     * @return Collection<int, Collection<int, array<string, mixed>>>
+     */
+    private function collectEvaluationsBySubject(
+        Collection $exams,
+        Collection $projects,
+        Collection $attempts,
+        Collection $projectScores,
+    ): Collection {
+        $rows = collect();
+
+        foreach ($exams as $exam) {
+            $best = $attempts->get($exam->id)?->sortByDesc('final_score')->first();
+            $score = $best?->final_score !== null ? (float) $best->final_score : null;
+
+            $rows->push([
+                'subject_id' => $exam->subject_id,
+                'skill_id' => $exam->skill_id,
+                'report_period_id' => $exam->report_period_id,
+                'id' => $exam->id,
+                'title' => $exam->title,
+                'type' => 'exam',
+                'weight' => (float) $exam->weight_percent,
+                'score' => $score,
+            ]);
+        }
+
+        foreach ($projects as $project) {
+            $score = $projectScores->get($project->id);
+            $skills = $project->skills;
+
+            if ($skills->isEmpty() && $project->skill_id) {
+                $skills = collect([(object) ['id' => $project->skill_id, 'pivot' => (object) ['weight_percent' => 100]]]);
+            }
+
+            foreach ($skills as $skill) {
+                $share = (float) ($skill->pivot->weight_percent ?? 100);
+                $effectiveWeight = round((float) $project->weight_percent * ($share / 100), 2);
+
+                $rows->push([
+                    'subject_id' => $project->subject_id,
+                    'skill_id' => $skill->id,
+                    'report_period_id' => $project->report_period_id,
+                    'id' => $project->id,
+                    'title' => $project->title,
+                    'type' => 'project',
+                    'weight' => $effectiveWeight,
+                    'score' => $score,
+                ]);
+            }
+        }
+
+        return $rows->groupBy('subject_id');
     }
 
     public function generate(Student $student, ReportPeriod $period, User $teacher, ?string $comment = null): Report

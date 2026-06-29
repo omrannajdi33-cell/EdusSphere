@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Correction;
 use App\Models\Project;
 use App\Models\ProjectSubmission;
+use App\Models\ReportPeriod;
 use App\Models\Skill;
 use App\Models\Student;
 use App\Models\Subject;
@@ -28,6 +29,8 @@ class ProjectTest extends TestCase
 
     private Skill $skill;
 
+    private ReportPeriod $period;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -43,36 +46,45 @@ class ProjectTest extends TestCase
 
         $this->subject = Subject::where('name', 'Français')->firstOrFail();
         $this->skill = $this->subject->skills()->firstOrFail();
+        $this->period = ReportPeriod::create([
+            'label' => 'Trimestre 1',
+            'school_year' => '2025-2026',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+    }
+
+    private function projectStepOnePayload(array $overrides = []): array
+    {
+        return [
+            'title' => 'Mon projet de recherche',
+            'subject_id' => $this->subject->id,
+            'report_period_id' => $this->period->id,
+            'weight_percent' => 30,
+            'skill_ids' => [$this->skill->id],
+            'project_type' => 'research',
+            'submission_format' => 'online',
+            'require_sources' => '1',
+            'require_bibliography' => '1',
+            ...$overrides,
+        ];
     }
 
     private function createPublishedProject(array $overrides = []): Project
     {
         $this->actingAs($this->teacher)
-            ->post(route('admin.projects.store'), [
-                'title' => 'Mon projet de recherche',
-                'subject_id' => $this->subject->id,
-                'skill_id' => $this->skill->id,
-                'project_type' => 'research',
-                'submission_format' => 'online',
-                'require_sources' => '1',
-                'require_bibliography' => '1',
-                ...$overrides,
-            ])
+            ->post(route('admin.projects.store'), $this->projectStepOnePayload($overrides))
             ->assertRedirect();
 
         $project = Project::firstOrFail();
 
         $this->actingAs($this->teacher)
             ->put(route('admin.projects.update', $project), [
-                'title' => $project->title,
-                'subject_id' => $project->subject_id,
-                'skill_id' => $project->skill_id,
-                'project_type' => $project->project_type,
-                'submission_format' => $project->submission_format,
-                'instructions' => 'Rédige une recherche sur le thème choisi.',
-                'require_sources' => '1',
-                'require_bibliography' => '1',
-                'next_step' => 3,
+                ...$this->projectStepOnePayload([
+                    'title' => $project->title,
+                    'instructions' => 'Rédige une recherche sur le thème choisi.',
+                    'next_step' => 3,
+                ]),
             ])
             ->assertRedirect();
 
@@ -93,6 +105,13 @@ class ProjectTest extends TestCase
             'id' => $project->id,
             'status' => 'published',
             'title' => 'Mon projet de recherche',
+            'weight_percent' => 30,
+            'report_period_id' => $this->period->id,
+        ]);
+
+        $this->assertDatabaseHas('project_skill', [
+            'project_id' => $project->id,
+            'skill_id' => $this->skill->id,
         ]);
 
         $this->assertTrue($project->assignedStudents()->where('student_id', $this->student->id)->exists());
@@ -105,11 +124,12 @@ class ProjectTest extends TestCase
         $this->actingAs($this->studentUser)
             ->get(route('student.projects.work', $project))
             ->assertOk()
-            ->assertSee('Consignes du professeur');
+            ->assertSee('Consignes');
 
         $this->actingAs($this->studentUser)
             ->postJson(route('student.projects.save', $project), [
                 'content' => 'Voici mon compte rendu complet.',
+                'research_notes' => "- Point 1\n- Point 2",
                 'sources' => [
                     ['type' => 'website', 'title' => 'Wikipedia', 'author' => '', 'url' => 'https://example.com', 'notes' => ''],
                 ],

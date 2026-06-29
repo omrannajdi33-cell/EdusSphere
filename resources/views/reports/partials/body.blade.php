@@ -81,7 +81,7 @@
                                 <thead>
                                     <tr class="bg-stone-100 text-left">
                                         <th class="p-2 font-bold border border-stone-200">Période</th>
-                                        <th class="p-2 font-bold border border-stone-200">Examens & notes</th>
+                                        <th class="p-2 font-bold border border-stone-200">Évaluations & notes</th>
                                         <th class="p-2 font-bold border border-stone-200 w-24 text-center">Moyenne</th>
                                     </tr>
                                 </thead>
@@ -90,16 +90,23 @@
                                         <tr>
                                             <td class="p-2 font-semibold border border-stone-200 align-top whitespace-nowrap">{{ $block['label'] }}</td>
                                             <td class="p-2 border border-stone-200 align-top">
-                                                @if (count($block['exams'] ?? []) === 0)
+                                                @php $items = $block['evaluations'] ?? $block['exams'] ?? []; @endphp
+                                                @if (count($items) === 0)
                                                     <span class="text-es-muted">—</span>
                                                 @else
                                                     <ul class="space-y-1">
-                                                        @foreach ($block['exams'] as $exam)
+                                                        @foreach ($items as $item)
                                                             <li class="flex justify-between gap-2">
-                                                                <span>{{ $exam['title'] }} <span class="text-es-muted">({{ number_format($exam['weight'], 0) }}%)</span></span>
+                                                                <span>
+                                                                    @if (($item['type'] ?? 'exam') === 'project')
+                                                                        <span class="text-es-muted">Projet ·</span>
+                                                                    @endif
+                                                                    {{ $item['title'] }}
+                                                                    <span class="text-es-muted">({{ number_format($item['weight'], 0) }}%)</span>
+                                                                </span>
                                                                 <span class="font-bold shrink-0">
-                                                                    @if ($exam['score'] !== null)
-                                                                        {{ number_format($exam['score'], 0) }}/100
+                                                                    @if ($item['score'] !== null)
+                                                                        {{ number_format($item['score'], 0) }}/100
                                                                     @else
                                                                         <span class="text-es-muted">—</span>
                                                                     @endif

@@ -4,12 +4,12 @@
 @php
     $sources = old('sources', $submission->sources ?? []);
     $bibliography = old('bibliography', $submission->bibliography ?? []);
-    if (empty($sources)) { $sources = [['type' => 'website', 'title' => '', 'author' => '', 'url' => '', 'notes' => '', 'accessed_at' => '']]; }
-    if (empty($bibliography)) { $bibliography = [['type' => 'book', 'title' => '', 'author' => '', 'year' => '', 'publisher' => '', 'url' => '', 'notes' => '']]; }
+    if (empty($sources)) { $sources = [['type' => 'website', 'title' => '', 'author' => '', 'url' => '', 'notes' => '']]; }
+    if (empty($bibliography)) { $bibliography = [['type' => 'book', 'title' => '', 'author' => '', 'year' => '', 'publisher' => '', 'notes' => '']]; }
 @endphp
 
 <div
-    class="es-project-work es-page-enter"
+    class="es-project-work es-page-enter pb-28"
     x-data="projectWorkspace({
         saveUrl: @js(route('student.projects.save', $project)),
         uploadUrl: @js(route('student.projects.upload', $project)),
@@ -18,6 +18,7 @@
         csrf: @js(csrf_token()),
         canEdit: @json($canEdit),
         content: @js($submission->content ?? ''),
+        researchNotes: @js($submission->research_notes ?? ''),
         sources: @js($sources),
         bibliography: @js($bibliography),
         files: @js($submission->files->map(fn ($f) => ['id' => $f->id, 'name' => $f->displayName(), 'url' => route('project-submission-files.show', [$project, $f])])->values()),
@@ -27,73 +28,58 @@
         requireBibliography: @json($project->require_bibliography),
     })"
 >
-    <div class="es-container py-6 max-w-5xl">
+    <div class="es-container py-5 max-w-3xl">
         <a href="{{ route('student.projects.index') }}" class="es-link text-sm font-bold">← Mes projets</a>
 
-        <header class="mt-4 mb-6">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-wider text-es-muted">{{ $project->subject->name }}</p>
-                    <h1 class="text-2xl md:text-3xl font-black text-es-ink">{{ $project->title }}</h1>
-                    <p class="text-sm text-es-muted mt-1">{{ $project->typeIcon() }} {{ $project->typeLabel() }} · {{ $project->formatLabel() }}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-sm font-bold" :class="saveState === 'saved' ? 'text-emerald-600' : saveState === 'error' ? 'text-red-600' : 'text-es-muted'" x-text="saveLabel"></p>
-                    @if ($project->due_at)
-                        <p class="text-xs text-es-muted mt-1">Échéance {{ $project->due_at->format('d/m/Y H:i') }}</p>
-                    @endif
-                </div>
-            </div>
+        <header class="mt-3 mb-5">
+            <p class="text-xs font-bold uppercase tracking-wider text-es-muted">{{ $project->subject->name }}</p>
+            <h1 class="text-xl md:text-2xl font-black text-es-ink leading-tight">{{ $project->title }}</h1>
+            <p class="text-sm text-es-muted mt-1" x-text="`Étape ${stepIndex + 1} / ${steps.length} · ${currentStep?.label}`"></p>
+            <p class="text-xs font-semibold mt-1" :class="saveState === 'saved' ? 'text-emerald-600' : saveState === 'error' ? 'text-red-600' : 'text-es-muted'" x-text="saveLabel"></p>
 
             @if ($submission->workflow_status === 'returned' && $submission->correction?->comment)
-                <x-alert type="warning" class="mt-4" title="Renvoyé par le professeur">
-                    {{ $submission->correction->comment }}
-                </x-alert>
-            @elseif ($submission->workflow_status === 'corrected' && $submission->correction?->score !== null)
-                <x-alert type="success" class="mt-4" title="Projet corrigé">
-                    Note : {{ number_format($submission->correction->score, 0) }}/100
-                    @if ($submission->correction->comment)
-                        — {{ $submission->correction->comment }}
-                    @endif
-                </x-alert>
+                <x-alert type="warning" class="mt-3" title="Renvoyé par le professeur">{{ $submission->correction->comment }}</x-alert>
             @elseif ($submission->workflow_status === 'submitted')
-                <x-alert type="info" class="mt-4" title="Projet soumis">
-                    En attente de correction par ton professeur.
-                </x-alert>
+                <x-alert type="info" class="mt-3" title="Projet soumis">En attente de correction.</x-alert>
             @endif
         </header>
 
-        {{-- Onglets --}}
-        <nav class="flex flex-wrap gap-2 mb-6 p-1 bg-stone-100 rounded-2xl w-fit" role="tablist">
-            <button type="button" class="es-btn es-btn-sm" :class="tab === 'brief' ? 'es-btn-primary' : 'es-btn-secondary'" @click="tab = 'brief'">📋 Consignes</button>
-            @if ($project->allowsOnlineWrite())
-                <button type="button" class="es-btn es-btn-sm" :class="tab === 'work' ? 'es-btn-primary' : 'es-btn-secondary'" @click="tab = 'work'">✍️ Mon travail</button>
-            @endif
-            @if ($project->allowsUpload())
-                <button type="button" class="es-btn es-btn-sm" :class="tab === 'files' ? 'es-btn-primary' : 'es-btn-secondary'" @click="tab = 'files'">📎 Fichiers</button>
-            @endif
-            @if ($project->require_sources)
-                <button type="button" class="es-btn es-btn-sm" :class="tab === 'sources' ? 'es-btn-primary' : 'es-btn-secondary'" @click="tab = 'sources'">🔍 Sources</button>
-            @endif
-            @if ($project->require_bibliography)
-                <button type="button" class="es-btn es-btn-sm" :class="tab === 'biblio' ? 'es-btn-primary' : 'es-btn-secondary'" @click="tab = 'biblio'">📚 Bibliographie</button>
-            @endif
+        {{-- Barre de progression --}}
+        <nav class="es-project-steps mb-6" aria-label="Étapes du projet">
+            <ol class="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+                <template x-for="(step, index) in steps" :key="step.id">
+                    <li class="shrink-0">
+                        <button
+                            type="button"
+                            class="es-project-step-pill"
+                            :class="{
+                                'es-project-step-pill-active': index === stepIndex,
+                                'es-project-step-pill-done': index < stepIndex,
+                            }"
+                            @click="goToStep(index)"
+                        >
+                            <span class="es-project-step-num" x-text="index + 1"></span>
+                            <span class="es-project-step-label" x-text="step.label"></span>
+                        </button>
+                    </li>
+                </template>
+            </ol>
         </nav>
 
-        {{-- Consignes --}}
-        <section x-show="tab === 'brief'" x-cloak class="space-y-4">
-            <div class="es-card p-5 md:p-6">
-                <h2 class="font-extrabold text-lg mb-3">Consignes du professeur</h2>
-                <div class="whitespace-pre-wrap text-es-ink leading-relaxed">{{ $project->instructions }}</div>
+        {{-- Étape 1 : Consignes --}}
+        <section x-show="isStep('brief')" class="space-y-4">
+            <div class="es-card p-5">
+                <h2 class="font-extrabold text-lg mb-2">📋 Consignes</h2>
+                <p class="text-sm text-es-muted mb-4">Lis bien ce que ton professeur attend avant de commencer.</p>
+                <div class="whitespace-pre-wrap text-es-ink leading-relaxed text-base">{{ $project->instructions }}</div>
             </div>
-
             @if ($project->attachments->isNotEmpty())
                 <div class="es-card p-5">
                     <h3 class="font-extrabold mb-3">Documents fournis</h3>
                     <ul class="space-y-2">
                         @foreach ($project->attachments as $attachment)
                             <li>
-                                <a href="{{ route('project-media.show', [$project, $attachment]) }}" class="es-link font-bold" target="_blank">
+                                <a href="{{ route('project-media.show', [$project, $attachment]) }}" class="es-link font-bold text-base" target="_blank">
                                     📎 {{ $attachment->displayName() }}
                                 </a>
                             </li>
@@ -103,152 +89,206 @@
             @endif
         </section>
 
-        {{-- Travail rédigé --}}
-        @if ($project->allowsOnlineWrite())
-            <section x-show="tab === 'work'" x-cloak>
-                <div class="es-card p-5 md:p-6">
-                    <h2 class="font-extrabold text-lg mb-3">Mon travail</h2>
-                    <textarea
-                        x-model="content"
-                        @input.debounce.800ms="save()"
-                        :disabled="!canEdit"
-                        rows="18"
-                        class="es-textarea w-full text-base leading-relaxed min-h-[420px]"
-                        placeholder="Rédige ton compte rendu, ta recherche ou ton dossier ici…"
-                    ></textarea>
-                </div>
-            </section>
-        @endif
+        {{-- Étape 2 : Recherche --}}
+        <section x-show="isStep('research')">
+            <div class="es-card p-5">
+                <h2 class="font-extrabold text-lg mb-2">🔍 Recherche</h2>
+                <p class="text-sm text-es-muted mb-4">Note tes idées, faits et infos importantes en points (puces). Tu peux utiliser des tirets « - » au début de chaque ligne.</p>
+                <textarea
+                    x-model="researchNotes"
+                    @input.debounce.800ms="save()"
+                    :disabled="!canEdit"
+                    rows="14"
+                    class="es-textarea w-full text-base leading-relaxed"
+                    placeholder="- Mon sujet principal est…&#10;- J'ai trouvé que…&#10;- Point important : …"
+                ></textarea>
+            </div>
+        </section>
 
-        {{-- Fichiers --}}
-        @if ($project->allowsUpload())
-            <section x-show="tab === 'files'" x-cloak>
-                <div class="es-card p-5 md:p-6 space-y-4">
-                    <h2 class="font-extrabold text-lg">Fichiers déposés</h2>
-                    <template x-if="canEdit">
-                        <div class="rounded-2xl border-2 border-dashed border-stone-200 p-6 text-center">
-                            <input type="file" x-ref="fileInput" class="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="uploadFile($event)">
-                            <p class="text-sm text-es-muted mb-3">PDF, Word ou PowerPoint (max 50 Mo)</p>
-                            <button type="button" class="es-btn es-btn-secondary" @click="$refs.fileInput.click()">Téléverser un fichier</button>
-                        </div>
-                    </template>
-                    <ul class="space-y-2" x-show="files.length">
-                        <template x-for="file in files" :key="file.id">
-                            <li class="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-4 py-3">
-                                <a :href="file.url" class="es-link font-bold truncate" target="_blank" x-text="'📎 ' + file.name"></a>
-                                <button type="button" x-show="canEdit" class="text-xs font-bold text-red-600" @click="removeFile(file.id)">Supprimer</button>
-                            </li>
-                        </template>
-                    </ul>
-                </div>
-            </section>
-        @endif
-
-        {{-- Sources --}}
-        @if ($project->require_sources)
-            <section x-show="tab === 'sources'" x-cloak class="space-y-4">
-                <div class="es-card p-5 md:p-6">
-                    <div class="flex items-center justify-between gap-4 mb-4">
-                        <div>
-                            <h2 class="font-extrabold text-lg">Sources documentaires</h2>
-                            <p class="text-sm text-es-muted">Sites, livres, articles consultés pour ton projet.</p>
-                        </div>
-                        <button type="button" class="es-btn es-btn-secondary es-btn-sm" x-show="canEdit" @click="addSource()">+ Ajouter</button>
+        {{-- Étape : Sources --}}
+        <section x-show="isStep('sources')" class="space-y-3">
+            <div class="es-card p-5">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="font-extrabold text-lg">📑 Sources</h2>
+                        <p class="text-sm text-es-muted">Où as-tu trouvé tes informations ?</p>
                     </div>
-                    <template x-for="(source, index) in sources" :key="index">
-                        <div class="rounded-2xl border border-stone-200 p-4 mb-3 space-y-3">
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label class="es-label text-xs">Type</label>
-                                    <select x-model="source.type" @change="save()" :disabled="!canEdit" class="es-select text-sm">
-                                        @foreach (config('project.source_types') as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">Titre *</label>
-                                    <input type="text" x-model="source.title" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">Auteur</label>
-                                    <input type="text" x-model="source.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">URL</label>
-                                    <input type="url" x-model="source.url" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
+                    <button type="button" class="es-btn es-btn-secondary es-btn-sm" x-show="canEdit" @click="addSource()">+ Source</button>
+                </div>
+                <template x-for="(source, index) in sources" :key="index">
+                    <div class="rounded-2xl border border-stone-200 p-4 mb-3 space-y-3 bg-stone-50/50">
+                        <p class="text-xs font-bold text-es-muted" x-text="'Source ' + (index + 1)"></p>
+                        <div>
+                            <label class="es-label">Titre *</label>
+                            <input type="text" x-model="source.title" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="es-label">Type</label>
+                                <select x-model="source.type" @change="save()" :disabled="!canEdit" class="es-select w-full">
+                                    @foreach (config('project.source_types') as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div>
-                                <label class="es-label text-xs">Notes / extrait utile</label>
-                                <textarea x-model="source.notes" @input.debounce.800ms="save()" :disabled="!canEdit" rows="2" class="es-textarea text-sm"></textarea>
+                                <label class="es-label">Auteur</label>
+                                <input type="text" x-model="source.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
                             </div>
-                            <button type="button" x-show="canEdit && sources.length > 1" class="text-xs font-bold text-red-600" @click="sources.splice(index, 1); save()">Supprimer cette source</button>
                         </div>
-                    </template>
-                </div>
-            </section>
-        @endif
-
-        {{-- Bibliographie --}}
-        @if ($project->require_bibliography)
-            <section x-show="tab === 'biblio'" x-cloak class="space-y-4">
-                <div class="es-card p-5 md:p-6">
-                    <div class="flex items-center justify-between gap-4 mb-4">
                         <div>
-                            <h2 class="font-extrabold text-lg">Bibliographie</h2>
-                            <p class="text-sm text-es-muted">Références au format scolaire (auteur, titre, année…).</p>
+                            <label class="es-label">URL (si site web)</label>
+                            <input type="url" x-model="source.url" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full" placeholder="https://…">
                         </div>
-                        <button type="button" class="es-btn es-btn-secondary es-btn-sm" x-show="canEdit" @click="addBiblio()">+ Ajouter</button>
+                        <div>
+                            <label class="es-label">Notes utiles</label>
+                            <textarea x-model="source.notes" @input.debounce.800ms="save()" :disabled="!canEdit" rows="2" class="es-textarea w-full"></textarea>
+                        </div>
+                        <button type="button" x-show="canEdit && sources.length > 1" class="text-sm font-bold text-red-600" @click="sources.splice(index, 1); save()">Supprimer</button>
                     </div>
-                    <template x-for="(entry, index) in bibliography" :key="index">
-                        <div class="rounded-2xl border border-stone-200 p-4 mb-3 space-y-3">
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label class="es-label text-xs">Type</label>
-                                    <select x-model="entry.type" @change="save()" :disabled="!canEdit" class="es-select text-sm">
-                                        @foreach (config('project.bibliography_types') as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">Titre *</label>
-                                    <input type="text" x-model="entry.title" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">Auteur</label>
-                                    <input type="text" x-model="entry.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                                <div>
-                                    <label class="es-label text-xs">Année</label>
-                                    <input type="text" x-model="entry.year" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label class="es-label text-xs">Éditeur / revue</label>
-                                    <input type="text" x-model="entry.publisher" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input text-sm">
-                                </div>
-                            </div>
-                            <button type="button" x-show="canEdit && bibliography.length > 1" class="text-xs font-bold text-red-600" @click="bibliography.splice(index, 1); save()">Supprimer</button>
-                        </div>
-                    </template>
-                </div>
-            </section>
-        @endif
+                </template>
+            </div>
+        </section>
 
-        @if ($canEdit)
-            <footer class="mt-8 flex flex-wrap items-center justify-between gap-4 sticky bottom-4 es-card p-4 shadow-lg">
-                <p class="text-sm text-es-muted">Pense à compléter ton travail, tes sources et ta bibliographie.</p>
-                <button type="button" class="es-btn es-btn-primary" @click="submitProject()" :disabled="submitting">
-                    <span x-show="!submitting">Soumettre le projet</span>
-                    <span x-show="submitting">Envoi…</span>
+        {{-- Étape : Rédaction --}}
+        <section x-show="isStep('write')">
+            <div class="es-card p-5">
+                <h2 class="font-extrabold text-lg mb-2">✍️ Rédaction</h2>
+                <p class="text-sm text-es-muted mb-4">Rédige ton compte rendu ou ton dossier final ici.</p>
+                <textarea
+                    x-model="content"
+                    @input.debounce.800ms="save()"
+                    :disabled="!canEdit"
+                    rows="16"
+                    class="es-textarea w-full text-base leading-relaxed"
+                    placeholder="Introduction…&#10;&#10;Développement…&#10;&#10;Conclusion…"
+                ></textarea>
+            </div>
+        </section>
+
+        {{-- Étape : Téléversement --}}
+        <section x-show="isStep('upload')">
+            <div class="es-card p-5 space-y-4">
+                <h2 class="font-extrabold text-lg mb-2">📎 Téléversement</h2>
+                <p class="text-sm text-es-muted">Dépose ton fichier PDF, Word ou PowerPoint (max 50 Mo).</p>
+                <template x-if="canEdit">
+                    <div class="rounded-2xl border-2 border-dashed border-violet-200 bg-violet-50/40 p-8 text-center">
+                        <input type="file" x-ref="fileInput" class="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx" @change="uploadFile($event)">
+                        <p class="text-3xl mb-2">📄</p>
+                        <button type="button" class="es-btn es-btn-primary w-full sm:w-auto" @click="$refs.fileInput.click()">Choisir un fichier</button>
+                    </div>
+                </template>
+                <ul class="space-y-2" x-show="files.length > 0">
+                    <template x-for="file in files" :key="file.id">
+                        <li class="flex items-center justify-between gap-3 rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
+                            <a :href="file.url" class="es-link font-bold truncate text-base" target="_blank" x-text="'📎 ' + file.name"></a>
+                            <button type="button" x-show="canEdit" class="text-sm font-bold text-red-600 shrink-0" @click="removeFile(file.id)">Suppr.</button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </section>
+
+        {{-- Étape : Bibliographie --}}
+        <section x-show="isStep('biblio')" class="space-y-3">
+            <div class="es-card p-5">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="font-extrabold text-lg">📚 Bibliographie</h2>
+                        <p class="text-sm text-es-muted">Liste tes références (livres, sites, articles…).</p>
+                    </div>
+                    <button type="button" class="es-btn es-btn-secondary es-btn-sm" x-show="canEdit" @click="addBiblio()">+ Référence</button>
+                </div>
+                <template x-for="(entry, index) in bibliography" :key="index">
+                    <div class="rounded-2xl border border-stone-200 p-4 mb-3 space-y-3 bg-stone-50/50">
+                        <p class="text-xs font-bold text-es-muted" x-text="'Référence ' + (index + 1)"></p>
+                        <div>
+                            <label class="es-label">Titre *</label>
+                            <input type="text" x-model="entry.title" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="es-label">Auteur</label>
+                                <input type="text" x-model="entry.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                            </div>
+                            <div>
+                                <label class="es-label">Année</label>
+                                <input type="text" x-model="entry.year" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="es-label">Éditeur / revue</label>
+                            <input type="text" x-model="entry.publisher" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                        </div>
+                        <button type="button" x-show="canEdit && bibliography.length > 1" class="text-sm font-bold text-red-600" @click="bibliography.splice(index, 1); save()">Supprimer</button>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        {{-- Étape : Révision --}}
+        <section x-show="isStep('review')" class="space-y-4">
+            <div class="es-card p-5">
+                <h2 class="font-extrabold text-lg mb-4">✅ Révision finale</h2>
+                <p class="text-sm text-es-muted mb-5">Vérifie que tout est complet avant de soumettre.</p>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
+                        <dt class="font-bold text-es-muted">Recherche</dt>
+                        <dd class="font-bold" :class="researchNotes.trim() ? 'text-emerald-600' : 'text-amber-600'" x-text="researchNotes.trim() ? '✓ Rempli' : 'À compléter'"></dd>
+                    </div>
+                    @if ($project->require_sources)
+                    <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
+                        <dt class="font-bold text-es-muted">Sources</dt>
+                        <dd class="font-bold" :class="filledSources().length ? 'text-emerald-600' : 'text-amber-600'" x-text="filledSources().length ? filledSources().length + ' source(s)' : 'À compléter'"></dd>
+                    </div>
+                    @endif
+                    @if ($project->allowsOnlineWrite())
+                    <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
+                        <dt class="font-bold text-es-muted">Rédaction</dt>
+                        <dd class="font-bold" :class="hasWorkContent() ? 'text-emerald-600' : 'text-amber-600'" x-text="hasWorkContent() ? '✓ Rempli' : 'À compléter'"></dd>
+                    </div>
+                    @endif
+                    @if ($project->allowsUpload())
+                    <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
+                        <dt class="font-bold text-es-muted">Fichier</dt>
+                        <dd class="font-bold" :class="files.length ? 'text-emerald-600' : 'text-amber-600'" x-text="files.length ? files.length + ' fichier(s)' : 'À compléter'"></dd>
+                    </div>
+                    @endif
+                    @if ($project->require_bibliography)
+                    <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
+                        <dt class="font-bold text-es-muted">Bibliographie</dt>
+                        <dd class="font-bold" :class="filledBibliography().length ? 'text-emerald-600' : 'text-amber-600'" x-text="filledBibliography().length ? filledBibliography().length + ' réf.' : 'À compléter'"></dd>
+                    </div>
+                    @endif
+                </dl>
+            </div>
+        </section>
+
+        {{-- Navigation étapes --}}
+        <footer class="es-project-nav fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-md px-4 py-3 safe-area-pb">
+            <div class="es-container max-w-3xl flex items-center gap-3">
+                <button type="button" class="es-btn es-btn-secondary flex-1" @click="goPrev()" :disabled="isFirstStep">
+                    ← Précédent
                 </button>
-            </footer>
-        @endif
+                @if ($canEdit)
+                    <template x-if="!isLastStep">
+                        <button type="button" class="es-btn es-btn-primary flex-1" @click="goNext()">
+                            Suivant →
+                        </button>
+                    </template>
+                    <template x-if="isLastStep">
+                        <button type="button" class="es-btn es-btn-primary flex-1" @click="submitProject()" :disabled="submitting">
+                            <span x-show="!submitting">Soumettre ✓</span>
+                            <span x-show="submitting">Envoi…</span>
+                        </button>
+                    </template>
+                @else
+                    <button type="button" class="es-btn es-btn-primary flex-1" @click="goNext()" :disabled="isLastStep">
+                        Suivant →
+                    </button>
+                @endif
+            </div>
+        </footer>
     </div>
 </div>
-
-@push('scripts')
-    @vite('resources/js/project-workspace.js')
-@endpush
 @endsection

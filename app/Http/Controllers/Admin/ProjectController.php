@@ -10,6 +10,7 @@ use App\Models\ClassGroup;
 use App\Models\Project;
 use App\Models\MediaFile;
 use App\Models\ProjectSubmission;
+use App\Models\ReportPeriod;
 use App\Models\SchoolLevel;
 use App\Models\Skill;
 use App\Models\Student;
@@ -25,7 +26,7 @@ class ProjectController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Project::with(['subject', 'skill'])->withCount('submissions')->latest();
+        $query = Project::with(['subject', 'skill', 'skills', 'reportPeriod'])->withCount('submissions')->latest();
 
         if ($status = $request->string('status')->toString()) {
             $query->where('status', $status);
@@ -51,11 +52,19 @@ class ProjectController extends Controller
 
     public function store(StoreProjectRequest $request): RedirectResponse
     {
+        $data = $request->validated();
+        $skillIds = $data['skill_ids'];
+        $skillWeights = $data['skill_weights'] ?? [];
+        unset($data['skill_ids'], $data['skill_weights']);
+
         $project = Project::create([
-            ...$request->validated(),
+            ...$data,
+            'skill_id' => $skillIds[0],
             'created_by' => $request->user()->id,
             'status' => 'draft',
         ]);
+
+        $this->syncProjectSkills($project, $skillIds, $skillWeights);
 
         return redirect()
             ->route('admin.projects.build', ['project' => $project, 'step' => 2])
@@ -76,7 +85,7 @@ class ProjectController extends Controller
                 ->withErrors(['instructions' => 'Ajoute des consignes avant de publier.']);
         }
 
-        return $this->wizardView($project->load(['attachments', 'subject', 'skill', 'assignedStudents']), $step);
+        return $this->wizardView($project->load(['attachments', 'subject', 'skill', 'skills', 'reportPeriod', 'assignedStudents']), $step);
     }
 
     public function edit(Project $project): RedirectResponse
@@ -86,7 +95,17 @@ class ProjectController extends Controller
 
     public function update(UpdateProjectRequest $request, Project $project): RedirectResponse
     {
-        $project->update($request->validated());
+        $data = $request->validated();
+        $skillIds = $data['skill_ids'];
+        $skillWeights = $data['skill_weights'] ?? [];
+        unset($data['skill_ids'], $data['skill_weights']);
+
+        $project->update([
+            ...$data,
+            'skill_id' => $skillIds[0],
+        ]);
+
+        $this->syncProjectSkills($project, $skillIds, $skillWeights);
 
         $nextStep = (int) $request->input('next_step', 2);
 
@@ -209,9 +228,7 @@ class ProjectController extends Controller
     protected function wizardView(Project $project, int $step): View
     {
         $subjects = Cache::remember('catalog.subjects', 3600, fn () => Subject::ordered()->get());
-        $skills = $project->subject_id
-            ? Skill::where('subject_id', $project->subject_id)->orderBy('name')->get()
-            : collect();
+        $skills = Cache::remember('catalog.skills', 3600, fn () => Skill::orderBy('subject_id')->orderBy('name')->get());
 
         $students = Student::with(['schoolLevel', 'classGroup'])
             ->whereHas('user', fn ($q) => $q->where('status', 'active'))
@@ -224,14 +241,43 @@ class ProjectController extends Controller
 
         return view('admin.projects.build', [
             'adminNav' => 'projects',
-            'project' => $project,
+            'project' => $project->loadMissing(['skills', 'reportPeriod']),
             'step' => $step,
             'subjects' => $subjects,
             'skills' => $skills,
+            'periods' => ReportPeriod::query()->orderBy('sort_order')->orderBy('id')->get(),
             'students' => $students,
             'levels' => $levels,
             'classGroups' => $classGroups,
             'selectedStudentIds' => $project->exists ? $project->assignedStudents()->pluck('students.id')->all() : [],
+            'selectedSkillIds' => old('skill_ids', $project->exists ? $project->skills->pluck('id')->all() : []),
         ]);
+    }
+
+    /** @param  list<int>  $skillIds  @param  array<int|string, float|int|string|null>  $skillWeights */
+    private function syncProjectSkills(Project $project, array $skillIds, array $skillWeights): void
+    {
+        $skillIds = array_values(array_unique(array_map('intval', $skillIds)));
+        $sync = [];
+        $hasCustomWeights = collect($skillIds)->every(fn (int $id) => isset($skillWeights[$id]) && $skillWeights[$id] !== '');
+
+        if ($hasCustomWeights) {
+            foreach ($skillIds as $id) {
+                $sync[$id] = ['weight_percent' => round((float) $skillWeights[$id], 2)];
+            }
+        } else {
+            $share = round(100 / count($skillIds), 2);
+            $assigned = 0.0;
+
+            foreach ($skillIds as $index => $id) {
+                $weight = $index === count($skillIds) - 1
+                    ? round(100 - $assigned, 2)
+                    : $share;
+                $sync[$id] = ['weight_percent' => $weight];
+                $assigned += $weight;
+            }
+        }
+
+        $project->skills()->sync($sync);
     }
 }

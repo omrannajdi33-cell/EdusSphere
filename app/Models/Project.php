@@ -12,6 +12,8 @@ class Project extends Model
     protected $fillable = [
         'subject_id',
         'skill_id',
+        'report_period_id',
+        'weight_percent',
         'created_by',
         'title',
         'instructions',
@@ -31,6 +33,7 @@ class Project extends Model
             'require_bibliography' => 'boolean',
             'due_at' => 'datetime',
             'published_at' => 'datetime',
+            'weight_percent' => 'decimal:2',
         ];
     }
 
@@ -42,6 +45,18 @@ class Project extends Model
     public function skill(): BelongsTo
     {
         return $this->belongsTo(Skill::class);
+    }
+
+    public function reportPeriod(): BelongsTo
+    {
+        return $this->belongsTo(ReportPeriod::class);
+    }
+
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class, 'project_skill')
+            ->withPivot('weight_percent')
+            ->withTimestamps();
     }
 
     public function author(): BelongsTo
