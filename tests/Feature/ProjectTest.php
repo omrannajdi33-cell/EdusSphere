@@ -117,6 +117,30 @@ class ProjectTest extends TestCase
         $this->assertTrue($project->assignedStudents()->where('student_id', $this->student->id)->exists());
     }
 
+    public function test_create_project_shows_validation_errors_when_skills_missing(): void
+    {
+        $this->actingAs($this->teacher)
+            ->from(route('admin.projects.create'))
+            ->post(route('admin.projects.store'), [
+                'title' => 'Projet sans compétence',
+                'subject_id' => $this->subject->id,
+                'report_period_id' => $this->period->id,
+                'weight_percent' => 25,
+                'project_type' => 'research',
+                'submission_format' => 'online',
+                'require_sources' => '1',
+                'require_bibliography' => '1',
+            ])
+            ->assertRedirect(route('admin.projects.create'))
+            ->assertSessionHasErrors('skill_ids');
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.projects.create'))
+            ->assertOk()
+            ->assertSee('Impossible d')
+            ->assertSee('Sélectionne au moins une compétence évaluée');
+    }
+
     public function test_student_can_save_and_submit_project_with_sources(): void
     {
         $project = $this->createPublishedProject();

@@ -69,4 +69,23 @@ class UpdateProjectRequest extends FormRequest
             'skill_ids' => array_values(array_filter((array) $this->input('skill_ids', []))),
         ]);
     }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Le titre du projet est obligatoire.',
+            'subject_id.required' => 'Choisis une matière.',
+            'report_period_id.required' => 'Choisis une période bulletin.',
+            'report_period_id.exists' => 'La période bulletin sélectionnée est invalide.',
+            'weight_percent.required' => 'Indique le poids du projet dans le bulletin (%).',
+            'weight_percent.numeric' => 'Le poids doit être un nombre.',
+            'weight_percent.min' => 'Le poids ne peut pas être négatif.',
+            'weight_percent.max' => 'Le poids ne peut pas dépasser 100 %.',
+            'skill_ids.required' => 'Sélectionne au moins une compétence évaluée.',
+            'skill_ids.min' => 'Sélectionne au moins une compétence évaluée.',
+            'skill_ids.*.exists' => 'Une compétence sélectionnée ne correspond pas à la matière choisie.',
+            'project_type.required' => 'Choisis un type de projet.',
+            'submission_format.required' => 'Choisis le mode de rendu attendu.',
+        ];
+    }
 }

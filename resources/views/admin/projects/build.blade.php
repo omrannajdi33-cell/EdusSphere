@@ -14,9 +14,23 @@
 
     <x-project-wizard-nav :step="$step" :project="$project"/>
 
+    @if ($errors->any())
+        <x-alert type="error" class="mb-6" title="Impossible d'enregistrer — corrige ces points :">
+            <ul class="list-disc pl-5 space-y-1 text-sm">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </x-alert>
+    @endif
+
     @if ($step === 1)
+        @php
+            $defaultSubjectId = old('subject_id', $project->subject_id ?? $subjects->first()?->id);
+            $defaultPeriodId = old('report_period_id', $project->report_period_id ?? $periods->first()?->id);
+        @endphp
         <div class="es-wizard-panel max-w-2xl" x-data="{
-            subjectId: '{{ old('subject_id', $project->subject_id) }}',
+            subjectId: '{{ $defaultSubjectId }}',
             selectedSkills: @js(array_map('strval', old('skill_ids', $selectedSkillIds ?? []))),
             toggleSkill(id) {
                 id = String(id);
@@ -26,7 +40,11 @@
                     this.selectedSkills.push(id);
                 }
             },
-            isSelected(id) { return this.selectedSkills.includes(String(id)); }
+            isSelected(id) { return this.selectedSkills.includes(String(id)); },
+            resetSkillsForSubject() {
+                this.selectedSkills = [];
+                this.$root.querySelectorAll('input[name=\'skill_ids[]\']').forEach(cb => { cb.checked = false; });
+            }
         }">
             <div class="es-wizard-panel-head">
                 <span class="es-wizard-panel-num">1</span>
@@ -44,23 +62,30 @@
 
                 <div>
                     <label for="subject_id" class="es-label">Matière</label>
-                    <select id="subject_id" name="subject_id" class="es-select" required x-model="subjectId" @change="selectedSkills = []">
+                    <select id="subject_id" name="subject_id" class="es-select @error('subject_id') es-input-error @enderror" required x-model="subjectId" @change="resetSkillsForSubject()">
                         @foreach ($subjects as $subject)
-                            <option value="{{ $subject->id }}" @selected(old('subject_id', $project->subject_id) == $subject->id)>{{ $subject->name }}</option>
+                            <option value="{{ $subject->id }}" @selected($defaultSubjectId == $subject->id)>{{ $subject->name }}</option>
                         @endforeach
                     </select>
+                    @error('subject_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="report_period_id" class="es-label">Période bulletin</label>
-                        <select id="report_period_id" name="report_period_id" class="es-select" required>
-                            @foreach ($periods as $period)
-                                <option value="{{ $period->id }}" @selected(old('report_period_id', $project->report_period_id) == $period->id)>
-                                    {{ $period->label }} ({{ $period->school_year }})
-                                </option>
-                            @endforeach
-                        </select>
+                        @if ($periods->isEmpty())
+                            <p class="text-sm text-amber-700 font-semibold rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                                Aucune période bulletin n'est configurée. Contacte l'administrateur ou crée une période avant de publier un projet noté.
+                            </p>
+                        @else
+                            <select id="report_period_id" name="report_period_id" class="es-select @error('report_period_id') es-input-error @enderror" required>
+                                @foreach ($periods as $period)
+                                    <option value="{{ $period->id }}" @selected($defaultPeriodId == $period->id)>
+                                        {{ $period->label }} ({{ $period->school_year }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                         @error('report_period_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -71,12 +96,16 @@
                 </div>
 
                 <div>
-                    <label class="es-label">Compétences évaluées</label>
-                    <p class="text-xs text-es-muted mb-3">Sélectionne une ou plusieurs compétences. Si plusieurs, répartis le poids entre elles (total 100 %).</p>
+                    <label class="es-label">Compétences évaluées <span class="text-red-600">*</span></label>
+                    <p class="text-xs text-es-muted mb-3">Sélectionne au moins une compétence. Si plusieurs, répartis le poids entre elles (total 100 %).</p>
                     @error('skill_ids')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
                     @error('skill_weights')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
 
-                    <div class="space-y-2 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                    <div @class([
+                        'space-y-2 rounded-2xl border bg-stone-50/80 p-4',
+                        'border-red-300' => $errors->has('skill_ids'),
+                        'border-stone-200' => ! $errors->has('skill_ids'),
+                    ])>
                         @foreach ($skills as $skill)
                             @php
                                 $oldWeight = old('skill_weights.'.$skill->id, $project->skills->firstWhere('id', $skill->id)?->pivot?->weight_percent);
@@ -97,13 +126,16 @@
                             </div>
                         @endforeach
                         @if ($skills->isEmpty())
-                            <p class="text-sm text-es-muted">Choisis d'abord une matière pour voir les compétences.</p>
+                            <p class="text-sm text-es-muted">Aucune compétence disponible pour cette matière.</p>
+                        @elseif ($skills->where('subject_id', $defaultSubjectId)->isEmpty())
+                            <p class="text-sm text-es-muted" x-show="subjectId == '{{ $defaultSubjectId }}'">Aucune compétence pour cette matière.</p>
                         @endif
                     </div>
                 </div>
 
                 <div>
                     <label class="es-label">Type de projet</label>
+                    @error('project_type')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
                     <div class="grid gap-3 sm:grid-cols-2 mt-2">
                         @foreach (config('project.project_types') as $key => $meta)
                             <label @class(['ap-type-menu-item cursor-pointer', 'ap-type-menu-item-active' => old('project_type', $project->project_type ?? 'research') === $key])>
@@ -120,6 +152,7 @@
 
                 <div>
                     <label class="es-label">Rendu attendu de l'élève</label>
+                    @error('submission_format')<p class="text-sm text-red-600 mb-2">{{ $message }}</p>@enderror
                     <div class="grid gap-3 sm:grid-cols-3 mt-2">
                         @foreach (config('project.submission_formats') as $key => $meta)
                             <label @class(['ap-type-menu-item cursor-pointer', 'ap-type-menu-item-active' => old('submission_format', $project->submission_format ?? 'both') === $key])>
@@ -152,7 +185,11 @@
                     </label>
                 </div>
 
-                <x-button type="submit">{{ $isNew ? 'Continuer → Consignes' : 'Enregistrer et continuer' }}</x-button>
+                @if ($periods->isEmpty())
+                    <x-button type="submit" disabled>{{ $isNew ? 'Continuer → Consignes' : 'Enregistrer et continuer' }}</x-button>
+                @else
+                    <x-button type="submit">{{ $isNew ? 'Continuer → Consignes' : 'Enregistrer et continuer' }}</x-button>
+                @endif
             </form>
         </div>
     @endif
