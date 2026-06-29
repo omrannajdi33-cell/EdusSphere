@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasDeviceType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exam extends Model
@@ -53,6 +54,11 @@ class Exam extends Model
     public function reportPeriod(): BelongsTo
     {
         return $this->belongsTo(ReportPeriod::class);
+    }
+
+    public function notions(): BelongsToMany
+    {
+        return $this->belongsToMany(Notion::class)->withTimestamps();
     }
 
     public function pages(): HasMany

@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Activity;
+use App\Models\Exam;
+use App\Models\Project;
 use App\Models\Schedule;
+use App\Models\Student;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -10,22 +14,22 @@ use Illuminate\Support\Collection;
 class ScheduleGrid
 {
     /** @return array{week_start: Carbon, week_end: Carbon, days: list<array>, period_defs: array<int, array>} */
-    public function forWeek(CarbonInterface $reference): array
+    public function forWeek(CarbonInterface $reference, ?Student $student = null): array
     {
         $weekStart = Carbon::parse($reference)->startOfWeek(CarbonInterface::MONDAY);
         $displayDays = max(1, (int) config('schedule.week_display_days', 7));
         $weekEnd = $weekStart->copy()->addDays($displayDays - 1);
 
-        $recurring = Schedule::query()
-            ->with(['subject', 'activities', 'exams'])
+        $recurring = $this->baseQuery()
             ->whereNull('schedule_date')
             ->get()
+            ->when($student, fn (Collection $rows) => $rows->filter(fn (Schedule $s) => $s->isVisibleToStudent($student)))
             ->groupBy(fn (Schedule $s) => $s->day_of_week.'-'.$s->period_number);
 
-        $specific = Schedule::query()
-            ->with(['subject', 'activities', 'exams'])
+        $specific = $this->baseQuery()
             ->whereBetween('schedule_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
             ->get()
+            ->when($student, fn (Collection $rows) => $rows->filter(fn (Schedule $s) => $s->isVisibleToStudent($student)))
             ->groupBy(fn (Schedule $s) => $s->schedule_date->toDateString().'-'.$s->period_number);
 
         $days = [];
@@ -40,7 +44,7 @@ class ScheduleGrid
                 $slot = $specific->get($specificKey)?->first()
                     ?? $recurring->get($recurringKey)?->first();
 
-                $periods[$periodNumber] = $slot ? $this->formatSlot($slot) : null;
+                $periods[$periodNumber] = $slot ? $this->formatSlot($slot, $student) : null;
             }
 
             $days[] = [
@@ -64,43 +68,43 @@ class ScheduleGrid
     }
 
     /** @return list<array|null> */
-    public function forDay(CarbonInterface $date): array
+    public function forDay(CarbonInterface $date, ?Student $student = null): array
     {
         $date = Carbon::parse($date);
         $dateKey = $date->toDateString();
 
-        $specific = Schedule::query()
-            ->with(['subject', 'activities', 'exams'])
+        $specific = $this->baseQuery()
             ->whereDate('schedule_date', $dateKey)
             ->get()
+            ->when($student, fn (Collection $rows) => $rows->filter(fn (Schedule $s) => $s->isVisibleToStudent($student)))
             ->keyBy('period_number');
 
-        $recurring = Schedule::query()
-            ->with(['subject', 'activities', 'exams'])
+        $recurring = $this->baseQuery()
             ->whereNull('schedule_date')
             ->where('day_of_week', $date->dayOfWeekIso)
             ->get()
+            ->when($student, fn (Collection $rows) => $rows->filter(fn (Schedule $s) => $s->isVisibleToStudent($student)))
             ->keyBy('period_number');
 
         $periods = [];
         foreach (array_keys(config('schedule.periods', [])) as $periodNumber) {
             $slot = $specific->get($periodNumber) ?? $recurring->get($periodNumber);
-            $periods[$periodNumber] = $slot ? $this->formatSlot($slot) : null;
+            $periods[$periodNumber] = $slot ? $this->formatSlot($slot, $student) : null;
         }
 
         return $periods;
     }
 
-    public function hasCoursesOn(CarbonInterface $date): bool
+    public function hasCoursesOn(CarbonInterface $date, ?Student $student = null): bool
     {
-        return collect($this->forDay($date))->filter()->isNotEmpty();
+        return collect($this->forDay($date, $student))->filter()->isNotEmpty();
     }
 
     /** @return array<string, mixed>|null */
-    public function currentSlot(CarbonInterface $at): ?array
+    public function currentSlot(CarbonInterface $at, ?Student $student = null): ?array
     {
         $time = $at->format('H:i:s');
-        $periods = $this->forDay($at);
+        $periods = $this->forDay($at, $student);
 
         foreach ($periods as $slot) {
             if (! $slot) {
@@ -118,9 +122,9 @@ class ScheduleGrid
         return null;
     }
 
-    public function currentPeriodNumber(CarbonInterface $at): ?int
+    public function currentPeriodNumber(CarbonInterface $at, ?Student $student = null): ?int
     {
-        $slot = $this->currentSlot($at);
+        $slot = $this->currentSlot($at, $student);
 
         return $slot['period_number'] ?? null;
     }
@@ -131,7 +135,7 @@ class ScheduleGrid
     }
 
     /** @return list<int> */
-    public function monthEventDays(int $year, int $month): array
+    public function monthEventDays(int $year, int $month, ?Student $student = null): array
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth();
         $end = $start->copy()->endOfMonth();
@@ -140,7 +144,7 @@ class ScheduleGrid
         $cursor = $start->copy();
 
         while ($cursor->lte($end)) {
-            if ($this->hasCoursesOn($cursor)) {
+            if ($this->hasCoursesOn($cursor, $student)) {
                 $days[] = $cursor->day;
             }
             $cursor->addDay();
@@ -154,8 +158,7 @@ class ScheduleGrid
     {
         $from = Carbon::parse($from ?? now())->startOfDay();
 
-        return Schedule::query()
-            ->with(['subject', 'activities', 'exams'])
+        return $this->baseQuery()
             ->whereNotNull('schedule_date')
             ->where('schedule_date', '>=', $from->toDateString())
             ->orderBy('schedule_date')
@@ -175,9 +178,63 @@ class ScheduleGrid
             ->get();
     }
 
-    /** @return array<string, mixed> */
-    private function formatSlot(Schedule $slot): array
+    /** @return \Illuminate\Database\Eloquent\Builder<Schedule> */
+    private function baseQuery()
     {
+        return Schedule::query()->with([
+            'subject',
+            'activities',
+            'exams',
+            'projects',
+            'notions.category',
+            'targetedStudents',
+            'studentItems',
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function formatSlot(Schedule $slot, ?Student $student = null): array
+    {
+        $personalItems = [];
+        if ($student && $slot->relationLoaded('studentItems')) {
+            $personalItems = $slot->studentItems
+                ->where('student_id', $student->id)
+                ->values()
+                ->map(fn ($item) => $item->toDisplayArray())
+                ->all();
+        }
+
+        $activities = $slot->relationLoaded('activities')
+            ? $slot->activities
+                ->when($student, fn (Collection $rows) => $rows->filter(fn (Activity $a) => $a->isVisibleToStudent($student)))
+                ->map(fn ($a) => ['id' => $a->id, 'title' => $a->title, 'type' => 'activity'])
+                ->values()
+                ->all()
+            : [];
+
+        $exams = $slot->relationLoaded('exams')
+            ? $slot->exams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title, 'type' => 'exam'])->all()
+            : [];
+
+        $projects = $slot->relationLoaded('projects')
+            ? $slot->projects->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'type' => 'project'])->all()
+            : [];
+
+        if ($student && count($personalItems) > 0) {
+            $activities = collect($personalItems)->where('type', 'activity')->values()->all();
+            $exams = collect($personalItems)->where('type', 'exam')->values()->all();
+            $projects = collect($personalItems)->where('type', 'project')->values()->all();
+        }
+
+        $studentItemsPayload = $slot->relationLoaded('studentItems')
+            ? $slot->studentItems->map(fn ($item) => [
+                'student_id' => $item->student_id,
+                'item_type' => $item->item_type,
+                'item_id' => $item->item_id,
+                'notes' => $item->notes,
+            ])->values()->all()
+            : [];
+
         return [
             'id' => $slot->id,
             'title' => $slot->display_title,
@@ -196,18 +253,23 @@ class ScheduleGrid
             'uses_custom_time' => (bool) $slot->uses_custom_time,
             'time_label' => $slot->timeLabel(),
             'has_notes' => $slot->hasPlanningDetails(),
-            'activity_ids' => $slot->relationLoaded('activities')
-                ? $slot->activities->pluck('id')->all()
+            'activity_ids' => $slot->relationLoaded('activities') ? $slot->activities->pluck('id')->all() : [],
+            'exam_ids' => $slot->relationLoaded('exams') ? $slot->exams->pluck('id')->all() : [],
+            'project_ids' => $slot->relationLoaded('projects') ? $slot->projects->pluck('id')->all() : [],
+            'notion_ids' => $slot->relationLoaded('notions') ? $slot->notions->pluck('id')->all() : [],
+            'student_ids' => $slot->relationLoaded('targetedStudents') ? $slot->targetedStudents->pluck('id')->all() : [],
+            'student_items' => $studentItemsPayload,
+            'activities' => $activities,
+            'exams' => $exams,
+            'projects' => $projects,
+            'notions' => $slot->relationLoaded('notions')
+                ? $slot->notions->map(fn ($n) => [
+                    'id' => $n->id,
+                    'title' => $n->title,
+                    'category' => $n->category?->name,
+                ])->all()
                 : [],
-            'exam_ids' => $slot->relationLoaded('exams')
-                ? $slot->exams->pluck('id')->all()
-                : [],
-            'activities' => $slot->relationLoaded('activities')
-                ? $slot->activities->map(fn ($a) => ['id' => $a->id, 'title' => $a->title])->all()
-                : [],
-            'exams' => $slot->relationLoaded('exams')
-                ? $slot->exams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title])->all()
-                : [],
+            'personal_items' => $personalItems,
         ];
     }
 }

@@ -52,6 +52,17 @@ class StoreScheduleRequest extends FormRequest
             'activity_ids.*' => ['integer', 'exists:activities,id'],
             'exam_ids' => ['nullable', 'array'],
             'exam_ids.*' => ['integer', 'exists:exams,id'],
+            'project_ids' => ['nullable', 'array'],
+            'project_ids.*' => ['integer', 'exists:projects,id'],
+            'notion_ids' => ['nullable', 'array'],
+            'notion_ids.*' => ['integer', 'exists:notions,id'],
+            'student_ids' => ['nullable', 'array'],
+            'student_ids.*' => ['integer', 'exists:students,id'],
+            'student_items' => ['nullable', 'array'],
+            'student_items.*.student_id' => ['required_with:student_items', 'integer', 'exists:students,id'],
+            'student_items.*.item_type' => ['required_with:student_items', 'in:activity,exam,project'],
+            'student_items.*.item_id' => ['required_with:student_items', 'integer'],
+            'student_items.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -59,6 +70,7 @@ class StoreScheduleRequest extends FormRequest
     {
         $this->merge([
             'use_custom_time' => $this->boolean('use_custom_time'),
+            'student_items' => array_values(array_filter((array) $this->input('student_items', []), fn ($item) => ! empty($item['student_id']) && ! empty($item['item_type']) && ! empty($item['item_id']))),
         ]);
     }
 

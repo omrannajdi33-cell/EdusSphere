@@ -50,13 +50,19 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-extrabold text-lg text-es-ink">{{ $slot['title'] }}</p>
                                 <p class="text-sm text-es-muted">{{ $slot['subject'] }} · {{ substr($slot['starts_at'], 0, 5) }}–{{ substr($slot['ends_at'], 0, 5) }}</p>
-                                @if (! empty($slot['activities']) || ! empty($slot['exams']))
+                                @if (! empty($slot['activities']) || ! empty($slot['exams']) || ! empty($slot['projects']) || ! empty($slot['notions']))
                                     <div class="flex flex-wrap gap-2 mt-2">
+                                        @foreach ($slot['notions'] ?? [] as $notion)
+                                            <span class="es-schedule-student-link">📌 {{ $notion['title'] }}</span>
+                                        @endforeach
                                         @foreach ($slot['activities'] ?? [] as $activity)
                                             <a href="{{ route('student.activities.play', $activity['id']) }}" class="es-schedule-student-link">✏️ {{ $activity['title'] }}</a>
                                         @endforeach
                                         @foreach ($slot['exams'] ?? [] as $exam)
                                             <span class="es-schedule-student-link">📝 {{ $exam['title'] }}</span>
+                                        @endforeach
+                                        @foreach ($slot['projects'] ?? [] as $project)
+                                            <a href="{{ route('student.projects.work', $project['id']) }}" class="es-schedule-student-link">📁 {{ $project['title'] }}</a>
                                         @endforeach
                                     </div>
                                 @endif
@@ -93,13 +99,19 @@
                                             <span class="text-xs font-bold text-es-muted w-16">{{ substr($slot['starts_at'], 0, 5) }}</span>
                                             <div class="min-w-0 flex-1">
                                                 <span class="font-bold text-es-ink">{{ $slot['title'] }}</span>
-                                                @if (! empty($slot['activities']) || ! empty($slot['exams']))
+                                                @if (! empty($slot['activities']) || ! empty($slot['exams']) || ! empty($slot['projects']))
                                                     <span class="text-xs text-es-muted block mt-0.5">
+                                                        @if (! empty($slot['notions']))
+                                                            {{ count($slot['notions']) }} notion(s)
+                                                        @endif
                                                         @if (! empty($slot['activities']))
-                                                            {{ count($slot['activities']) }} activité(s)
+                                                            · {{ count($slot['activities']) }} activité(s)
                                                         @endif
                                                         @if (! empty($slot['exams']))
                                                             · {{ count($slot['exams']) }} examen(s)
+                                                        @endif
+                                                        @if (! empty($slot['projects']))
+                                                            · {{ count($slot['projects']) }} projet(s)
                                                         @endif
                                                     </span>
                                                 @endif

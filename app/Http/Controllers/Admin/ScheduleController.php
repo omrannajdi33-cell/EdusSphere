@@ -7,9 +7,13 @@ use App\Http\Requests\Admin\StoreScheduleRequest;
 use App\Http\Requests\Admin\UpdateScheduleRequest;
 use App\Models\Activity;
 use App\Models\Exam;
+use App\Models\Notion;
+use App\Models\Project;
 use App\Models\Schedule;
+use App\Models\Student;
 use App\Models\Subject;
 use App\Services\ScheduleGrid;
+use App\Services\SchedulePlannerService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +21,10 @@ use Illuminate\View\View;
 
 class ScheduleController extends Controller
 {
+    public function __construct(
+        private SchedulePlannerService $planner,
+    ) {}
+
     public function index(Request $request, ScheduleGrid $grid): View
     {
         $weekParam = $request->string('week')->toString();
@@ -39,6 +47,22 @@ class ScheduleController extends Controller
                 ->where('status', '!=', 'draft')
                 ->orderBy('title')
                 ->get(['id', 'title', 'subject_id']),
+            'linkableProjects' => Project::query()
+                ->with('subject')
+                ->where('status', 'published')
+                ->orderBy('title')
+                ->get(['id', 'title', 'subject_id']),
+            'linkableNotions' => Notion::query()
+                ->with(['category', 'subject'])
+                ->orderBy('subject_id')
+                ->orderBy('title')
+                ->get(['id', 'title', 'subject_id', 'notion_category_id']),
+            'students' => Student::query()
+                ->with('user')
+                ->whereHas('user', fn ($q) => $q->where('status', 'active'))
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get(),
             'prevWeek' => $reference->copy()->subWeek()->toDateString(),
             'nextWeek' => $reference->copy()->addWeek()->toDateString(),
         ]);
@@ -51,7 +75,7 @@ class ScheduleController extends Controller
         $this->removeConflictingSlot($data);
 
         $schedule = Schedule::create($data);
-        $this->syncLinks($schedule, $validated);
+        $this->planner->sync($schedule, $validated);
 
         return $this->redirectBack($request, 'Créneau ajouté à l\'horaire.');
     }
@@ -62,7 +86,7 @@ class ScheduleController extends Controller
         $data = $this->resolveSlotData($validated);
         $this->removeConflictingSlot($data, $schedule->id);
         $schedule->update($data);
-        $this->syncLinks($schedule, $validated);
+        $this->planner->sync($schedule, $validated);
 
         return $this->redirectBack($request, 'Créneau mis à jour.');
     }
@@ -98,13 +122,6 @@ class ScheduleController extends Controller
             'materials' => $validated['materials'] ?? null,
             'plan' => $validated['plan'] ?? null,
         ];
-    }
-
-    /** @param  array<string, mixed>  $validated */
-    private function syncLinks(Schedule $schedule, array $validated): void
-    {
-        $schedule->activities()->sync(collect($validated['activity_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values());
-        $schedule->exams()->sync(collect($validated['exam_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values());
     }
 
     /** @param  array<string, mixed>  $data */

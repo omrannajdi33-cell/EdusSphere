@@ -20,7 +20,7 @@ class DashboardController extends Controller
     ): View {
         $student = auth()->user()->student;
         $firstName = $student?->first_name ?? explode(' ', auth()->user()->name)[0];
-        $weekGrid = $schedule->forWeek(now());
+        $weekGrid = $schedule->forWeek(now(), $student);
         $todayPeriods = collect($weekGrid['days'])->firstWhere('is_today', true)['periods'] ?? [];
         $todayCourses = collect($todayPeriods)->filter()->values();
 

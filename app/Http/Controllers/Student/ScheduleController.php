@@ -18,9 +18,9 @@ class ScheduleController extends Controller
         $dateParam = $request->string('date')->toString();
         $reference = $dateParam !== '' ? Carbon::parse($dateParam) : now();
 
-        $weekGrid = $grid->forWeek($reference);
-        $dayPeriods = $grid->forDay($reference);
-        $monthEvents = $grid->monthEventDays($reference->year, $reference->month);
+        $weekGrid = $grid->forWeek($reference, $request->user()?->student);
+        $dayPeriods = $grid->forDay($reference, $request->user()?->student);
+        $monthEvents = $grid->monthEventDays($reference->year, $reference->month, $request->user()?->student);
 
         return view('student.schedule.index', [
             'activeNav' => 'schedule',

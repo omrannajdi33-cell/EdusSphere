@@ -30,6 +30,11 @@ class Subject extends Model
         return $this->hasMany(Exam::class);
     }
 
+    public function notionCategories(): HasMany
+    {
+        return $this->hasMany(NotionCategory::class)->orderBy('display_order');
+    }
+
     public function getSlugAttribute(): string
     {
         return Str::slug($this->name);

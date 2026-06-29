@@ -14,20 +14,20 @@ class StudentScheduleThemeService
     ) {}
 
     /** @return array<string, mixed> */
-    public function resolve(?CarbonInterface $at = null): array
+    public function resolve(?CarbonInterface $at = null, ?\App\Models\Student $student = null): array
     {
         $at = Carbon::parse($at ?? now());
 
-        if ($this->isWeekend($at) && ! $this->grid->hasCoursesOn($at)) {
+        if ($this->isWeekend($at) && ! $this->grid->hasCoursesOn($at, $student)) {
             return $this->buildWeekendTheme();
         }
 
-        $periodNumber = $this->grid->currentPeriodNumber($at);
+        $periodNumber = $this->grid->currentPeriodNumber($at, $student);
         if ($periodNumber === null) {
             return $this->buildDefaultTheme();
         }
 
-        $slot = $this->grid->currentSlot($at);
+        $slot = $this->grid->currentSlot($at, $student);
         if ($slot === null) {
             return $this->buildDefaultTheme();
         }

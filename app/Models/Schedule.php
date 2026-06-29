@@ -40,6 +40,43 @@ class Schedule extends Model
         return $this->belongsToMany(Exam::class)->withTimestamps();
     }
 
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_schedule')->withTimestamps();
+    }
+
+    public function notions(): BelongsToMany
+    {
+        return $this->belongsToMany(Notion::class, 'schedule_notion')->withTimestamps();
+    }
+
+    public function targetedStudents(): BelongsToMany
+    {
+        return $this->belongsToMany(Student::class, 'schedule_student')->withTimestamps();
+    }
+
+    public function studentItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ScheduleStudentItem::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function isVisibleToStudent(?Student $student): bool
+    {
+        if (! $student) {
+            return false;
+        }
+
+        if (! $this->relationLoaded('targetedStudents')) {
+            $this->load('targetedStudents');
+        }
+
+        if ($this->targetedStudents->isEmpty()) {
+            return true;
+        }
+
+        return $this->targetedStudents->contains('id', $student->id);
+    }
+
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
@@ -71,6 +108,18 @@ class Schedule extends Model
         }
 
         if ($this->relationLoaded('exams') && $this->exams->isNotEmpty()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('projects') && $this->projects->isNotEmpty()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('notions') && $this->notions->isNotEmpty()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('studentItems') && $this->studentItems->isNotEmpty()) {
             return true;
         }
 

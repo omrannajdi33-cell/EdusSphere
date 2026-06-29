@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ExamAttemptController;
 use App\Http\Controllers\Admin\ExamController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LessonController;
+use App\Http\Controllers\Admin\NotionController;
 use App\Http\Controllers\Admin\LessonDocumentController;
 use App\Http\Controllers\Admin\PointActionController;
 use App\Http\Controllers\Admin\PointController;
@@ -91,6 +92,14 @@ Route::prefix('admin')
 
         Route::resource('subjects', SubjectController::class)->except(['show']);
         Route::resource('subjects.skills', SkillController::class)->except(['show']);
+
+        Route::get('notions', [NotionController::class, 'index'])->name('notions.index');
+        Route::post('notion-categories', [NotionController::class, 'storeCategory'])->name('notion-categories.store');
+        Route::put('notion-categories/{category}', [NotionController::class, 'updateCategory'])->name('notion-categories.update');
+        Route::delete('notion-categories/{category}', [NotionController::class, 'destroyCategory'])->name('notion-categories.destroy');
+        Route::post('notions', [NotionController::class, 'storeNotion'])->name('notions.store');
+        Route::put('notions/{notion}', [NotionController::class, 'updateNotion'])->name('notions.update');
+        Route::delete('notions/{notion}', [NotionController::class, 'destroyNotion'])->name('notions.destroy');
 
         Route::get('activities/{activity}/build', [AdminActivityController::class, 'build'])->name('activities.build');
         Route::get('activities/{activity}/preview', [AdminActivityController::class, 'preview'])->name('activities.preview');

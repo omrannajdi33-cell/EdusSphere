@@ -69,6 +69,11 @@ class Activity extends Model
         return $this->belongsToMany(Student::class, 'activity_student')->withTimestamps();
     }
 
+    public function notions(): BelongsToMany
+    {
+        return $this->belongsToMany(Notion::class)->withTimestamps();
+    }
+
     public function isPublished(): bool
     {
         return $this->status === 'published';

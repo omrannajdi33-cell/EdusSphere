@@ -22,6 +22,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <x-button href="{{ route('admin.subjects.skills.index', $subject) }}" variant="secondary" class="es-btn-sm">Compétences</x-button>
+                    <x-button href="{{ route('admin.notions.index', ['subject' => $subject->id]) }}" variant="secondary" class="es-btn-sm">Notions</x-button>
                     <x-button href="{{ route('admin.subjects.edit', $subject) }}" variant="secondary" class="es-btn-sm">Modifier</x-button>
                     <form method="POST" action="{{ route('admin.subjects.destroy', $subject) }}" onsubmit="return confirm('Supprimer cette matière et ses compétences ?')">
                         @csrf

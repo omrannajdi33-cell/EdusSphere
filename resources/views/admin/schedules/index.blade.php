@@ -67,6 +67,10 @@
                                         'ends_at' => substr((string) ($slot['ends_at'] ?? '09:45'), 0, 5),
                                         'activity_ids' => $slot['activity_ids'] ?? [],
                                         'exam_ids' => $slot['exam_ids'] ?? [],
+                                        'project_ids' => $slot['project_ids'] ?? [],
+                                        'notion_ids' => $slot['notion_ids'] ?? [],
+                                        'student_ids' => $slot['student_ids'] ?? [],
+                                        'student_items' => $slot['student_items'] ?? [],
                                     ]))"
                                 >
                                     <span class="es-schedule-slot-compact-label">{{ $slot['grid_label'] }}</span>
@@ -94,7 +98,7 @@
         </div>
     </x-card>
 
-    <p class="text-sm text-es-muted">Clique un cours pour l'horaire, le matériel, les activités et examens liés.</p>
+    <p class="text-sm text-es-muted">Clique un cours pour planifier matériel, notions, activités, examens, projets et le travail par élève.</p>
 </div>
 
 <div
@@ -106,6 +110,9 @@
         'updateUrl' => url('/admin/schedules'),
         'activities' => $linkableActivities->map(fn ($a) => ['id' => $a->id, 'title' => $a->title, 'subject_id' => $a->subject_id, 'subject' => $a->subject?->name])->values(),
         'exams' => $linkableExams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title, 'subject_id' => $e->subject_id, 'subject' => $e->subject?->name])->values(),
+        'projects' => $linkableProjects->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'subject_id' => $p->subject_id, 'subject' => $p->subject?->name])->values(),
+        'notions' => $linkableNotions->map(fn ($n) => ['id' => $n->id, 'title' => $n->title, 'subject_id' => $n->subject_id, 'category' => $n->category?->name])->values(),
+        'students' => $students->map(fn ($s) => ['id' => $s->id, 'name' => $s->full_name])->values(),
     ]))"
     x-on:open-schedule-modal.window="open($event.detail)"
     @keydown.escape.window="close()"
@@ -117,7 +124,7 @@
             <div class="flex items-start justify-between gap-4 mb-6">
                 <div>
                     <h2 class="text-2xl font-black text-es-ink" x-text="editing ? 'Détail du cours' : 'Planifier un cours'"></h2>
-                    <p class="text-sm text-es-muted mt-1">Horaire, matériel, activités et examens pour cette période.</p>
+                    <p class="text-sm text-es-muted mt-1">Horaire, notions, contenus liés et plan personnalisé par élève.</p>
                 </div>
                 <button type="button" class="rounded-xl p-2 text-es-muted hover:bg-stone-100 hover:text-es-ink" @click="close()" aria-label="Fermer">✕</button>
             </div>
@@ -215,6 +222,41 @@
 
                 <div class="grid gap-6 lg:grid-cols-2 mt-6 pt-6 border-t border-stone-100">
                     <div>
+                        <label class="es-label">Notions travaillées</label>
+                        <p class="text-xs text-es-muted mb-3">Notions de la banque (par matière).</p>
+                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
+                            <template x-for="notion in filteredNotions()" :key="'n-' + notion.id">
+                                <label class="es-schedule-link-item">
+                                    <input type="checkbox" name="notion_ids[]" :value="notion.id" :checked="isLinked('notion_ids', notion.id)" @change="toggleLink('notion_ids', notion.id)">
+                                    <span class="min-w-0">
+                                        <span class="font-bold text-es-ink block truncate" x-text="notion.title"></span>
+                                        <span class="text-xs text-es-muted" x-text="notion.category || 'Notion'"></span>
+                                    </span>
+                                </label>
+                            </template>
+                            <p x-show="filteredNotions().length === 0" class="text-sm text-es-muted py-4 text-center">Aucune notion pour cette matière. <a href="{{ route('admin.notions.index') }}" class="es-link">Créer des notions</a></p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="es-label">Projets liés</label>
+                        <p class="text-xs text-es-muted mb-3">Projets publiés pendant ce cours.</p>
+                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
+                            <template x-for="project in filteredProjects()" :key="'p-' + project.id">
+                                <label class="es-schedule-link-item">
+                                    <input type="checkbox" name="project_ids[]" :value="project.id" :checked="isLinked('project_ids', project.id)" @change="toggleLink('project_ids', project.id)">
+                                    <span class="min-w-0">
+                                        <span class="font-bold text-es-ink block truncate" x-text="project.title"></span>
+                                        <span class="text-xs text-es-muted" x-text="project.subject"></span>
+                                    </span>
+                                </label>
+                            </template>
+                            <p x-show="filteredProjects().length === 0" class="text-sm text-es-muted py-4 text-center">Aucun projet publié pour cette matière.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-2 mt-6 pt-6 border-t border-stone-100">
+                    <div>
                         <label class="es-label">Activités liées</label>
                         <p class="text-xs text-es-muted mb-3">Coche les activités prévues pendant ce cours.</p>
                         <div class="es-schedule-link-list max-h-44 overflow-y-auto">
@@ -248,6 +290,71 @@
                     </div>
                 </div>
 
+                <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+                    <div>
+                        <label class="es-label">Limiter à certains élèves (optionnel)</label>
+                        <p class="text-xs text-es-muted mb-3">Vide = visible par toute la classe. Sinon, seuls les élèves cochés voient ce créneau.</p>
+                        <div class="es-schedule-link-list max-h-36 overflow-y-auto">
+                            <template x-for="student in config.students" :key="'st-' + student.id">
+                                <label class="es-schedule-link-item">
+                                    <input type="checkbox" name="student_ids[]" :value="student.id" :checked="isLinked('student_ids', student.id)" @change="toggleLink('student_ids', student.id)">
+                                    <span class="font-semibold text-es-ink" x-text="student.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 space-y-4">
+                        <div>
+                            <p class="font-extrabold text-es-ink">Plan par élève</p>
+                            <p class="text-xs text-es-muted mt-1">Indique précisément ce que chaque élève doit faire (activité, examen ou projet).</p>
+                        </div>
+                        <div>
+                            <label class="es-label">Élève</label>
+                            <select x-model="planStudentId" class="es-select">
+                                <option value="">— Choisir un élève —</option>
+                                <template x-for="student in config.students" :key="'plan-' + student.id">
+                                    <option :value="String(student.id)" x-text="student.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div x-show="planStudentId" x-cloak class="grid gap-4 sm:grid-cols-3">
+                            <div>
+                                <p class="text-xs font-bold text-es-muted mb-2">Activités</p>
+                                <template x-for="activity in filteredActivities()" :key="'pa-' + activity.id">
+                                    <label class="flex items-center gap-2 text-sm py-1">
+                                        <input type="checkbox" :checked="studentHasItem('activity', activity.id)" @change="toggleStudentItem('activity', activity.id)">
+                                        <span class="truncate" x-text="activity.title"></span>
+                                    </label>
+                                </template>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-es-muted mb-2">Examens</p>
+                                <template x-for="exam in filteredExams()" :key="'pe-' + exam.id">
+                                    <label class="flex items-center gap-2 text-sm py-1">
+                                        <input type="checkbox" :checked="studentHasItem('exam', exam.id)" @change="toggleStudentItem('exam', exam.id)">
+                                        <span class="truncate" x-text="exam.title"></span>
+                                    </label>
+                                </template>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-es-muted mb-2">Projets</p>
+                                <template x-for="project in filteredProjects()" :key="'pp-' + project.id">
+                                    <label class="flex items-center gap-2 text-sm py-1">
+                                        <input type="checkbox" :checked="studentHasItem('project', project.id)" @change="toggleStudentItem('project', project.id)">
+                                        <span class="truncate" x-text="project.title"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                        <template x-for="(item, idx) in form.student_items" :key="'si-' + idx">
+                            <input type="hidden" :name="'student_items[' + idx + '][student_id]'" :value="item.student_id">
+                            <input type="hidden" :name="'student_items[' + idx + '][item_type]'" :value="item.item_type">
+                            <input type="hidden" :name="'student_items[' + idx + '][item_id]'" :value="item.item_id">
+                        </template>
+                    </div>
+                </div>
+
                 <div class="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-stone-100">
                     <x-button type="submit" x-text="editing ? 'Enregistrer' : 'Ajouter'"></x-button>
                     <x-button type="button" variant="secondary" @click="close()">Fermer</x-button>
@@ -268,11 +375,13 @@
 <script>
 function scheduleModal(config) {
     return {
+        config,
         openModal: false,
         editing: false,
         week: config.week,
         formAction: config.storeUrl,
         deleteUrl: '',
+        planStudentId: '',
         form: {
             subject_id: '',
             title: '',
@@ -287,6 +396,10 @@ function scheduleModal(config) {
             ends_at: '09:45',
             activity_ids: [],
             exam_ids: [],
+            project_ids: [],
+            notion_ids: [],
+            student_ids: [],
+            student_items: [],
         },
         defaultTimeHint() {
             const p = config.periods[this.form.period_number] || config.periods[1];
@@ -301,6 +414,14 @@ function scheduleModal(config) {
             if (!this.form.subject_id) return config.exams;
             return config.exams.filter((e) => String(e.subject_id) === String(this.form.subject_id));
         },
+        filteredProjects() {
+            if (!this.form.subject_id) return config.projects;
+            return config.projects.filter((p) => String(p.subject_id) === String(this.form.subject_id));
+        },
+        filteredNotions() {
+            if (!this.form.subject_id) return config.notions;
+            return config.notions.filter((n) => String(n.subject_id) === String(this.form.subject_id));
+        },
         isLinked(field, id) {
             return this.form[field].map(String).includes(String(id));
         },
@@ -314,10 +435,36 @@ function scheduleModal(config) {
                 this.form[field].push(key);
             }
         },
+        studentHasItem(type, id) {
+            if (!this.planStudentId) return false;
+            return this.form.student_items.some((item) =>
+                String(item.student_id) === String(this.planStudentId)
+                && item.item_type === type
+                && String(item.item_id) === String(id)
+            );
+        },
+        toggleStudentItem(type, id) {
+            if (!this.planStudentId) return;
+            const sid = String(this.planStudentId);
+            const iid = String(id);
+            const index = this.form.student_items.findIndex((item) =>
+                String(item.student_id) === sid && item.item_type === type && String(item.item_id) === iid
+            );
+            if (index >= 0) {
+                this.form.student_items.splice(index, 1);
+            } else {
+                this.form.student_items.push({
+                    student_id: sid,
+                    item_type: type,
+                    item_id: iid,
+                });
+            }
+        },
         open(detail = {}) {
             this.editing = Boolean(detail.id);
             this.formAction = this.editing ? `${config.updateUrl}/${detail.id}` : config.storeUrl;
             this.deleteUrl = this.editing ? `${config.updateUrl}/${detail.id}` : '';
+            this.planStudentId = '';
             const period = String(detail.period_number || 1);
             const periodDef = config.periods[period] || config.periods[1] || { starts_at: '08:30', ends_at: '09:45' };
             this.form = {
@@ -334,6 +481,15 @@ function scheduleModal(config) {
                 ends_at: detail.ends_at || periodDef.ends_at.slice(0, 5),
                 activity_ids: (detail.activity_ids || []).map(String),
                 exam_ids: (detail.exam_ids || []).map(String),
+                project_ids: (detail.project_ids || []).map(String),
+                notion_ids: (detail.notion_ids || []).map(String),
+                student_ids: (detail.student_ids || []).map(String),
+                student_items: (detail.student_items || []).map((item) => ({
+                    student_id: String(item.student_id),
+                    item_type: item.item_type,
+                    item_id: String(item.item_id),
+                    notes: item.notes || '',
+                })),
             };
             this.openModal = true;
         },

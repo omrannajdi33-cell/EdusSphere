@@ -59,6 +59,11 @@ class Project extends Model
             ->withTimestamps();
     }
 
+    public function notions(): BelongsToMany
+    {
+        return $this->belongsToMany(Notion::class)->withTimestamps();
+    }
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
