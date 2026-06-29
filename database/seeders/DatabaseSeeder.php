@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
                 SubjectSeeder::class,
                 SkillSeeder::class,
                 ProductionAdminSeeder::class,
+                OfficialNotionsSeeder::class,
             ]);
 
             return;
