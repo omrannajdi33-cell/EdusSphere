@@ -1675,9 +1675,59 @@
     }
 
     .es-schedule-cell {
-        @apply min-h-[5.5rem] rounded-xl p-1;
+        @apply min-h-[3.25rem] rounded-xl p-0.5;
         background: rgb(255 255 255 / 0.7);
-        border: 1px dashed rgb(214 211 209 / 0.8);
+        border: 1px dashed rgb(214 211 209 / 0.65);
+    }
+
+    .es-schedule-slot-compact {
+        @apply relative flex h-full min-h-[2.75rem] items-center justify-center rounded-lg px-1.5 py-2 transition-all duration-150;
+        background: color-mix(in srgb, var(--slot-color, #4f46e5) 18%, white);
+        border-left: 3px solid var(--slot-color, #4f46e5);
+    }
+
+    .es-schedule-slot-compact:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--slot-color, #4f46e5) 35%, transparent);
+    }
+
+    .es-schedule-slot-compact-label {
+        @apply block w-full text-center font-extrabold leading-tight text-es-ink;
+        font-size: 0.6875rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .es-schedule-slot-note-dot {
+        @apply absolute top-1 right-1 h-1.5 w-1.5 rounded-full;
+        background: var(--slot-color, #4f46e5);
+    }
+
+    .es-schedule-empty {
+        @apply flex h-full min-h-[2.75rem] w-full items-center justify-center rounded-lg text-xl font-light text-stone-300 transition-colors hover:bg-stone-50 hover:text-es-primary;
+    }
+
+    .es-schedule-modal {
+        @apply rounded-[1.75rem] bg-white p-6 sm:p-8;
+        box-shadow: var(--shadow-es-lg);
+        border: 1px solid var(--color-es-border);
+    }
+
+    .es-schedule-notes {
+        @apply font-medium leading-relaxed;
+        font-size: 0.9375rem;
+    }
+
+    .es-schedule-preview-list {
+        @apply list-disc pl-5 space-y-1 text-es-ink;
+    }
+
+    .es-schedule-date-pill {
+        @apply inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-150 hover:-translate-y-0.5;
+        background: color-mix(in srgb, var(--slot-color, #4f46e5) 10%, white);
+        border: 1px solid color-mix(in srgb, var(--slot-color, #4f46e5) 22%, transparent);
     }
 
     .es-schedule-slot {
@@ -1698,10 +1748,6 @@
         @apply inline-block mt-2 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide;
         background: rgb(255 255 255 / 0.7);
         color: var(--color-es-muted);
-    }
-
-    .es-schedule-empty {
-        @apply flex h-full min-h-[5rem] w-full items-center justify-center rounded-lg text-2xl font-light text-es-muted transition-colors hover:bg-stone-50 hover:text-es-primary;
     }
 
     .es-schedule-day-card {

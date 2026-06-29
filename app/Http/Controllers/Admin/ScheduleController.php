@@ -78,6 +78,8 @@ class ScheduleController extends Controller
             'starts_at' => $period['starts_at'] ?? '08:00',
             'ends_at' => $period['ends_at'] ?? '09:00',
             'schedule_date' => $isRecurring ? null : $validated['schedule_date'],
+            'materials' => $validated['materials'] ?? null,
+            'plan' => $validated['plan'] ?? null,
         ];
     }
 

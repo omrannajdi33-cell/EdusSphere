@@ -176,6 +176,7 @@ class ScheduleGrid
         return [
             'id' => $slot->id,
             'title' => $slot->display_title,
+            'grid_label' => $slot->gridLabel(),
             'color' => $slot->display_color,
             'subject_id' => $slot->subject_id,
             'subject' => $slot->subject?->name,
@@ -185,6 +186,9 @@ class ScheduleGrid
             'schedule_date' => $slot->schedule_date?->toDateString(),
             'day_of_week' => $slot->day_of_week,
             'period_number' => $slot->period_number,
+            'materials' => $slot->materials,
+            'plan' => $slot->plan,
+            'has_notes' => $slot->hasNotes(),
         ];
     }
 }

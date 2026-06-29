@@ -11,15 +11,15 @@
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <x-button href="{{ route('admin.schedules.index', ['week' => $prevWeek]) }}" variant="secondary" class="es-btn-sm">← Semaine</x-button>
+            <x-button href="{{ route('admin.schedules.index', ['week' => $prevWeek]) }}" variant="secondary" class="es-btn-sm">←</x-button>
             <x-button href="{{ route('admin.schedules.index', ['week' => now()->startOfWeek()->toDateString()]) }}" variant="secondary" class="es-btn-sm">Aujourd'hui</x-button>
-            <x-button href="{{ route('admin.schedules.index', ['week' => $nextWeek]) }}" variant="secondary" class="es-btn-sm">Semaine →</x-button>
-            <x-button type="button" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Ajouter une date</x-button>
+            <x-button href="{{ route('admin.schedules.index', ['week' => $nextWeek]) }}" variant="secondary" class="es-btn-sm">→</x-button>
+            <x-button type="button" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Date</x-button>
         </div>
     </div>
 
-    <x-card class="overflow-x-auto mb-8">
-        <div class="min-w-[960px]">
+    <x-card class="overflow-x-auto mb-6">
+        <div class="min-w-[880px]">
             <div class="es-schedule-grid-head">
                 <div class="es-schedule-time-col"></div>
                 @foreach ($grid['days'] as $day)
@@ -36,8 +36,8 @@
             @foreach ($grid['period_defs'] as $periodNumber => $periodDef)
                 <div class="es-schedule-grid-row">
                     <div class="es-schedule-time-col">
-                        <p class="font-bold text-es-ink text-sm">{{ $periodDef['label'] }}</p>
-                        <p class="text-xs text-es-muted">{{ substr($periodDef['starts_at'], 0, 5) }}–{{ substr($periodDef['ends_at'], 0, 5) }}</p>
+                        <p class="font-bold text-es-ink text-xs">{{ $periodNumber }}</p>
+                        <p class="text-[10px] text-es-muted leading-tight">{{ substr($periodDef['starts_at'], 0, 5) }}</p>
                     </div>
                     @foreach ($grid['days'] as $day)
                         @php $slot = $day['periods'][$periodNumber] ?? null; @endphp
@@ -49,8 +49,9 @@
                             @if ($slot)
                                 <button
                                     type="button"
-                                    class="es-schedule-slot w-full text-left"
+                                    class="es-schedule-slot-compact w-full"
                                     style="--slot-color: {{ $slot['color'] }}"
+                                    title="{{ $slot['title'] }}"
                                     @click="$dispatch('open-schedule-modal', {
                                         id: {{ $slot['id'] }},
                                         mode: '{{ $slot['is_specific'] ? 'specific' : 'recurring' }}',
@@ -59,29 +60,27 @@
                                         period_number: {{ $periodNumber }},
                                         day_of_week: {{ $day['day_of_week'] }},
                                         schedule_date: '{{ $slot['schedule_date'] ?? $day['date_key'] }}',
+                                        materials: @js($slot['materials'] ?? ''),
+                                        plan: @js($slot['plan'] ?? ''),
                                     })"
                                 >
-                                    <span class="es-schedule-slot-title">{{ $slot['title'] }}</span>
-                                    <span class="es-schedule-slot-sub">{{ $slot['subject'] }}</span>
-                                    @if ($slot['is_specific'])
-                                        <span class="es-schedule-slot-badge">Date choisie</span>
-                                    @else
-                                        <span class="es-schedule-slot-badge es-schedule-slot-badge-recurring">Chaque semaine</span>
+                                    <span class="es-schedule-slot-compact-label">{{ $slot['grid_label'] }}</span>
+                                    @if ($slot['has_notes'] ?? false)
+                                        <span class="es-schedule-slot-note-dot" aria-hidden="true"></span>
                                     @endif
                                 </button>
                             @else
                                 <button
                                     type="button"
                                     class="es-schedule-empty"
+                                    aria-label="Ajouter un cours"
                                     @click="$dispatch('open-schedule-modal', {
                                         mode: 'specific',
                                         period_number: {{ $periodNumber }},
                                         day_of_week: {{ $day['day_of_week'] }},
                                         schedule_date: '{{ $day['date_key'] }}',
                                     })"
-                                >
-                                    +
-                                </button>
+                                >+</button>
                             @endif
                         </div>
                     @endforeach
@@ -90,24 +89,15 @@
         </div>
     </x-card>
 
-    <p class="text-sm text-es-muted mb-8">
-        Clique une case pour ajouter un cours sur <strong>cette date précise</strong>, ou choisis « Chaque semaine » pour un créneau récurrent.
-        Tu peux planifier n'importe quel jour, y compris le week-end.
-    </p>
+    <p class="text-sm text-es-muted mb-8">Clique un cours pour voir le détail, le matériel et ta planification.</p>
 
     @if ($upcomingDates->isNotEmpty())
-        <div class="mb-4 flex items-center justify-between gap-4">
-            <h2 class="es-section-title !mb-0">Dates planifiées</h2>
-            <x-button type="button" variant="secondary" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Nouvelle date</x-button>
-        </div>
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 class="es-section-title">Dates à venir</h2>
+        <div class="flex flex-wrap gap-2 mb-4">
             @foreach ($upcomingDates as $entry)
-                @php
-                    $periodDef = $grid['period_defs'][$entry->period_number] ?? null;
-                @endphp
                 <button
                     type="button"
-                    class="es-schedule-date-card text-left"
+                    class="es-schedule-date-pill"
                     style="--slot-color: {{ $entry->display_color }}"
                     @click="$dispatch('open-schedule-modal', {
                         id: {{ $entry->id }},
@@ -117,18 +107,12 @@
                         period_number: {{ $entry->period_number }},
                         day_of_week: {{ $entry->day_of_week }},
                         schedule_date: '{{ $entry->schedule_date->toDateString() }}',
+                        materials: @js($entry->materials ?? ''),
+                        plan: @js($entry->plan ?? ''),
                     })"
                 >
-                    <p class="text-xs font-bold uppercase tracking-wide text-es-muted">
-                        {{ $entry->schedule_date->translatedFormat('l j F Y') }}
-                    </p>
-                    <p class="font-extrabold text-es-ink mt-1">{{ $entry->display_title }}</p>
-                    <p class="text-sm text-es-muted mt-1">
-                        {{ $entry->subject?->name }}
-                        @if ($periodDef)
-                            · {{ $periodDef['label'] }} ({{ substr($periodDef['starts_at'], 0, 5) }}–{{ substr($periodDef['ends_at'], 0, 5) }})
-                        @endif
-                    </p>
+                    <span>{{ $entry->schedule_date->translatedFormat('D j M') }}</span>
+                    <span class="font-extrabold">{{ $entry->gridLabel() }}</span>
                 </button>
             @endforeach
         </div>
@@ -137,7 +121,6 @@
 
 <div
     x-data="scheduleModal(@js([
-        'subjects' => $subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'color' => $s->color])->values(),
         'dayLabels' => $dayLabels,
         'periods' => $grid['period_defs'],
         'week' => $grid['week_start']->toDateString(),
@@ -148,75 +131,119 @@
     @keydown.escape.window="close()"
     x-cloak
 >
-    <div x-show="openModal" x-cloak class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-5" role="dialog" aria-modal="true">
+    <div x-show="openModal" x-cloak class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
         <div class="es-modal-backdrop" @click="close()"></div>
-        <div class="es-modal-panel relative w-full max-w-md" @click.outside="close()">
-            <h2 class="text-xl font-black text-es-ink mb-1" x-text="editing ? 'Modifier le créneau' : 'Nouveau créneau'"></h2>
-            <p class="text-sm text-es-muted mb-5">Choisis la matière, la date et la période.</p>
+        <div class="es-schedule-modal relative w-full max-w-3xl max-h-[90vh] overflow-y-auto" @click.outside="close()">
+            <div class="flex items-start justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-es-ink" x-text="editing ? 'Détail du cours' : 'Planifier un cours'"></h2>
+                    <p class="text-sm text-es-muted mt-1" x-show="editing" x-cloak>Modifie les infos, le matériel et ta planification.</p>
+                </div>
+                <button type="button" class="rounded-xl p-2 text-es-muted hover:bg-stone-100 hover:text-es-ink" @click="close()" aria-label="Fermer">✕</button>
+            </div>
 
-            <form :action="formAction" method="POST" class="space-y-4">
+            <form :action="formAction" method="POST">
                 @csrf
                 <template x-if="editing"><input type="hidden" name="_method" value="PUT"></template>
                 <input type="hidden" name="week" :value="week">
 
-                <div>
-                    <label class="es-label">Matière</label>
-                    <select name="subject_id" x-model="form.subject_id" class="es-select" required>
-                        <option value="">— Choisir —</option>
-                        @foreach ($subjects as $subject)
-                            <option value="{{ $subject->id }}">{{ $subject->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="es-label">Matière</label>
+                            <select name="subject_id" x-model="form.subject_id" class="es-select" required>
+                                <option value="">— Choisir —</option>
+                                @foreach ($subjects as $subject)
+                                    <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                <div>
-                    <label class="es-label">Titre (optionnel)</label>
-                    <input type="text" name="title" x-model="form.title" class="es-input" placeholder="Ex. Lecture, Fractions…">
-                </div>
+                        <div>
+                            <label class="es-label">Titre du cours</label>
+                            <input type="text" name="title" x-model="form.title" class="es-input" placeholder="Ex. Fractions, Lecture…">
+                        </div>
 
-                <div>
-                    <label class="es-label">Période</label>
-                    <select name="period_number" x-model="form.period_number" class="es-select" required>
-                        @foreach ($grid['period_defs'] as $num => $def)
-                            <option value="{{ $num }}">{{ $def['label'] }} ({{ substr($def['starts_at'], 0, 5) }}–{{ substr($def['ends_at'], 0, 5) }})</option>
-                        @endforeach
-                    </select>
-                </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="es-label">Période</label>
+                                <select name="period_number" x-model="form.period_number" class="es-select" required>
+                                    @foreach ($grid['period_defs'] as $num => $def)
+                                        <option value="{{ $num }}">P{{ $num }} · {{ substr($def['starts_at'], 0, 5) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="es-label">Répétition</label>
+                                <select name="mode" x-model="form.mode" class="es-select" required>
+                                    <option value="specific">Date précise</option>
+                                    <option value="recurring">Chaque semaine</option>
+                                </select>
+                            </div>
+                        </div>
 
-                <div>
-                    <label class="es-label">Planification</label>
-                    <div class="flex flex-wrap gap-2">
-                        <label class="es-qtype-chip" :class="form.mode === 'specific' ? 'es-qtype-chip-active' : ''">
-                            <input type="radio" name="mode" value="specific" x-model="form.mode" class="sr-only"> Date précise
-                        </label>
-                        <label class="es-qtype-chip" :class="form.mode === 'recurring' ? 'es-qtype-chip-active' : ''">
-                            <input type="radio" name="mode" value="recurring" x-model="form.mode" class="sr-only"> Chaque semaine
-                        </label>
+                        <div x-show="form.mode === 'specific'" x-cloak>
+                            <label class="es-label">Date</label>
+                            <input type="date" name="schedule_date" x-model="form.schedule_date" class="es-input" :required="form.mode === 'specific'">
+                        </div>
+
+                        <div x-show="form.mode === 'recurring'" x-cloak>
+                            <label class="es-label">Jour</label>
+                            <select name="day_of_week" x-model="form.day_of_week" class="es-select" :required="form.mode === 'recurring'">
+                                @foreach ($dayLabels as $dow => $label)
+                                    <option value="{{ $dow }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="es-label">Matériel nécessaire</label>
+                            <textarea
+                                name="materials"
+                                x-model="form.materials"
+                                class="es-textarea es-schedule-notes"
+                                rows="5"
+                                placeholder="Un élément par ligne&#10;Ex.&#10;Cahier de maths&#10;Règle et équerre&#10;Crayons de couleur"
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="es-label">Ce que je planifie</label>
+                            <textarea
+                                name="plan"
+                                x-model="form.plan"
+                                class="es-textarea es-schedule-notes"
+                                rows="5"
+                                placeholder="Un point par ligne&#10;Ex.&#10;Correction du devoir&#10;Leçon sur les fractions&#10;Exercices en autonomie"
+                            ></textarea>
+                        </div>
+
+                        <div x-show="editing && (form.materials || form.plan)" x-cloak class="rounded-2xl bg-stone-50 p-4 text-sm space-y-3">
+                            <template x-if="form.materials">
+                                <div>
+                                    <p class="font-bold text-es-muted text-xs uppercase mb-2">Aperçu matériel</p>
+                                    <ul class="es-schedule-preview-list" x-html="previewList(form.materials)"></ul>
+                                </div>
+                            </template>
+                            <template x-if="form.plan">
+                                <div>
+                                    <p class="font-bold text-es-muted text-xs uppercase mb-2">Aperçu plan</p>
+                                    <ul class="es-schedule-preview-list" x-html="previewList(form.plan)"></ul>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
-                <div x-show="form.mode === 'specific'" x-cloak>
-                    <label class="es-label">Date du cours</label>
-                    <input type="date" name="schedule_date" x-model="form.schedule_date" class="es-input" :required="form.mode === 'specific'">
-                    <p class="text-xs text-es-muted mt-1">Tu choisis librement le jour — lundi, samedi, vacances, etc.</p>
-                </div>
-
-                <div x-show="form.mode === 'recurring'" x-cloak>
-                    <label class="es-label">Jour (chaque semaine)</label>
-                    <select name="day_of_week" x-model="form.day_of_week" class="es-select" :required="form.mode === 'recurring'">
-                        @foreach ($dayLabels as $dow => $label)
-                            <option value="{{ $dow }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="flex flex-wrap gap-2 pt-2">
+                <div class="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-stone-100">
                     <x-button type="submit" x-text="editing ? 'Enregistrer' : 'Ajouter'"></x-button>
-                    <x-button type="button" variant="secondary" @click="close()">Annuler</x-button>
+                    <x-button type="button" variant="secondary" @click="close()">Fermer</x-button>
                 </div>
             </form>
 
-            <form x-show="editing" x-cloak :action="deleteUrl" method="POST" class="mt-3" onsubmit="return confirm('Supprimer ce créneau ?')">
+            <form x-show="editing" x-cloak :action="deleteUrl" method="POST" class="mt-3 flex justify-end" onsubmit="return confirm('Supprimer ce créneau ?')">
                 @csrf
                 @method('DELETE')
                 <input type="hidden" name="week" :value="week">
@@ -242,6 +269,16 @@ function scheduleModal(config) {
             mode: 'specific',
             day_of_week: '1',
             schedule_date: '',
+            materials: '',
+            plan: '',
+        },
+        previewList(text) {
+            return String(text || '')
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => `<li>${line.replace(/</g, '&lt;')}</li>`)
+                .join('');
         },
         open(detail = {}) {
             this.editing = Boolean(detail.id);
@@ -254,6 +291,8 @@ function scheduleModal(config) {
                 mode: detail.mode || 'specific',
                 day_of_week: String(detail.day_of_week || 1),
                 schedule_date: detail.schedule_date || '',
+                materials: detail.materials || '',
+                plan: detail.plan || '',
             };
             this.openModal = true;
         },

@@ -34,6 +34,8 @@ class StoreScheduleRequest extends FormRequest
                 'nullable',
                 'date',
             ],
+            'materials' => ['nullable', 'string', 'max:5000'],
+            'plan' => ['nullable', 'string', 'max:5000'],
         ];
     }
 

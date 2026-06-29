@@ -16,6 +16,8 @@ class Schedule extends Model
         'starts_at',
         'ends_at',
         'schedule_date',
+        'materials',
+        'plan',
     ];
 
     protected function casts(): array
@@ -43,5 +45,44 @@ class Schedule extends Model
     public function isRecurring(): bool
     {
         return $this->schedule_date === null;
+    }
+
+    public function hasNotes(): bool
+    {
+        return filled($this->materials) || filled($this->plan);
+    }
+
+    /** @return list<string> */
+    public function materialsLines(): array
+    {
+        return $this->linesFromText($this->materials);
+    }
+
+    /** @return list<string> */
+    public function planLines(): array
+    {
+        return $this->linesFromText($this->plan);
+    }
+
+    /** @return list<string> */
+    private function linesFromText(?string $text): array
+    {
+        if ($text === null || trim($text) === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $text))));
+    }
+
+    public function gridLabel(): string
+    {
+        $subject = $this->subject?->name ?? 'Cours';
+        $title = trim($this->title ?? '');
+
+        if ($title === '' || strcasecmp($title, $subject) === 0) {
+            return $subject;
+        }
+
+        return $title;
     }
 }
