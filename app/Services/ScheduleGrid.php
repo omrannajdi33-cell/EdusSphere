@@ -77,6 +77,39 @@ class ScheduleGrid
         return array_fill_keys(array_keys(config('schedule.periods', [])), null);
     }
 
+    /** @return array<string, mixed>|null */
+    public function currentSlot(CarbonInterface $at): ?array
+    {
+        if ($at->dayOfWeekIso >= 6) {
+            return null;
+        }
+
+        $periodNumber = $this->currentPeriodNumber($at);
+        if ($periodNumber === null) {
+            return null;
+        }
+
+        $periods = $this->forDay($at);
+
+        return $periods[$periodNumber] ?? null;
+    }
+
+    public function currentPeriodNumber(CarbonInterface $at): ?int
+    {
+        $time = $at->format('H:i:s');
+
+        foreach (config('schedule.periods', []) as $number => $def) {
+            $starts = strlen($def['starts_at']) === 5 ? $def['starts_at'].':00' : $def['starts_at'];
+            $ends = strlen($def['ends_at']) === 5 ? $def['ends_at'].':00' : $def['ends_at'];
+
+            if ($time >= $starts && $time <= $ends) {
+                return (int) $number;
+            }
+        }
+
+        return null;
+    }
+
     /** @return list<int> */
     public function monthEventDays(int $year, int $month): array
     {

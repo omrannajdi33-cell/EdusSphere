@@ -2,9 +2,24 @@
 
 @section('title', 'Mon espace — '.config('app.name'))
 
+@push('head')
+    <meta name="theme-color" content="{{ $scheduleTheme['color'] ?? '#4f46e5' }}">
+@endpush
+
 @section('content')
-<div class="relative min-h-screen flex flex-col pb-32 lg:pb-10">
-    <header class="es-header">
+@php
+    $themeSlug = $scheduleTheme['slug'] ?? 'default';
+    $themeColor = $scheduleTheme['color'] ?? '#4f46e5';
+    $gradient = $scheduleTheme['gradient'] ?? ['#eef2ff', '#e0f2fe', '#f8fafc'];
+@endphp
+<div
+    class="es-student-shell es-theme-{{ $themeSlug }} relative min-h-screen flex flex-col pb-32 lg:pb-10"
+    style="--es-theme-color: {{ $themeColor }}; --es-theme-g1: {{ $gradient[0] ?? '#eef2ff' }}; --es-theme-g2: {{ $gradient[1] ?? '#e0f2fe' }}; --es-theme-g3: {{ $gradient[2] ?? '#f8fafc' }};"
+>
+    <div class="es-student-theme-bg" aria-hidden="true"></div>
+    <x-student-theme-deco :theme="$scheduleTheme" />
+
+    <header class="es-header es-student-themed-header">
         <div class="es-header-inner">
             <x-logo subtitle="Mon espace" />
             <div class="flex items-center gap-2">
@@ -47,9 +62,11 @@
         </div>
     </header>
 
+    <x-student-theme-banner :theme="$scheduleTheme" />
+
     <x-student-bottom-nav :active="$activeNav ?? 'home'" />
 
-    <main class="flex-1 es-container py-6 md:py-10">
+    <main class="relative z-[1] flex-1 es-container py-6 md:py-10">
         @yield('student-content')
     </main>
 </div>

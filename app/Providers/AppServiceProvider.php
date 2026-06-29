@@ -39,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('pointsTotal', $student
                 ? app(BehaviorPointService::class)->totalFor($student)
                 : 0);
+            $view->with('scheduleTheme', app(\App\Services\StudentScheduleThemeService::class)->resolve());
         });
     }
 }
