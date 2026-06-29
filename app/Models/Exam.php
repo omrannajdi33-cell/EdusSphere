@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDeviceType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exam extends Model
 {
+    use HasDeviceType;
     protected $fillable = [
         'subject_id',
         'skill_id',
@@ -16,6 +18,7 @@ class Exam extends Model
         'source_activity_id',
         'title',
         'description',
+        'device_type',
         'duration_minutes',
         'max_attempts',
         'opens_at',

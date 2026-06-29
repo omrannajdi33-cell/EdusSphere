@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Exam;
 use App\Models\Lesson;
 use App\Models\Progression;
+use App\Models\Project;
 use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Support\Collection;
@@ -32,6 +33,14 @@ class StudentDashboardStats
             ->get();
 
         $homeworkPending = $homework->filter(fn (Activity $a) => $a->isPendingForStudent($student))->count();
+
+        $projects = Project::query()
+            ->where('status', 'published')
+            ->whereHas('assignedStudents', fn ($q) => $q->where('students.id', $student->id))
+            ->with(['submissions' => fn ($q) => $q->where('student_id', $student->id)])
+            ->get();
+
+        $projectsPending = $projects->filter(fn (Project $p) => $p->isPendingForStudent($student))->count();
 
         $progressions = Progression::query()
             ->where('student_id', $student->id)
@@ -74,6 +83,8 @@ class StudentDashboardStats
         return [
             'activities_count' => $activities->count(),
             'homework_pending_count' => $homeworkPending,
+            'projects_count' => $projects->count(),
+            'projects_pending_count' => $projectsPending,
             'lessons_count' => $lessons->count(),
             'exams_active_count' => $examsActive,
             'in_progress_count' => $inProgress->count(),
@@ -90,6 +101,8 @@ class StudentDashboardStats
         return [
             'activities_count' => 0,
             'homework_pending_count' => 0,
+            'projects_count' => 0,
+            'projects_pending_count' => 0,
             'lessons_count' => 0,
             'exams_active_count' => 0,
             'in_progress_count' => 0,

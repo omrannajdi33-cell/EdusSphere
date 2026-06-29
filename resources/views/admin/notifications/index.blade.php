@@ -29,6 +29,9 @@
                     </div>
                     <form method="POST" action="{{ route('admin.notifications.read', $notification) }}">
                         @csrf
+                        @if (! empty($data['url']))
+                            <input type="hidden" name="redirect" value="{{ $data['url'] }}">
+                        @endif
                         <x-button type="submit" variant="secondary" class="es-btn-sm">
                             {{ $notification->read_at ? 'Voir' : 'Marquer lu' }}
                         </x-button>

@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\SkillSeeder;
 use Database\Seeders\SubjectSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SubjectWorkspacePageTest extends TestCase
@@ -48,5 +49,34 @@ class SubjectWorkspacePageTest extends TestCase
         $page = $activity->pages()->firstOrFail();
         $this->assertSame('reading_comprehension', $page->type);
         $this->assertSame('Il était une fois…', $page->content['passage']);
+    }
+
+    public function test_recitation_page_includes_voice_recording_for_correction(): void
+    {
+        Storage::fake('private');
+
+        $subject = Subject::where('name', 'Islam')->first()
+            ?? Subject::where('name', 'Français')->firstOrFail();
+        $skill = $subject->skills()->firstOrFail();
+
+        $activity = Activity::create([
+            'subject_id' => $subject->id,
+            'skill_id' => $skill->id,
+            'title' => 'Récitation',
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->post(route('admin.activities.pages.store', $activity), [
+                'title' => 'Sourate',
+                'type' => 'recitation',
+                'body' => 'Récite à voix haute.',
+                'passage' => 'بِسْمِ اللَّهِ',
+            ])
+            ->assertRedirect();
+
+        $page = $activity->pages()->firstOrFail();
+        $this->assertTrue($page->isRecitation());
+        $this->assertTrue($page->recordsVoice());
     }
 }

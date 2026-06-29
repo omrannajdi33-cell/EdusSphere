@@ -19,10 +19,14 @@ $badges = [
             @php
                 $isActive = $active === $item['key'];
                 if (! $isActive && ! empty($item['routes'])) {
-                    foreach ($item['routes'] as $pattern) {
-                        if (request()->routeIs($pattern)) {
-                            $isActive = true;
-                            break;
+                    $excluded = ! empty($item['exclude_routes'])
+                        && collect($item['exclude_routes'])->contains(fn ($pattern) => request()->routeIs($pattern));
+                    if (! $excluded) {
+                        foreach ($item['routes'] as $pattern) {
+                            if (request()->routeIs($pattern)) {
+                                $isActive = true;
+                                break;
+                            }
                         }
                     }
                 }

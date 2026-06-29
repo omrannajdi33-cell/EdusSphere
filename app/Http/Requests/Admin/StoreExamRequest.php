@@ -22,6 +22,7 @@ class StoreExamRequest extends FormRequest
             'report_period_id' => ['nullable', 'exists:report_periods,id'],
             'weight_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'source_activity_id' => ['nullable', 'exists:activities,id'],
+            'device_type' => ['required', Rule::in(array_keys(config('edusphere.device_types', [])))],
             'duration_minutes' => ['required', 'integer', 'min:5', 'max:480'],
             'max_attempts' => ['required', 'integer', 'min:1', 'max:10'],
             'opens_at' => ['required', 'date'],
@@ -34,6 +35,7 @@ class StoreExamRequest extends FormRequest
     {
         return [
             'title.required' => 'Le titre est obligatoire.',
+            'device_type.required' => 'Indique si l\'examen se fait sur tablette ou ordinateur.',
             'closes_at.after' => 'La date de fermeture doit être après l\'ouverture.',
         ];
     }

@@ -64,7 +64,7 @@ return [
         ],
         'recitation' => [
             'label' => 'Récitation / Coran',
-            'description' => 'Texte sacré, écoute, masquer pour mémoriser.',
+            'description' => 'Texte sacré, écoute modèle, masquer le texte et enregistrer la voix pour correction.',
             'icon' => '🕌',
             'color' => '#059669',
             'subject' => 'islam',

@@ -12,6 +12,7 @@ class Correction extends Model
         'student_id',
         'activity_id',
         'exam_attempt_id',
+        'project_submission_id',
         'teacher_id',
         'status',
         'score',
@@ -38,6 +39,11 @@ class Correction extends Model
     public function examAttempt(): BelongsTo
     {
         return $this->belongsTo(ExamAttempt::class);
+    }
+
+    public function projectSubmission(): BelongsTo
+    {
+        return $this->belongsTo(ProjectSubmission::class);
     }
 
     public function teacher(): BelongsTo

@@ -94,6 +94,11 @@
                     <p class="text-xs text-es-muted mt-1">L'élève pourra consulter cette leçon pendant l'activité.</p>
                 </div>
 
+                <x-device-type-picker
+                    :value="old('device_type', $activity->device_type ?? 'tablet')"
+                    :error="$errors->first('device_type')"
+                />
+
                 @php
                     $isHomework = (bool) old('is_homework', $activity->is_homework ?? false);
                     $dueValue = old('due_at', $activity->due_at?->format('Y-m-d\TH:i'));
@@ -374,6 +379,9 @@
                                 <input type="file" name="audio" accept="audio/*" class="es-input">
                                 <p class="text-xs text-es-muted mt-1">L'élève pourra écouter et masquer/réafficher le texte.</p>
                             </div>
+                            <div x-show="pageType === 'recitation'" class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-sm text-emerald-900">
+                                L'élève pourra <strong>enregistrer sa voix</strong> (récitation). L'enregistrement est sauvegardé pour que tu puisses l'écouter en correction.
+                            </div>
                         </div>
 
                         <div x-show="pageType === 'oral_recording'" x-cloak class="rounded-2xl bg-pink-50 border border-pink-100 p-4 text-sm text-pink-900" style="display: none;">
@@ -422,6 +430,11 @@
                     <div class="rounded-2xl bg-stone-50 p-5">
                         <h3 class="font-extrabold text-lg">{{ $activity->title }}</h3>
                         <p class="text-es-muted mt-1">{{ $activity->subject->name }} · {{ $activity->skill->name }}</p>
+                        @if ($activity->device_type)
+                            <p class="text-sm font-bold text-es-primary mt-2">
+                                <x-device-type-badge :device-type="$activity->device_type" size="md"/>
+                            </p>
+                        @endif
                         @if ($activity->description)
                             <p class="mt-3 text-sm">{{ $activity->description }}</p>
                         @endif

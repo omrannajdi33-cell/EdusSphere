@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('subject_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('skill_id')->nullable()->constrained()->nullOnDelete();
             $table->decimal('value', 5, 2);
-            $table->enum('type', ['activity', 'exam', 'average_skill', 'average_subject', 'general']);
+            $table->enum('type', ['activity', 'exam', 'project', 'average_skill', 'average_subject', 'general']);
             $table->unsignedBigInteger('source_id')->nullable();
             $table->timestamp('calculated_at');
             $table->timestamps();

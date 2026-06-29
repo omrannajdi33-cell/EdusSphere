@@ -24,10 +24,18 @@ class CorrectionController extends Controller
             ->latest('updated_at')
             ->get();
 
+        $projectCorrections = Correction::query()
+            ->with(['student.user', 'projectSubmission.project.subject'])
+            ->whereNotNull('project_submission_id')
+            ->whereIn('status', ['to_correct', 'submitted'])
+            ->latest('updated_at')
+            ->get();
+
         return view('admin.corrections.index', [
             'adminNav' => 'corrections',
             'activityCorrections' => $activityCorrections,
             'examCorrections' => $examCorrections,
+            'projectCorrections' => $projectCorrections,
         ]);
     }
 }

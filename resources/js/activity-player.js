@@ -1,4 +1,5 @@
 import { initSubjectWorkspaces, collectWorkspaceData, waitForPendingUploads } from './subject-workspaces';
+import { initSheetWorkspaces, getSheetDimensions, ensureSheetPageReady } from './sheet-workspace';
 import { csrfFetch, csrfToken, readErrorMessage } from './csrf-fetch';
 function initActivityPlayer(root) {
     if (!root || root.dataset.initialized === '1') {
@@ -98,11 +99,25 @@ function initActivityPlayer(root) {
         }
     });
 
-    window.addEventListener('resize', () => pages.forEach((p) => {
-        if (pageState.get(p)?.needsCanvas) {
-            resizeCanvas(p);
-        }
-    }));
+    window.addEventListener('resize', () => {
+        pages.forEach((pageEl) => {
+            if (isFullscreenSheetPage(pageEl)) {
+                const surface = pageEl.querySelector('[data-sheet-surface][data-math-scroll="1"]');
+                if (surface) {
+                    const scrollEl = surface.closest('[data-sheet-scroll]');
+                    const playerBody = surface.closest('.ap-player-body');
+                    const width = Math.max(320, scrollEl?.clientWidth || playerBody?.clientWidth || 900);
+                    const scrollHeight = parseInt(surface.dataset.scrollHeight, 10) || 3200;
+                    surface.style.width = `${width}px`;
+                    surface.dataset.sheetWidth = String(width);
+                    surface.dataset.sheetHeight = String(scrollHeight);
+                }
+            }
+            if (pageState.get(pageEl)?.needsCanvas) {
+                resizeCanvas(pageEl);
+            }
+        });
+    });
 
     toolButtons.forEach((btn) => {
         btn.addEventListener('click', () => setTool(btn.dataset.tool));
@@ -191,6 +206,14 @@ function initActivityPlayer(root) {
     });
 
     initSubjectWorkspaces(root);
+    initSheetWorkspaces(root);
+
+    root.addEventListener('activity-player:resize-sheet', () => {
+        const pageEl = pages[currentIndex];
+        if (pageEl && pageState.get(pageEl)?.needsCanvas) {
+            resizeCanvas(pageEl);
+        }
+    });
 
     showPage(currentIndex);
 
@@ -201,6 +224,16 @@ function initActivityPlayer(root) {
         });
 
         const state = pageState.get(pages[currentIndex]);
+        const pageEl = pages[currentIndex];
+        const isSheet = isFullscreenSheetPage(pageEl);
+        const drawTarget = isCorrection ? state?.teacherCanvas : state?.studentCanvas;
+
+        if (drawTarget && isSheet && !isCorrection) {
+            const allowDraw = tool !== 'pan';
+            drawTarget.classList.toggle('pointer-events-none', !allowDraw);
+            drawTarget.classList.toggle('touch-none', allowDraw);
+        }
+
         if (!state?.needsCanvas || !state.notes) {
             return;
         }
@@ -209,12 +242,16 @@ function initActivityPlayer(root) {
             state.notes.classList.remove('hidden');
             state.studentCanvas?.classList.add('pointer-events-none');
             state.notes.focus();
-        } else {
+        } else if (!isSheet || tool !== 'pan') {
             state.notes.classList.add('hidden');
-            if (!isCorrection) {
+            if (!isCorrection && tool !== 'pan') {
                 state.studentCanvas?.classList.remove('pointer-events-none');
             }
         }
+    }
+
+    function isFullscreenSheetPage(pageEl) {
+        return pageEl?.dataset.fullscreenSheet === '1';
     }
 
     function resizeCanvas(pageEl) {
@@ -223,20 +260,33 @@ function initActivityPlayer(root) {
             return;
         }
 
+        const sheet = getSheetDimensions(pageEl);
+        const ratio = window.devicePixelRatio || 1;
+
         [state.studentCanvas, state.teacherCanvas].filter(Boolean).forEach((canvas) => {
-            const parent = canvas.parentElement;
-            const rect = parent?.getBoundingClientRect() ?? { width: 800, height: 420 };
-            const isMath = pageEl.dataset.pageType === 'math_scroll';
-            const scrollH = parseInt(pageEl.dataset.scrollHeight, 10) || 3200;
-            const ratio = window.devicePixelRatio || 1;
-            canvas.width = Math.max(1, rect.width * ratio);
-            canvas.height = Math.max(isMath ? scrollH : 420, rect.height) * ratio;
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${Math.max(420, rect.height)}px`;
+            let width;
+            let height;
+
+            if (sheet) {
+                width = sheet.width;
+                height = sheet.height;
+            } else {
+                const parent = canvas.parentElement;
+                const rect = parent?.getBoundingClientRect() ?? { width: 800, height: 420 };
+                const isMath = pageEl.dataset.pageType === 'math_scroll';
+                const scrollH = parseInt(pageEl.dataset.scrollHeight, 10) || 3200;
+                width = rect.width;
+                height = Math.max(isMath ? scrollH : 420, rect.height);
+            }
+
+            canvas.width = Math.max(1, width * ratio);
+            canvas.height = Math.max(1, height * ratio);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
         });
 
-        state.studentCtx?.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
-        state.teacherCtx?.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+        state.studentCtx?.setTransform(ratio, 0, 0, ratio, 0, 0);
+        state.teacherCtx?.setTransform(ratio, 0, 0, ratio, 0, 0);
         redraw(pageEl);
     }
 
@@ -286,7 +336,7 @@ function initActivityPlayer(root) {
     }
 
     function onPointerDown(e, pageEl) {
-        if (pageEl !== pages[currentIndex] || (activeTool === 'text' && !isCorrection)) {
+        if (pageEl !== pages[currentIndex] || activeTool === 'pan' || (activeTool === 'text' && !isCorrection)) {
             return;
         }
         const state = pageState.get(pageEl);
@@ -345,10 +395,22 @@ function initActivityPlayer(root) {
         const state = pageState.get(pageEl);
         const richPanel = pageEl.querySelector('[data-rich-panel]');
         const richDrawMode = richPanel && richPanel.dataset.richMode === 'draw';
+        const isSheet = isFullscreenSheetPage(pageEl);
         const needsToolbar = state?.needsCanvas && (!isReadonly || isCorrection) && (!richPanel || richDrawMode);
 
         if (toolbar) {
             toolbar.classList.toggle('hidden', !needsToolbar);
+            toolbar.querySelector('.player-tool-pan')?.classList.toggle('hidden', !isSheet || isCorrection);
+        }
+
+        if (isSheet && !isCorrection && !isReadonly) {
+            setTool('pan');
+        } else if (needsToolbar) {
+            setTool(activeTool === 'pan' && !isSheet ? 'pen' : activeTool);
+        }
+
+        if (isSheet) {
+            ensureSheetPageReady(pageEl, root);
         }
 
         if (pageIndicator) {
@@ -369,8 +431,6 @@ function initActivityPlayer(root) {
         if (submitBtn) {
             submitBtn.classList.toggle('hidden', !isLast);
         }
-
-        setTool(activeTool);
 
         if (state?.needsCanvas) {
             requestAnimationFrame(() => resizeCanvas(pageEl));

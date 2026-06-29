@@ -43,7 +43,7 @@
     @endif
 
     {{-- Accès rapide --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-10">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
         <a href="{{ route('student.points.index') }}" class="es-quick-link group es-quick-link-points">
             <span class="text-2xl block mb-1">⭐</span>
             <span class="text-sm font-extrabold text-es-ink group-hover:text-amber-600">Mes points</span>
@@ -71,6 +71,17 @@
                     {{ $stats['homework_pending_count'] }} à faire
                 @else
                     À jour
+                @endif
+            </span>
+        </a>
+        <a href="{{ route('student.projects.index') }}" class="es-quick-link group">
+            <span class="text-2xl block mb-1">📁</span>
+            <span class="text-sm font-extrabold text-es-ink group-hover:text-es-primary">Projets</span>
+            <span class="text-xs font-bold text-violet-600 mt-1 block">
+                @if (($stats['projects_pending_count'] ?? 0) > 0)
+                    {{ $stats['projects_pending_count'] }} en cours
+                @else
+                    {{ $stats['projects_count'] ?? 0 }} assigné(s)
                 @endif
             </span>
         </a>

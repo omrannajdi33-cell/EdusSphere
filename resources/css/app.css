@@ -884,6 +884,35 @@
         box-shadow: 0 -1px 0 rgb(0 0 0 / 0.05);
     }
 
+    .ap-page-sheet-mode {
+        @apply bg-stone-100/50;
+    }
+
+    .ap-page-sheet-mode .ap-sheet-chrome {
+        box-shadow: 0 1px 0 rgb(0 0 0 / 0.04);
+    }
+
+    .ap-page-sheet-mode .ap-sheet-scroll {
+        @apply flex-1 min-h-0 w-full;
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ap-page-sheet-mode .ap-sheet-surface {
+        @apply mx-auto shadow-md ring-1 ring-stone-200/80;
+        min-width: min(100%, 320px);
+    }
+
+    .ap-page-sheet-mode .sheet-pdf-pages {
+        @apply relative z-0;
+    }
+
+    .ap-page-sheet-mode .player-canvas-student,
+    .ap-page-sheet-mode .player-canvas-teacher {
+        @apply z-20;
+    }
+
     .es-oral-panel {
         @apply rounded-2xl border border-stone-200 bg-white p-4 md:p-5;
     }
@@ -921,6 +950,65 @@
 
     .ap-type-menu-desc {
         @apply text-[11px] text-es-muted leading-snug;
+    }
+
+    /* ——— Correction professeur ——— */
+    .es-correction-page {
+        @apply w-full max-w-[1680px];
+    }
+
+    .es-correction-head {
+        @apply border-b border-stone-200/80 pb-5;
+    }
+
+    .es-correction-grid {
+        @apply grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start;
+    }
+
+    .es-correction-work {
+        @apply min-w-0 min-h-[min(78vh,880px)] flex flex-col;
+    }
+
+    .es-correction-aside {
+        @apply space-y-4 lg:sticky lg:top-6;
+    }
+
+    .es-correction-panel {
+        box-shadow: var(--shadow-es);
+    }
+
+    .ap-correction-player {
+        @apply w-full h-full flex-1;
+    }
+
+    .ap-correction-page .ap-page-single,
+    .ap-correction-page .ap-page-split {
+        @apply flex-1 min-h-0;
+    }
+
+    .ap-correction-page .ap-page-single {
+        @apply overflow-y-auto;
+    }
+
+    .ap-correction-page .ap-page-split {
+        @apply min-h-[420px];
+    }
+
+    .ap-correction-page .ap-page-questions {
+        @apply bg-stone-50/50;
+    }
+
+    .ap-correction-page .es-reading-passage {
+        @apply bg-white;
+    }
+
+    /* ——— Espace projet élève ——— */
+    .es-project-work .es-card {
+        @apply shadow-sm;
+    }
+
+    .es-project-work textarea.es-textarea {
+        @apply min-h-[420px] leading-relaxed;
     }
 
     .es-question-block {

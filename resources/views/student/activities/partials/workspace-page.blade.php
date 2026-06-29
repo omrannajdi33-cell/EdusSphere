@@ -27,47 +27,44 @@
             </div>
 
             <div class="es-reading-passage rounded-2xl border border-stone-200 bg-stone-50 p-4 md:p-5 {{ $textHidden ? 'hidden' : '' }}" data-reading-text @if ($rtl) dir="rtl" @endif>
-                <p class="text-base md:text-lg leading-relaxed whitespace-pre-wrap font-medium text-es-ink">{{ $passage }}</p>
+                <p class="text-base md:text-lg leading-relaxed whitespace-pre-wrap font-medium text-es-ink {{ $page->isRecitation() ? 'text-right' : '' }}">{{ $passage }}</p>
             </div>
 
-            <div class="mt-4">
-                <label class="es-label text-sm">Mes notes / réponses</label>
-                <textarea
-                    class="player-workspace-notes es-textarea w-full min-h-[120px] text-sm"
-                    placeholder="Écris tes réponses à la compréhension…"
-                    @if ($readOnly && ! $correctionMode) readonly @endif
-                >{{ $workspaceData['notes'] ?? '' }}</textarea>
-            </div>
+            @unless ($page->isRecitation())
+                <div class="mt-4">
+                    <label class="es-label text-sm">Mes notes / réponses</label>
+                    <textarea
+                        class="player-workspace-notes es-textarea w-full min-h-[120px] text-sm"
+                        placeholder="Écris tes réponses à la compréhension…"
+                        @if ($readOnly && ! $correctionMode) readonly @endif
+                    >{{ $workspaceData['notes'] ?? '' }}</textarea>
+                </div>
+            @endunless
         </div>
+
+        @if ($page->recordsVoice())
+            @include('student.activities.partials.oral-recording-panel', [
+                'activity' => $activity,
+                'page' => $page,
+                'workspaceData' => $workspaceData,
+                'recordingUrl' => $recordingUrl,
+                'readOnly' => $readOnly,
+                'correctionMode' => $correctionMode,
+                'recitationMode' => $page->isRecitation(),
+            ])
+        @endif
     @endif
 
     @if ($page->isOral())
-        <div class="es-oral-panel space-y-4" data-oral-panel data-recording-path="{{ $workspaceData['recording_path'] ?? '' }}" data-recording-kind="{{ $workspaceData['recording_kind'] ?? 'audio' }}">
-            <p class="text-sm font-semibold text-es-ink">Enregistre ta réponse orale</p>
-            <p class="text-xs text-es-muted -mt-2">Autorise le micro (et la caméra pour la vidéo) quand le navigateur te le demande.</p>
-
-            @unless ($correctionMode ?? false)
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" class="es-btn es-btn-primary es-btn-sm oral-record-audio">🎤 Audio</button>
-                    <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-record-video">📹 Vidéo</button>
-                    <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-stop hidden">⏹ Arrêter</button>
-                </div>
-            @endunless
-
-            <p class="text-xs font-semibold text-es-muted oral-status" aria-live="polite"></p>
-
-            <div class="oral-preview rounded-2xl border border-stone-200 bg-stone-50 p-3 min-h-[80px] {{ empty($recordingUrl) ? 'hidden' : '' }}" data-oral-preview>
-                @if ($recordingUrl)
-                    @if (($workspaceData['recording_kind'] ?? 'audio') === 'video')
-                        <video controls class="w-full max-h-64 rounded-xl" src="{{ $recordingUrl }}"></video>
-                    @else
-                        <audio controls class="w-full" src="{{ $recordingUrl }}"></audio>
-                    @endif
-                @endif
-            </div>
-
-            <video class="oral-live-video hidden w-full max-h-48 rounded-xl bg-black" autoplay muted playsinline></video>
-        </div>
+        @include('student.activities.partials.oral-recording-panel', [
+            'activity' => $activity,
+            'page' => $page,
+            'workspaceData' => $workspaceData,
+            'recordingUrl' => $recordingUrl,
+            'readOnly' => $readOnly,
+            'correctionMode' => $correctionMode,
+            'recitationMode' => false,
+        ])
     @endif
 
     @if ($page->isRichDocument())

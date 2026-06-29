@@ -16,10 +16,12 @@
 
             <x-input label="Titre" name="title" value="{{ old('title', $exam->title) }}" required :error="$errors->first('title')"/>
 
-            <div>
-                <label for="description" class="es-label">Description</label>
-                <textarea id="description" name="description" rows="3" class="es-textarea">{{ old('description', $exam->description) }}</textarea>
-            </div>
+            <x-input label="Description" name="description" value="{{ old('description', $exam->description) }}" />
+
+            <x-device-type-picker
+                :value="old('device_type', $exam->device_type ?? 'tablet')"
+                :error="$errors->first('device_type')"
+            />
 
             @php
                 $defaultSubjectId = old('subject_id', $exam->subject_id ?? $subjects->first()?->id);

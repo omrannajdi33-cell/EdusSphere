@@ -54,31 +54,41 @@ export function initSubjectWorkspaces(root) {
 }
 
 export function collectWorkspaceData(pageEl) {
+    const data = {};
+    let hasAny = false;
+
     const reading = pageEl.querySelector('[data-reading-panel]');
     if (reading) {
-        return {
+        Object.assign(data, {
             text_hidden: reading.dataset.textHidden === '1',
             notes: reading.querySelector('.player-workspace-notes')?.value ?? '',
-        };
+        });
+        hasAny = true;
     }
 
     const oral = pageEl.querySelector('[data-oral-panel]');
     if (oral) {
         const state = workspaceState.get(oral) ?? {};
-        return {
+        Object.assign(data, {
             recording_path: state.recordingPath ?? oral.dataset.recordingPath ?? '',
             recording_kind: state.recordingKind ?? oral.dataset.recordingKind ?? 'audio',
             recording_url: state.recordingUrl ?? '',
-        };
+        });
+        hasAny = true;
     }
 
     const rich = pageEl.querySelector('[data-rich-panel]');
     if (rich) {
         const editor = rich.querySelector('[data-rich-editor]');
-        return {
+        Object.assign(data, {
             rich_mode: rich.dataset.richMode ?? 'text',
             rich_html: editor?.innerHTML ?? '',
-        };
+        });
+        hasAny = true;
+    }
+
+    if (hasAny) {
+        return data;
     }
 
     if (pageEl.querySelector('[data-workspace-root]')) {

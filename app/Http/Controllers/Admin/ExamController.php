@@ -17,12 +17,18 @@ class ExamController extends Controller
 {
     public function index(): View
     {
+        $query = Exam::with(['subject', 'skill', 'reportPeriod'])
+            ->withCount('pages')
+            ->latest('opens_at');
+
+        if ($deviceType = request()->string('device')->toString()) {
+            $query->where('device_type', $deviceType);
+        }
+
         return view('admin.exams.index', [
             'adminNav' => 'exams',
-            'exams' => Exam::with(['subject', 'skill', 'reportPeriod'])
-                ->withCount('pages')
-                ->latest('opens_at')
-                ->paginate(12),
+            'exams' => $query->paginate(12)->withQueryString(),
+            'deviceFilter' => $deviceType ?: null,
         ]);
     }
 
@@ -35,6 +41,7 @@ class ExamController extends Controller
             'skill_id' => Skill::orderBy('name')->value('id'),
             'report_period_id' => $period?->id,
             'title' => 'Nouvel examen',
+            'device_type' => 'tablet',
             'duration_minutes' => 30,
             'max_attempts' => 1,
             'weight_percent' => 0,

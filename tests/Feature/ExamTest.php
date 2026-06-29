@@ -72,6 +72,7 @@ class ExamTest extends TestCase
                 'skill_id' => $this->skill->id,
                 'report_period_id' => $this->period->id,
                 'weight_percent' => 50,
+                'device_type' => 'tablet',
                 'duration_minutes' => 45,
                 'max_attempts' => 1,
                 'opens_at' => now()->subHour()->format('Y-m-d\TH:i'),
@@ -79,6 +80,9 @@ class ExamTest extends TestCase
                 'status' => 'open',
             ])
             ->assertRedirect(route('admin.exams.build', $exam));
+
+        $exam->refresh();
+        $this->assertSame('tablet', $exam->device_type);
 
         $page = ExamPage::create([
             'exam_id' => $exam->id,

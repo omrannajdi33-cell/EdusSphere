@@ -117,6 +117,7 @@ class ActivityEngineTest extends TestCase
                 'description' => 'Test',
                 'subject_id' => $this->subject->id,
                 'skill_id' => $this->skill->id,
+                'device_type' => 'tablet',
             ])
             ->assertRedirect(route('admin.activities.build', ['activity' => Activity::where('title', 'Mon quiz')->first(), 'step' => 2]));
 
@@ -256,7 +257,7 @@ class ActivityEngineTest extends TestCase
         $this->actingAs($this->teacher)
             ->get(route('admin.activities.corrections.show', [$activity, $this->student]))
             ->assertOk()
-            ->assertSee('Mode correction');
+            ->assertSee('Validation');
 
         $this->actingAs($this->teacher)
             ->postJson(route('admin.activities.corrections.save', [$activity, $this->student]), [
@@ -340,6 +341,54 @@ class ActivityEngineTest extends TestCase
         $this->assertSame('Ma compréhension', $answer->content['workspace']['notes'] ?? null);
     }
 
+    public function test_student_can_save_recitation_voice_with_passage_state(): void
+    {
+        Storage::fake('private');
+
+        $activity = $this->makeDraftActivity();
+        $page = ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Récitation',
+            'type' => 'recitation',
+            'content' => ['passage' => 'بِسْمِ اللَّهِ', 'body' => 'Récite.', 'rtl' => true],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $file = UploadedFile::fake()->create('recitation.webm', 200, 'audio/webm');
+
+        $upload = $this->actingAs($this->studentUser)
+            ->post(route('student.activities.recording.upload', $activity), [
+                'page_id' => $page->id,
+                'kind' => 'audio',
+                'recording' => $file,
+            ])
+            ->assertOk();
+
+        $this->actingAs($this->studentUser)
+            ->postJson(route('student.activities.save', $activity), [
+                'page_id' => $page->id,
+                'page_order' => 1,
+                'total_pages' => 1,
+                'workspace' => [
+                    'text_hidden' => true,
+                    'notes' => '',
+                    'recording_path' => $upload->json('path'),
+                    'recording_kind' => 'audio',
+                ],
+            ])
+            ->assertOk();
+
+        $answer = \App\Models\Answer::query()
+            ->where('student_id', $this->student->id)
+            ->where('activity_page_id', $page->id)
+            ->whereNull('question_id')
+            ->first();
+
+        $this->assertSame($upload->json('path'), $answer->content['workspace']['recording_path'] ?? null);
+        $this->assertTrue($answer->content['workspace']['text_hidden'] ?? false);
+    }
+
     public function test_teacher_can_view_student_oral_recording(): void
     {
         Storage::fake('private');
@@ -409,6 +458,27 @@ class ActivityEngineTest extends TestCase
         $this->actingAs($this->studentUser)
             ->get(route('student.activities.play', $activity))
             ->assertNotFound();
+    }
+
+    public function test_teacher_can_set_device_type_on_activity(): void
+    {
+        $this->actingAs($this->teacher)
+            ->post(route('admin.activities.store'), [
+                'title' => 'Activité ordinateur',
+                'description' => 'Sur PC',
+                'subject_id' => $this->subject->id,
+                'skill_id' => $this->skill->id,
+                'device_type' => 'computer',
+            ])
+            ->assertRedirect();
+
+        $activity = Activity::where('title', 'Activité ordinateur')->firstOrFail();
+        $this->assertSame('computer', $activity->device_type);
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.activities.index', ['device' => 'computer']))
+            ->assertOk()
+            ->assertSee('Activité ordinateur');
     }
 
     public function test_config_has_eight_page_types_and_ten_question_types(): void

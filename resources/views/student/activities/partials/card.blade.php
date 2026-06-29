@@ -16,9 +16,12 @@
     <div class="flex items-center gap-3 mb-3">
         <x-subject-icon :icon="$activity->subject->icon" :color="$activity->subject->color" size="sm"/>
         <span class="text-sm font-bold text-es-muted">{{ $activity->subject->name }}</span>
-        @if ($showHomeworkMeta && $overdue)
-            <span class="ml-auto rounded-lg bg-red-100 px-2 py-0.5 text-[10px] font-black uppercase text-red-700">En retard</span>
-        @endif
+        <div class="ml-auto flex flex-wrap items-center gap-2">
+            <x-device-type-badge :device-type="$activity->device_type"/>
+            @if ($showHomeworkMeta && $overdue)
+                <span class="rounded-lg bg-red-100 px-2 py-0.5 text-[10px] font-black uppercase text-red-700">En retard</span>
+            @endif
+        </div>
     </div>
     <h2 class="text-lg font-extrabold text-es-ink">{{ $activity->title }}</h2>
     <p class="text-sm text-es-muted mt-2 line-clamp-2">{{ $activity->description }}</p>

@@ -19,9 +19,11 @@
     $examMode = $examMode ?? false;
     $lessonAnnotations = $lessonAnnotations ?? collect();
     $linkedLesson = $activity->relationLoaded('lesson') ? $activity->lesson : null;
-    $playerRootClass = ($focusMode ?? false)
-        ? 'ap-player flex-1 flex flex-col min-h-0 bg-white text-es-ink'
-        : 'es-card overflow-hidden';
+    $playerRootClass = match (true) {
+        ($focusMode ?? false) => 'ap-player flex-1 flex flex-col min-h-0 bg-white text-es-ink',
+        $correctionMode => 'ap-correction-player flex flex-col flex-1 min-h-0 bg-white text-es-ink rounded-2xl border border-stone-200 shadow-sm overflow-hidden',
+        default => 'es-card overflow-hidden',
+    };
 @endphp
 
 <div
@@ -43,8 +45,13 @@
     role="application"
     aria-label="Activité : {{ $activity->title }}"
 >
-    <header class="ap-player-header shrink-0 border-b border-stone-200/90 bg-white/95 backdrop-blur-sm px-4 py-3 md:px-6 flex flex-wrap items-center justify-between gap-3">
-        @if ($focusMode ?? false)
+    <header class="ap-player-header shrink-0 border-b border-stone-200/90 bg-stone-50/60 px-4 py-2.5 md:px-5 flex items-center justify-between gap-3">
+        @if ($correctionMode)
+            <p class="text-xs font-bold uppercase tracking-wider text-es-muted">Copie de l'élève</p>
+            <span id="player-page-indicator" class="inline-flex items-center rounded-lg bg-white border border-stone-200 px-3 py-1 text-sm font-bold text-es-primary tabular-nums" aria-live="polite">
+                Page {{ $startPage }} / {{ $totalPages }}
+            </span>
+        @elseif ($focusMode ?? false)
             <div class="min-w-0 flex-1">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-es-muted">{{ $activity->subject->name }}</p>
                 <h2 class="text-base md:text-lg font-black text-es-ink truncate">{{ $activity->title }}</h2>
@@ -60,9 +67,7 @@
             <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-es-muted">{{ $activity->subject->name }}</p>
                 <h2 class="text-lg font-extrabold text-es-ink">{{ $activity->title }}</h2>
-                @if ($correctionMode && $student)
-                    <p class="text-sm font-semibold text-red-600 mt-1">Mode correction — {{ $student->full_name }}</p>
-                @elseif ($isReturned)
+                @if ($isReturned)
                     <p class="text-sm font-semibold text-amber-600 mt-1">Renvoyée par le prof — tu peux modifier et resoumettre</p>
                     @if ($correction?->comment)
                         <p class="text-sm text-es-muted mt-1">{{ $correction->comment }}</p>
@@ -97,11 +102,15 @@
             <p class="font-extrabold">Cette activité n'a pas encore d'étapes.</p>
         </div>
     @else
-        <div id="player-toolbar" class="shrink-0 border-b border-stone-200 px-4 py-2.5 flex flex-wrap gap-2 bg-stone-50/80 {{ $correctionMode ? '' : 'hidden' }}" role="toolbar" aria-label="Outils">
+        <div id="player-toolbar" class="shrink-0 border-b border-stone-200 px-4 py-2.5 flex flex-wrap gap-2 bg-amber-50/80 {{ $correctionMode ? '' : 'hidden' }}" role="toolbar" aria-label="Outils">
+            @if ($correctionMode)
+                <span class="text-xs font-bold text-amber-900 self-center mr-1">Encre rouge :</span>
+            @endif
             <button type="button" class="player-tool es-btn es-btn-secondary es-btn-sm" data-tool="pen" aria-pressed="true">
                 {{ $correctionMode ? '🖊 Encre rouge' : '✏️ Dessiner' }}
             </button>
             @unless ($correctionMode)
+                <button type="button" class="player-tool player-tool-pan es-btn es-btn-secondary es-btn-sm hidden" data-tool="pan" aria-pressed="false">✋ Déplacer</button>
                 <button type="button" class="player-tool es-btn es-btn-secondary es-btn-sm" data-tool="highlight" aria-pressed="false">🖍 Surligner</button>
                 <button type="button" class="player-tool es-btn es-btn-secondary es-btn-sm" data-tool="erase" aria-pressed="false">🧽 Effacer</button>
                 <button type="button" class="player-tool es-btn es-btn-secondary es-btn-sm" data-tool="text" aria-pressed="false">📝 Écrire</button>
@@ -109,7 +118,7 @@
             @endunless
         </div>
 
-        <div class="ap-player-body flex-1 min-h-0 relative">
+        <div class="ap-player-body flex-1 min-h-0 {{ $correctionMode ? 'flex flex-col' : 'relative' }}">
             @foreach ($pages as $page)
                 @php
                     $pageAnswers = $savedAnswers->get($page->id, collect());
@@ -126,21 +135,98 @@
                     $scrollHeight = (int) ($page->content['scroll_height'] ?? 3200);
                     $hasQuestions = $page->questions->isNotEmpty();
                     $hasBody = ! empty($page->content['body']);
+                    $isFullscreenSheet = $page->isFullscreenSheet();
                     $hasSourcePane = $page->isSubjectWorkspace() || $showCanvas || $hasBody;
-                    $useSplit = $hasQuestions && $hasSourcePane;
+                    $useSplit = $hasQuestions && $hasSourcePane && ! $isFullscreenSheet;
                 @endphp
                 <section
-                    class="player-page ap-player-page absolute inset-0 flex flex-col min-h-0 {{ $page->page_order !== $startPage ? 'hidden' : '' }}"
+                    class="player-page {{ $correctionMode ? 'ap-correction-page flex flex-col flex-1 min-h-0' : 'ap-player-page absolute inset-0 flex flex-col min-h-0' }} {{ $isFullscreenSheet ? 'ap-page-sheet-mode' : '' }} {{ $page->page_order !== $startPage ? 'hidden' : '' }}"
                     data-page
                     data-page-id="{{ $page->id }}"
                     data-page-order="{{ $page->page_order }}"
                     data-page-type="{{ $page->type }}"
                     data-scroll-height="{{ $scrollHeight }}"
                     data-needs-canvas="{{ $showCanvas ? '1' : '0' }}"
+                    data-fullscreen-sheet="{{ $isFullscreenSheet ? '1' : '0' }}"
                     data-split-layout="{{ $useSplit ? '1' : '0' }}"
                     aria-labelledby="page-title-{{ $page->id }}"
                     @if ($page->page_order !== $startPage) hidden @endif
                 >
+                    @if ($isFullscreenSheet)
+                        <div class="shrink-0 px-4 md:px-6 py-2.5 border-b border-stone-200/80 bg-stone-50/90 flex flex-wrap items-center justify-between gap-2 ap-sheet-chrome">
+                            <div class="min-w-0">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-es-muted">{{ is_array($pageMeta) ? ($pageMeta['label'] ?? '') : '' }}</span>
+                                <h3 id="page-title-{{ $page->id }}" class="text-sm md:text-base font-extrabold text-es-ink truncate">{{ $page->title }}</h3>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                @if ($hasBody || $page->title)
+                                    <button type="button" class="es-btn es-btn-secondary es-btn-sm" data-page-brief-open="{{ $page->id }}">📋 Consignes</button>
+                                @endif
+                                @if ($hasQuestions)
+                                    <button type="button" class="es-btn es-btn-primary es-btn-sm" data-page-questions-open="{{ $page->id }}">❓ Questions ({{ $page->questions->count() }})</button>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if ($showCanvas)
+                            @include('student.activities.partials.player-canvas', [
+                                'page' => $page,
+                                'activity' => $activity,
+                                'canvasData' => $canvasData,
+                                'teacherStrokes' => $teacherStrokes,
+                                'readOnly' => $readOnly,
+                                'correctionMode' => $correctionMode,
+                                'scrollHeight' => $scrollHeight,
+                                'fullscreen' => true,
+                            ])
+                        @endif
+
+                        @if ($hasBody || $page->title)
+                            <div class="hidden fixed inset-0 z-[70] bg-es-ink/50 p-4 md:p-8 flex items-start justify-center overflow-y-auto" data-page-brief="{{ $page->id }}" role="dialog" aria-modal="true" aria-labelledby="brief-title-{{ $page->id }}">
+                                <div class="es-card w-full max-w-lg p-5 md:p-6 my-auto shadow-xl">
+                                    <div class="flex items-start justify-between gap-4 mb-4">
+                                        <div>
+                                            <p class="text-xs font-bold uppercase text-es-muted">Consignes</p>
+                                            <h4 id="brief-title-{{ $page->id }}" class="text-xl font-black text-es-ink mt-1">{{ $page->title }}</h4>
+                                        </div>
+                                        <button type="button" class="es-btn es-btn-secondary es-btn-sm shrink-0" data-page-brief-close>Fermer</button>
+                                    </div>
+                                    @if ($hasBody)
+                                        <p class="text-base text-es-ink leading-relaxed whitespace-pre-wrap">{{ $page->content['body'] }}</p>
+                                    @else
+                                        <p class="text-sm text-es-muted">Lis le document et complète les exercices directement sur la feuille.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($hasQuestions)
+                            <div class="hidden fixed inset-0 z-[70] bg-es-ink/50 p-4 md:p-8 flex items-start justify-center overflow-y-auto" data-page-questions-panel="{{ $page->id }}" role="dialog" aria-modal="true" aria-label="Questions">
+                                <div class="es-card w-full max-w-2xl p-5 md:p-6 my-auto max-h-[min(90vh,720px)] overflow-y-auto shadow-xl">
+                                    <div class="flex items-start justify-between gap-4 mb-4 sticky top-0 bg-white pb-3 border-b border-stone-100">
+                                        <h4 class="text-xl font-black text-es-ink">Questions</h4>
+                                        <button type="button" class="es-btn es-btn-secondary es-btn-sm shrink-0" data-page-questions-close>Fermer</button>
+                                    </div>
+                                    <div class="space-y-4">
+                                        @foreach ($page->questions as $question)
+                                            @php
+                                                $studentValue = $questionValues->get($question->id);
+                                                $review = ($correctionMode || $isCorrected)
+                                                    ? \App\Support\QuestionGrader::evaluate($question, $studentValue)
+                                                    : null;
+                                            @endphp
+                                            <x-activity-question
+                                                :question="$question"
+                                                :value="$studentValue"
+                                                :readonly="$readOnly"
+                                                :review="$review"
+                                            />
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @else
                     <div class="shrink-0 px-4 md:px-6 py-3 border-b border-stone-100 ap-page-titlebar">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-es-muted">{{ is_array($pageMeta) ? ($pageMeta['label'] ?? '') : '' }}</span>
                         <h3 id="page-title-{{ $page->id }}" class="text-lg font-extrabold text-es-ink mt-0.5">{{ $page->title }}</h3>
@@ -242,20 +328,21 @@
                             @endforeach
                         </div>
                     @endif
+                    @endif
                 </section>
             @endforeach
         </div>
 
-        <footer class="ap-player-footer shrink-0 border-t border-stone-200 px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3 bg-white">
-            @if ($correctionMode)
-                <a href="{{ route('admin.activities.submissions', $activity) }}" class="es-link text-sm font-bold">← Copies</a>
-            @elseif ($previewMode)
-                <a href="{{ route('admin.activities.build', ['activity' => $activity, 'step' => 2]) }}" class="es-link text-sm font-bold">← Retour</a>
-            @elseif (! ($focusMode ?? false))
-                <a href="{{ route('student.activities.index') }}" class="es-link text-sm font-bold">← Retour</a>
-            @else
-                <span class="text-xs font-semibold text-es-muted uppercase tracking-wide">Mode verrouillé</span>
-            @endif
+        <footer class="ap-player-footer shrink-0 border-t border-stone-200 px-4 md:px-5 py-2.5 flex flex-wrap items-center gap-2 bg-stone-50/60 {{ $correctionMode ? 'justify-end' : 'justify-between' }}">
+            @unless ($correctionMode)
+                @if ($previewMode)
+                    <a href="{{ route('admin.activities.build', ['activity' => $activity, 'step' => 2]) }}" class="es-link text-sm font-bold">← Retour</a>
+                @elseif (! ($focusMode ?? false))
+                    <a href="{{ route('student.activities.index') }}" class="es-link text-sm font-bold">← Retour</a>
+                @else
+                    <span class="text-xs font-semibold text-es-muted uppercase tracking-wide">Mode verrouillé</span>
+                @endif
+            @endunless
             <div class="flex gap-2">
                 <button type="button" id="player-prev" class="es-btn es-btn-secondary" disabled>Précédent</button>
                 <button type="button" id="player-next" class="es-btn es-btn-primary">Suivant</button>

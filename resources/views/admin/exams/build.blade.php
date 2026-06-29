@@ -67,6 +67,11 @@
                     <textarea name="description" rows="2" class="es-textarea">{{ old('description', $exam->description) }}</textarea>
                 </div>
 
+                <x-device-type-picker
+                    :value="old('device_type', $exam->device_type ?? 'tablet')"
+                    :error="$errors->first('device_type')"
+                />
+
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label class="es-label">Matière</label>

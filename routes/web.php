@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PointController;
 use App\Http\Controllers\Admin\PointRewardController;
 use App\Http\Controllers\Admin\PointSettingsController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
+use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\SkillController;
@@ -24,6 +25,8 @@ use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\ActivityMediaController;
 use App\Http\Controllers\ActivityRecordingController;
 use App\Http\Controllers\LessonMediaController;
+use App\Http\Controllers\ProjectMediaController;
+use App\Http\Controllers\ProjectSubmissionFileController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Student\ActivityController as StudentActivityController;
@@ -36,7 +39,7 @@ use App\Http\Controllers\Student\BulletinController;
 use App\Http\Controllers\Student\PointRedemptionController;
 use App\Http\Controllers\Student\PointsController;
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
-use App\Http\Controllers\Student\ProfileController as StudentProfileController;
+use App\Http\Controllers\Student\ProjectController as StudentProjectController;
 use App\Http\Controllers\Student\ScheduleController as StudentScheduleController;
 use App\Models\Activity;
 use App\Models\User;
@@ -60,6 +63,10 @@ Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))-
 Route::middleware('auth')->get('/lesson-media/{lesson}/{media}', LessonMediaController::class)->name('lesson-media.show');
 
 Route::middleware('auth')->get('/activity-media/{activity}/{media}', ActivityMediaController::class)->name('activity-media.show');
+
+Route::middleware('auth')->get('/project-media/{project}/{media}', ProjectMediaController::class)->name('project-media.show');
+
+Route::middleware('auth')->get('/projects/{project}/submission-files/{file}', ProjectSubmissionFileController::class)->name('project-submission-files.show');
 
 Route::middleware('auth')->get('/activities/{activity}/students/{student}/recording', ActivityRecordingController::class)->name('activities.recording.show');
 
@@ -100,6 +107,17 @@ Route::prefix('admin')
         Route::delete('activities/{activity}/pages/{page}', [ActivityEditorController::class, 'destroyPage'])->name('activities.pages.destroy');
         Route::post('activities/{activity}/pages/{page}/questions', [ActivityEditorController::class, 'storeQuestion'])->name('activities.questions.store');
         Route::delete('activities/{activity}/questions/{question}', [ActivityEditorController::class, 'destroyQuestion'])->name('activities.questions.destroy');
+
+        Route::get('projects/{project}/build', [ProjectController::class, 'build'])->name('projects.build');
+        Route::post('projects/{project}/publish', [ProjectController::class, 'publish'])->name('projects.publish');
+        Route::post('projects/{project}/unpublish', [ProjectController::class, 'unpublish'])->name('projects.unpublish');
+        Route::post('projects/{project}/attachments', [ProjectController::class, 'storeAttachment'])->name('projects.attachments.store');
+        Route::delete('projects/{project}/attachments/{media}', [ProjectController::class, 'destroyAttachment'])->name('projects.attachments.destroy');
+        Route::get('projects/{project}/submissions', [ProjectController::class, 'submissions'])->name('projects.submissions');
+        Route::get('projects/{project}/corrections/{student}', [ProjectController::class, 'correct'])->name('projects.corrections.show');
+        Route::post('projects/{project}/corrections/{student}/finalize', [ProjectController::class, 'finalizeCorrection'])->name('projects.corrections.finalize');
+        Route::post('projects/{project}/corrections/{student}/return', [ProjectController::class, 'returnSubmission'])->name('projects.corrections.return');
+        Route::resource('projects', ProjectController::class)->except(['show']);
 
         Route::post('lessons/{lesson}/documents', [LessonDocumentController::class, 'store'])->name('lessons.documents.store');
         Route::put('lessons/{lesson}/documents/{media}', [LessonDocumentController::class, 'update'])->name('lessons.documents.update');
@@ -159,6 +177,12 @@ Route::prefix('student')
         Route::post('/lessons/{lesson}/annotations', [LessonAnnotationController::class, 'save'])->name('lessons.annotations.save');
         Route::get('/activities', [StudentActivityController::class, 'index'])->name('activities.index');
         Route::get('/homework', [\App\Http\Controllers\Student\HomeworkController::class, 'index'])->name('homework.index');
+        Route::get('/projects', [StudentProjectController::class, 'index'])->name('projects.index');
+        Route::get('/projects/{project}/work', [StudentProjectController::class, 'work'])->name('projects.work');
+        Route::post('/projects/{project}/save', [StudentProjectController::class, 'save'])->name('projects.save');
+        Route::post('/projects/{project}/upload', [StudentProjectController::class, 'upload'])->name('projects.upload');
+        Route::delete('/projects/{project}/files/{file}', [StudentProjectController::class, 'deleteFile'])->name('projects.files.destroy');
+        Route::post('/projects/{project}/submit', [StudentProjectController::class, 'submit'])->name('projects.submit');
         Route::get('/activities/{activity}/play', [StudentActivityController::class, 'play'])->name('activities.play');
         Route::post('/activities/{activity}/save', [StudentActivityController::class, 'save'])->name('activities.save');
         Route::post('/activities/{activity}/recording', [StudentActivityController::class, 'uploadRecording'])->name('activities.recording.upload');

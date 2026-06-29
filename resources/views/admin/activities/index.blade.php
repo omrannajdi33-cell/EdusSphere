@@ -51,6 +51,12 @@
                     <option value="{{ $key }}" @selected($statusFilter === $key)>{{ $label }}</option>
                 @endforeach
             </select>
+            <select name="device" class="es-select sm:w-44">
+                <option value="">Tous matériels</option>
+                @foreach (config('edusphere.device_types') as $key => $meta)
+                    <option value="{{ $key }}" @selected(($deviceFilter ?? null) === $key)>{{ $meta['icon'] ?? '' }} {{ $meta['label'] }}</option>
+                @endforeach
+            </select>
             <x-button type="submit" variant="secondary">Filtrer</x-button>
         </form>
     </x-card>
@@ -64,6 +70,7 @@
                         @if ($activity->isHomework())
                             <span class="inline-flex items-center rounded-lg bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">📋 Devoir</span>
                         @endif
+                        <x-device-type-badge :device-type="$activity->device_type"/>
                     </div>
                     <span class="text-xs font-bold text-es-muted">{{ $activity->pages_count }} étape(s)</span>
                 </div>

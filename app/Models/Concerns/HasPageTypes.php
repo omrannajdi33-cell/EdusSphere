@@ -24,6 +24,16 @@ trait HasPageTypes
         return in_array($this->type, ['reading_comprehension', 'recitation'], true);
     }
 
+    public function isRecitation(): bool
+    {
+        return $this->type === 'recitation';
+    }
+
+    public function recordsVoice(): bool
+    {
+        return $this->isOral() || $this->isRecitation();
+    }
+
     public function isOral(): bool
     {
         return $this->type === 'oral_recording';
@@ -37,6 +47,11 @@ trait HasPageTypes
     public function isMathScroll(): bool
     {
         return $this->type === 'math_scroll';
+    }
+
+    public function isFullscreenSheet(): bool
+    {
+        return $this->isPdfWorksheet() || $this->isMathScroll();
     }
 
     public function isSubjectWorkspace(): bool

@@ -19,6 +19,7 @@ class StudentNavigationTest extends TestCase
             'student.subjects.index',
             'student.lessons.index',
             'student.activities.index',
+            'student.projects.index',
             'student.exams.index',
             'student.bulletin.index',
             'student.schedule.index',

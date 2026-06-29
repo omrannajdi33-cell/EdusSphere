@@ -32,12 +32,17 @@ class ActivityController extends Controller
             $query->where('subject_id', $subjectId);
         }
 
+        if ($deviceType = $request->string('device')->toString()) {
+            $query->where('device_type', $deviceType);
+        }
+
         return view('admin.activities.index', [
             'adminNav' => 'activities',
             'activities' => $query->paginate(12)->withQueryString(),
             'subjects' => Cache::remember('catalog.subjects', 3600, fn () => Subject::ordered()->get()),
             'statusFilter' => $status ?: null,
             'subjectFilter' => $subjectId ?: null,
+            'deviceFilter' => $deviceType ?: null,
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDeviceType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Activity extends Model
 {
+    use HasDeviceType;
     public const HOMEWORK_DURING_SCHOOL = 'during_school';
 
     public const HOMEWORK_AFTER_SCHOOL = 'after_school';
@@ -20,6 +22,7 @@ class Activity extends Model
         'lesson_id',
         'title',
         'description',
+        'device_type',
         'is_homework',
         'due_at',
         'homework_slot',

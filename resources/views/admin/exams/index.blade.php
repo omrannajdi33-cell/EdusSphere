@@ -13,6 +13,18 @@
         </div>
     </div>
 
+    <x-card class="mb-6 !p-4">
+        <form method="GET" class="flex flex-col sm:flex-row gap-3" aria-label="Filtrer les examens">
+            <select name="device" class="es-select sm:w-48">
+                <option value="">Tous matériels</option>
+                @foreach (config('edusphere.device_types') as $key => $meta)
+                    <option value="{{ $key }}" @selected(($deviceFilter ?? null) === $key)>{{ $meta['icon'] ?? '' }} {{ $meta['label'] }}</option>
+                @endforeach
+            </select>
+            <x-button type="submit" variant="secondary">Filtrer</x-button>
+        </form>
+    </x-card>
+
     <div class="space-y-4">
         @forelse ($exams as $exam)
             <div class="es-card p-5">
@@ -21,6 +33,7 @@
                         <div class="flex flex-wrap items-center gap-2 mb-2">
                             <p class="font-extrabold text-lg text-es-ink">{{ $exam->title }}</p>
                             <x-status-badge :status="match($exam->status) { 'open' => 'published', 'closed' => 'draft', default => 'draft' }" :label="config('exam.statuses.'.$exam->status)"/>
+                            <x-device-type-badge :device-type="$exam->device_type"/>
                         </div>
                         <p class="text-sm text-es-muted">{{ $exam->subject->name }} · {{ $exam->skill->name }}</p>
                         <p class="text-sm text-es-muted mt-1">

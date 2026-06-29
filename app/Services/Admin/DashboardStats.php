@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Announcement;
 use App\Models\Correction;
 use App\Models\Exam;
+use App\Models\Project;
 use App\Models\Student;
 use Illuminate\Support\Facades\Cache;
 
@@ -17,6 +18,7 @@ class DashboardStats
             return [
                 'students_count' => Student::count(),
                 'pending_activities' => Activity::where('status', 'draft')->count(),
+                'draft_projects' => Project::where('status', 'draft')->count(),
                 'active_exams' => Exam::where('status', 'open')->count(),
                 'pending_corrections' => Correction::whereIn('status', ['submitted', 'to_correct'])->count(),
                 'published_announcements' => Announcement::query()
@@ -24,6 +26,7 @@ class DashboardStats
                     ->where('published_at', '<=', now())
                     ->count(),
                 'recent_activities' => Activity::with('subject')->latest()->limit(5)->get(),
+                'recent_projects' => Project::with('subject')->latest()->limit(5)->get(),
             ];
         });
     }

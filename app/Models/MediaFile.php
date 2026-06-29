@@ -11,6 +11,7 @@ class MediaFile extends Model
         'lesson_id',
         'activity_id',
         'activity_page_id',
+        'project_id',
         'filename',
         'label',
         'path',
@@ -39,6 +40,11 @@ class MediaFile extends Model
     public function activityPage(): BelongsTo
     {
         return $this->belongsTo(ActivityPage::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function storagePath(): ?string

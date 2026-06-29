@@ -59,9 +59,11 @@
             </div>
         </header>
         <main id="admin-main" @class([
-            'flex-1 p-6 md:p-10 w-full',
-            'max-w-none' => ($adminNav ?? null) === 'schedules',
-            'max-w-6xl mx-auto' => ($adminNav ?? null) !== 'schedules',
+            'flex-1 w-full',
+            'p-5 md:p-8' => ($adminNav ?? null) === 'corrections',
+            'p-6 md:p-10' => ($adminNav ?? null) !== 'corrections',
+            'max-w-none' => in_array($adminNav ?? null, ['schedules', 'corrections'], true),
+            'max-w-6xl mx-auto' => ! in_array($adminNav ?? null, ['schedules', 'corrections'], true),
         ]) tabindex="-1">
             @yield('admin-content')
         </main>

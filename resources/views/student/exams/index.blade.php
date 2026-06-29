@@ -19,7 +19,10 @@
                 <div class="es-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <p class="font-extrabold text-lg">{{ $exam->title }}</p>
-                        <p class="text-sm text-es-muted">{{ $exam->subject->name }} · {{ $exam->duration_minutes }} min</p>
+                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                            <p class="text-sm text-es-muted">{{ $exam->subject->name }} · {{ $exam->duration_minutes }} min</p>
+                            <x-device-type-badge :device-type="$exam->device_type"/>
+                        </div>
                         <p class="text-xs text-es-muted mt-1">Ferme le {{ $exam->closes_at->translatedFormat('j M à H:i') }}</p>
                     </div>
                     @if ($attempt?->status === 'in_progress')
@@ -40,7 +43,10 @@
             @foreach ($upcoming as $exam)
                 <div class="es-card p-5 opacity-90">
                     <p class="font-extrabold">{{ $exam->title }}</p>
-                    <p class="text-sm text-es-muted">{{ $exam->subject->name }}</p>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <p class="text-sm text-es-muted">{{ $exam->subject->name }}</p>
+                        <x-device-type-badge :device-type="$exam->device_type"/>
+                    </div>
                     <p class="text-xs font-bold text-es-primary mt-2">Ouverture : {{ $exam->opens_at->translatedFormat('j M Y H:i') }}</p>
                 </div>
             @endforeach
