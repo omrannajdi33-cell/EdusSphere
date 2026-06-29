@@ -1,4 +1,4 @@
-import { initSubjectWorkspaces, collectWorkspaceData } from './subject-workspaces';
+import { initSubjectWorkspaces, collectWorkspaceData, waitForPendingUploads } from './subject-workspaces';
 import { csrfFetch, csrfToken, readErrorMessage } from './csrf-fetch';
 function initActivityPlayer(root) {
     if (!root || root.dataset.initialized === '1') {
@@ -352,7 +352,10 @@ function initActivityPlayer(root) {
         }
 
         if (pageIndicator) {
-            pageIndicator.textContent = `Page ${currentIndex + 1} / ${totalPages}`;
+            const compact = root.classList.contains('ap-player');
+            pageIndicator.textContent = compact
+                ? `${currentIndex + 1} / ${totalPages}`
+                : `Page ${currentIndex + 1} / ${totalPages}`;
         }
         if (prevBtn) {
             prevBtn.disabled = currentIndex === 0;
@@ -368,6 +371,10 @@ function initActivityPlayer(root) {
         }
 
         setTool(activeTool);
+
+        if (state?.needsCanvas) {
+            requestAnimationFrame(() => resizeCanvas(pageEl));
+        }
     }
 
     function goToPage(index) {
@@ -480,7 +487,7 @@ function initActivityPlayer(root) {
             body.canvas = canvas;
         }
         const workspace = collectWorkspaceData(pageEl);
-        if (workspace) {
+        if (workspace !== null) {
             body.workspace = workspace;
         }
         return body;
@@ -516,6 +523,7 @@ function initActivityPlayer(root) {
         updateSaveStatus('saving', 'Sauvegarde en cours…');
 
         try {
+            await waitForPendingUploads(root);
             const res = await csrfFetch(url, {
                 method: 'POST',
                 headers: {
@@ -565,6 +573,7 @@ function initActivityPlayer(root) {
         }
         await saveNow(true);
         try {
+            await waitForPendingUploads(root);
             const res = await csrfFetch(submitUrl, { method: 'POST' });
             if (res.status === 419) {
                 throw new Error('session expired');

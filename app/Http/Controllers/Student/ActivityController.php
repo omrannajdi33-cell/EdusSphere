@@ -106,7 +106,7 @@ class ActivityController extends Controller
         abort_if($progression && in_array($progression->workflow_status, ['submitted', 'corrected'], true), 423);
 
         $data = $request->validate([
-            'page_id' => ['required', 'exists:activity_pages,id'],
+            'page_id' => ['required', 'integer', 'exists:activity_pages,id'],
             'page_order' => ['required', 'integer', 'min:1'],
             'total_pages' => ['required', 'integer', 'min:1'],
             'responses' => ['nullable', 'array'],
@@ -128,31 +128,7 @@ class ActivityController extends Controller
             );
         }
 
-        if (isset($data['canvas']) || isset($data['workspace'])) {
-            $existing = Answer::query()
-                ->where('student_id', $student->id)
-                ->where('question_id', null)
-                ->where('activity_page_id', $pageId)
-                ->first();
-
-            $content = $existing?->content ?? [];
-
-            if (isset($data['canvas'])) {
-                $content['canvas'] = $data['canvas'];
-            }
-            if (isset($data['workspace'])) {
-                $content['workspace'] = array_merge($content['workspace'] ?? [], $data['workspace']);
-            }
-
-            Answer::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'question_id' => null,
-                    'activity_page_id' => $pageId,
-                ],
-                ['content' => $content],
-            );
-        }
+        $this->persistPageWorkspaceAnswer($student->id, $pageId, $data);
 
         $percent = min(100, round(($data['page_order'] / $data['total_pages']) * 100, 2));
 
@@ -189,11 +165,53 @@ class ActivityController extends Controller
             PrivateStorage::DISK,
         );
 
+        $pageId = (int) $data['page_id'];
+        $this->persistPageWorkspaceAnswer($student->id, $pageId, [
+            'workspace' => [
+                'recording_path' => $path,
+                'recording_kind' => $data['kind'],
+            ],
+        ]);
+
         return response()->json([
             'path' => $path,
             'kind' => $data['kind'],
             'url' => route('activities.recording.show', [$activity, $student], absolute: false).'?path='.urlencode($path),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function persistPageWorkspaceAnswer(int $studentId, int $pageId, array $data): void
+    {
+        if (! isset($data['canvas']) && ! isset($data['workspace'])) {
+            return;
+        }
+
+        $existing = Answer::query()
+            ->where('student_id', $studentId)
+            ->whereNull('question_id')
+            ->where('activity_page_id', $pageId)
+            ->first();
+
+        $content = $existing?->content ?? [];
+
+        if (isset($data['canvas'])) {
+            $content['canvas'] = $data['canvas'];
+        }
+        if (isset($data['workspace'])) {
+            $content['workspace'] = array_merge($content['workspace'] ?? [], $data['workspace']);
+        }
+
+        Answer::updateOrCreate(
+            [
+                'student_id' => $studentId,
+                'question_id' => null,
+                'activity_page_id' => $pageId,
+            ],
+            ['content' => $content],
+        );
     }
 
     public function showRecording(Request $request, Activity $activity)

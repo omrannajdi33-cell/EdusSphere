@@ -179,6 +179,7 @@ class ExamController extends Controller
             'total_pages' => ['required', 'integer', 'min:1'],
             'responses' => ['nullable', 'array'],
             'canvas' => ['nullable', 'array'],
+            'workspace' => ['nullable', 'array'],
         ]);
 
         $pageId = (int) $data['page_id'];
@@ -208,7 +209,7 @@ class ExamController extends Controller
             Answer::updateOrCreate($attrs, ['content' => ['value' => $value]]);
         }
 
-        if (isset($data['canvas'])) {
+        if (isset($data['canvas']) || isset($data['workspace'])) {
             $canvasAttrs = [
                 'student_id' => $student->id,
                 'exam_attempt_id' => $attempt->id,
@@ -223,7 +224,17 @@ class ExamController extends Controller
                 $canvasAttrs['activity_page_id'] = $pageId;
             }
 
-            Answer::updateOrCreate($canvasAttrs, ['content' => ['canvas' => $data['canvas']]]);
+            $existing = Answer::query()->where($canvasAttrs)->first();
+            $content = $existing?->content ?? [];
+
+            if (isset($data['canvas'])) {
+                $content['canvas'] = $data['canvas'];
+            }
+            if (isset($data['workspace'])) {
+                $content['workspace'] = array_merge($content['workspace'] ?? [], $data['workspace']);
+            }
+
+            Answer::updateOrCreate($canvasAttrs, ['content' => $content]);
         }
 
         $answerCount = Answer::where('exam_attempt_id', $attempt->id)

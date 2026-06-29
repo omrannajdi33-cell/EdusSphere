@@ -275,8 +275,8 @@ class ActivityEngineTest extends TestCase
             'activity_id' => $activity->id,
             'page_order' => 1,
             'title' => 'Oral',
-            'type' => 'oral_record',
-            'content' => ['prompt' => 'Enregistre ta lecture'],
+            'type' => 'oral_recording',
+            'content' => ['body' => 'Enregistre ta lecture'],
         ]);
         $activity->publishTo([$this->student->id]);
 
@@ -292,6 +292,52 @@ class ActivityEngineTest extends TestCase
         $response->assertOk()->assertJsonStructure(['path', 'kind', 'url']);
         $this->assertStringStartsWith('/activities/', $response->json('url'));
         $this->assertStringContainsString('/students/', $response->json('url'));
+
+        $this->assertDatabaseHas('answers', [
+            'student_id' => $this->student->id,
+            'activity_page_id' => $page->id,
+            'question_id' => null,
+        ]);
+
+        $answer = \App\Models\Answer::query()
+            ->where('student_id', $this->student->id)
+            ->where('activity_page_id', $page->id)
+            ->whereNull('question_id')
+            ->first();
+
+        $this->assertSame($response->json('path'), $answer->content['workspace']['recording_path'] ?? null);
+        $this->assertSame('audio', $answer->content['workspace']['recording_kind'] ?? null);
+    }
+
+    public function test_student_can_save_reading_workspace_notes(): void
+    {
+        $activity = $this->makeDraftActivity();
+        $page = ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Lecture',
+            'type' => 'reading_comprehension',
+            'content' => ['passage' => 'Il était une fois…', 'body' => 'Lis le texte.'],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $this->actingAs($this->studentUser)
+            ->postJson(route('student.activities.save', $activity), [
+                'page_id' => $page->id,
+                'page_order' => 1,
+                'total_pages' => 1,
+                'workspace' => ['text_hidden' => false, 'notes' => 'Ma compréhension'],
+            ])
+            ->assertOk()
+            ->assertJson(['saved' => true]);
+
+        $answer = \App\Models\Answer::query()
+            ->where('student_id', $this->student->id)
+            ->where('activity_page_id', $page->id)
+            ->whereNull('question_id')
+            ->first();
+
+        $this->assertSame('Ma compréhension', $answer->content['workspace']['notes'] ?? null);
     }
 
     public function test_teacher_can_view_student_oral_recording(): void

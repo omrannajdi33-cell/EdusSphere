@@ -303,35 +303,40 @@
                         <span class="es-wizard-panel-num">2</span>
                         <div>
                             <h2 class="text-2xl font-black text-es-ink">Ajouter une étape</h2>
-                            <p class="text-es-muted mt-1">Tout se crée ici, sur le site — pas de module à importer.</p>
+                            <p class="text-es-muted mt-1">Choisis un format, puis complète le formulaire.</p>
                         </div>
                     </div>
 
-                    <p class="text-sm font-bold text-es-muted mt-8 mb-4">Choisis le format :</p>
                     @if ($subjectWorkspace ?? null)
-                        <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 text-sm text-indigo-900 mb-4">
+                        <div class="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-900 mt-6">
                             <strong>{{ $activity->subject->name }}</strong> — {{ $subjectWorkspace['hint'] }}
                         </div>
                     @endif
-                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 mb-6">
-                        @foreach ($pageTypes as $typeKey => $typeMeta)
-                            <button type="button"
-                                @click="pageType = '{{ $typeKey }}'; document.getElementById('page-type-input') && (document.getElementById('page-type-input').value = '{{ $typeKey }}')"
-                                class="es-type-picker {{ ! empty($typeMeta['featured']) ? 'ring-2 ring-es-primary/20' : '' }}"
-                                :class="pageType === '{{ $typeKey }}' ? 'es-type-picker-active' : ''"
-                                style="--type-color: {{ $typeMeta['color'] ?? '#4f46e5' }}">
-                                @if (! empty($typeMeta['featured']))
-                                    <span class="text-[10px] font-bold uppercase text-es-primary">Recommandé</span>
-                                @endif
-                                <span class="es-type-picker-icon">{{ $typeMeta['icon'] }}</span>
-                                <span class="es-type-picker-label">{{ $typeMeta['label'] }}</span>
-                                <span class="es-type-picker-desc text-xs">{{ $typeMeta['description'] }}</span>
-                            </button>
-                        @endforeach
-                    </div>
+
+                    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(220px,280px)_1fr]">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-wider text-es-muted mb-2">Format d'étape</p>
+                            <div class="ap-type-menu" role="listbox" aria-label="Types d'étape">
+                                @foreach ($pageTypes as $typeKey => $typeMeta)
+                                    <button type="button"
+                                        role="option"
+                                        @click="pageType = '{{ $typeKey }}'; document.getElementById('page-type-input') && (document.getElementById('page-type-input').value = '{{ $typeKey }}')"
+                                        class="ap-type-menu-item w-full {{ ! empty($typeMeta['featured']) ? 'ring-1 ring-es-primary/15' : '' }}"
+                                        :class="pageType === '{{ $typeKey }}' ? 'ap-type-menu-item-active' : ''"
+                                        :aria-selected="pageType === '{{ $typeKey }}' ? 'true' : 'false'"
+                                        style="--type-color: {{ $typeMeta['color'] ?? '#4f46e5' }}">
+                                        <span class="ap-type-menu-icon">{{ $typeMeta['icon'] }}</span>
+                                        <span class="min-w-0">
+                                            <span class="ap-type-menu-label block">{{ $typeMeta['label'] }}</span>
+                                            <span class="ap-type-menu-desc block mt-0.5">{{ $typeMeta['description'] }}</span>
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
 
                     <form method="POST" action="{{ route('admin.activities.pages.store', $activity) }}" enctype="multipart/form-data"
-                        class="space-y-5 border-t border-stone-100 pt-6"
+                        class="space-y-5"
                         @submit="document.getElementById('page-type-input').value = pageType">
                         @csrf
                         <input type="hidden" name="type" id="page-type-input" value="interactive">
@@ -387,6 +392,7 @@
 
                         <x-button type="submit">+ Ajouter l'étape</x-button>
                     </form>
+                    </div>
                 </div>
 
                 @if ($activity->pages->isNotEmpty())

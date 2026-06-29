@@ -43,11 +43,12 @@
 
     @if ($page->isOral())
         <div class="es-oral-panel space-y-4" data-oral-panel data-recording-path="{{ $workspaceData['recording_path'] ?? '' }}" data-recording-kind="{{ $workspaceData['recording_kind'] ?? 'audio' }}">
-            <p class="text-sm text-es-muted">Enregistre ta réponse orale (audio ou courte vidéo).</p>
+            <p class="text-sm font-semibold text-es-ink">Enregistre ta réponse orale</p>
+            <p class="text-xs text-es-muted -mt-2">Autorise le micro (et la caméra pour la vidéo) quand le navigateur te le demande.</p>
 
             @unless ($correctionMode ?? false)
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-record-audio">🎤 Audio</button>
+                    <button type="button" class="es-btn es-btn-primary es-btn-sm oral-record-audio">🎤 Audio</button>
                     <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-record-video">📹 Vidéo</button>
                     <button type="button" class="es-btn es-btn-secondary es-btn-sm oral-stop hidden">⏹ Arrêter</button>
                 </div>

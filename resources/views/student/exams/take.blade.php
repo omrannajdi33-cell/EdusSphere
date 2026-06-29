@@ -6,7 +6,7 @@
 <div
     data-focus-room
     data-hand-raise-url="{{ route('student.exams.attempts.hand-raise', $attempt) }}"
-    class="min-h-screen flex flex-col"
+    class="h-[100dvh] flex flex-col"
 >
     <div data-focus-gate class="fixed inset-0 z-50 flex items-center justify-center bg-es-ink/90 p-6">
         <div class="es-card max-w-md w-full p-8 text-center space-y-4">
@@ -19,38 +19,37 @@
 
     <div data-focus-warn class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-5 py-3 rounded-2xl font-bold shadow-lg" role="alert"></div>
 
-    <div data-focus-shell class="hidden flex-1 flex flex-col min-h-screen overflow-y-auto">
-        <div class="es-container py-4 md:py-6 max-w-3xl mx-auto w-full px-4">
-            <div
-                class="es-focus-player p-4 mb-4 flex flex-wrap items-center justify-between gap-3 border-l-4 border-amber-400"
-                x-data="examTimer(@js($endsAt->toIso8601String()), @js(route('student.exams.submit', $attempt)))"
-                x-init="start()"
-            >
-                <div>
-                    <p class="text-xs font-bold uppercase text-es-muted">Examen en cours</p>
-                    <p class="font-extrabold text-es-ink">{{ $exam->title }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" class="es-btn es-btn-secondary es-btn-sm" data-hand-raise>✋ J'ai une question</button>
-                    <div class="text-right">
-                        <p class="text-xs font-bold text-es-muted">Temps restant</p>
-                        <p class="text-2xl font-black tabular-nums" x-text="display" :class="urgent ? 'text-red-600' : 'text-es-primary'"></p>
-                    </div>
+    <div data-focus-shell class="hidden flex-1 flex flex-col min-h-0 h-[100dvh]">
+        <div
+            class="shrink-0 border-b border-stone-200 bg-amber-50/90 px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3"
+            x-data="examTimer(@js($endsAt->toIso8601String()), @js(route('student.exams.submit', $attempt)))"
+            x-init="start()"
+        >
+            <div class="min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-800/80">Examen en cours</p>
+                <p class="font-extrabold text-es-ink truncate">{{ $exam->title }}</p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <button type="button" class="es-btn es-btn-secondary es-btn-sm" data-hand-raise>✋ J'ai une question</button>
+                <div class="text-right">
+                    <p class="text-[11px] font-bold uppercase text-es-muted">Temps restant</p>
+                    <p class="text-xl font-black tabular-nums" x-text="display" :class="urgent ? 'text-red-600' : 'text-es-primary'"></p>
                 </div>
             </div>
-
-            @include('student.activities.partials.player-shell', [
-                'activity' => $content,
-                'progression' => null,
-                'answers' => $answers,
-                'previewMode' => false,
-                'focusMode' => true,
-                'examMode' => $usesOwnContent,
-                'examAttempt' => $attempt,
-                'saveUrl' => route('student.exams.attempts.save', $attempt),
-                'submitUrl' => route('student.exams.submit', $attempt),
-            ])
         </div>
+
+        @include('student.activities.partials.player-shell', [
+            'activity' => $content,
+            'progression' => null,
+            'answers' => $answers,
+            'previewMode' => false,
+            'focusMode' => true,
+            'examMode' => $usesOwnContent,
+            'examAttempt' => $attempt,
+            'saveUrl' => route('student.exams.attempts.save', $attempt),
+            'submitUrl' => route('student.exams.submit', $attempt),
+            'recordingUrlOverride' => auth()->check() ? route('student.activities.recording.upload', $content, false) : '',
+        ])
     </div>
 </div>
 

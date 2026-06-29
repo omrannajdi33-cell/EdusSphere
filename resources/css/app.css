@@ -834,6 +834,95 @@
         @apply bg-white;
     }
 
+    /* ——— Lecteur activité plein écran ——— */
+    .ap-player {
+        @apply w-full;
+    }
+
+    .ap-player-header {
+        box-shadow: 0 1px 0 rgb(0 0 0 / 0.04);
+    }
+
+    .ap-page-badge {
+        @apply inline-flex items-center rounded-full bg-es-primary/10 px-3 py-1 text-xs font-black text-es-primary;
+    }
+
+    .ap-player-body {
+        background: linear-gradient(180deg, rgb(250 250 249) 0%, rgb(255 255 255) 24%);
+    }
+
+    .ap-page-titlebar {
+        background: rgb(255 255 255 / 0.85);
+    }
+
+    .ap-pane-label {
+        @apply text-[11px] font-black uppercase tracking-wider text-es-muted mb-3;
+    }
+
+    .ap-page-split {
+        @apply min-h-0;
+    }
+
+    .ap-page-pane {
+        scrollbar-width: thin;
+    }
+
+    .ap-page-source .es-reading-passage {
+        @apply bg-white shadow-sm;
+        max-height: none;
+    }
+
+    .ap-page-source .es-reading-panel {
+        @apply space-y-3;
+    }
+
+    .ap-page-questions .es-question-block {
+        @apply border-stone-200/90 shadow-none;
+    }
+
+    .ap-player-footer {
+        box-shadow: 0 -1px 0 rgb(0 0 0 / 0.05);
+    }
+
+    .es-oral-panel {
+        @apply rounded-2xl border border-stone-200 bg-white p-4 md:p-5;
+    }
+
+    .es-oral-panel .oral-record-audio,
+    .es-oral-panel .oral-record-video {
+        @apply min-w-[7rem];
+    }
+
+    .ap-type-menu {
+        @apply flex flex-col gap-1 p-1.5 rounded-2xl border border-stone-200 bg-stone-50/80;
+    }
+
+    .ap-type-menu-item {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all cursor-pointer border border-transparent;
+    }
+
+    .ap-type-menu-item:hover {
+        @apply bg-white border-stone-200;
+    }
+
+    .ap-type-menu-item-active {
+        border-color: var(--type-color, var(--color-es-primary));
+        background: color-mix(in srgb, var(--type-color, #4f46e5) 10%, white);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--type-color, #4f46e5) 18%, transparent);
+    }
+
+    .ap-type-menu-icon {
+        @apply text-xl shrink-0 w-8 text-center;
+    }
+
+    .ap-type-menu-label {
+        @apply font-extrabold text-sm text-es-ink leading-tight;
+    }
+
+    .ap-type-menu-desc {
+        @apply text-[11px] text-es-muted leading-snug;
+    }
+
     .es-question-block {
         @apply shadow-sm;
     }

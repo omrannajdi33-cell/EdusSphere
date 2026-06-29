@@ -6,6 +6,47 @@ import { csrfFetch, readErrorMessage } from './csrf-fetch';
 
 const workspaceState = new WeakMap();
 
+function pickRecorderMime(preferVideo) {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+        return '';
+    }
+
+    const candidates = preferVideo
+        ? [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+            'video/mp4',
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/mpeg',
+        ]
+        : [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/mpeg',
+            'audio/ogg;codecs=opus',
+        ];
+
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+}
+
+function extensionForMime(mime) {
+    if (mime.includes('mp4')) {
+        return 'mp4';
+    }
+    if (mime.includes('mpeg')) {
+        return 'mp3';
+    }
+    if (mime.includes('ogg')) {
+        return 'ogg';
+    }
+
+    return 'webm';
+}
+
 export function initSubjectWorkspaces(root) {
     root.querySelectorAll('[data-reading-panel]').forEach(initReadingPanel);
     root.querySelectorAll('[data-oral-panel]').forEach((panel) => initOralPanel(panel, root));
@@ -40,7 +81,19 @@ export function collectWorkspaceData(pageEl) {
         };
     }
 
+    if (pageEl.querySelector('[data-workspace-root]')) {
+        return {};
+    }
+
     return null;
+}
+
+export async function waitForPendingUploads(root) {
+    const promises = [...root.querySelectorAll('[data-oral-panel]')]
+        .map((panel) => workspaceState.get(panel)?.uploadPromise)
+        .filter(Boolean);
+
+    await Promise.all(promises);
 }
 
 function initReadingPanel(panel) {
@@ -61,7 +114,7 @@ function initReadingPanel(panel) {
 
 function initOralPanel(panel, root) {
     const uploadUrl = root.dataset.recordingUrl;
-    const pageId = panel.closest('[data-page-id]')?.dataset.pageId;
+    const pageId = panel.closest('[data-page]')?.dataset.pageId;
     const statusEl = panel.querySelector('.oral-status');
     const preview = panel.querySelector('[data-oral-preview]');
     const liveVideo = panel.querySelector('.oral-live-video');
@@ -73,92 +126,160 @@ function initOralPanel(panel, root) {
     let chunks = [];
     let stream = null;
     let kind = 'audio';
+    let recorderMime = '';
 
-    workspaceState.set(panel, {
+    const state = {
         recordingPath: panel.dataset.recordingPath || '',
         recordingKind: panel.dataset.recordingKind || 'audio',
         recordingUrl: preview?.querySelector('audio,video')?.src ?? '',
-    });
+        uploadPromise: null,
+        isRecording: false,
+    };
+    workspaceState.set(panel, state);
+
+    function setStatus(message, isError = false) {
+        if (!statusEl) {
+            return;
+        }
+        statusEl.textContent = message;
+        statusEl.classList.toggle('text-red-600', isError);
+        statusEl.classList.toggle('text-es-muted', !isError);
+    }
+
+    function mediaUnavailableMessage(err) {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            return 'Micro/caméra indisponible — utilise Chrome ou Safari récent en HTTPS.';
+        }
+        if (err?.name === 'NotAllowedError') {
+            return 'Autorise le micro et la caméra dans les réglages du navigateur.';
+        }
+        if (err?.name === 'NotFoundError') {
+            return 'Aucun micro ou caméra détecté sur cet appareil.';
+        }
+
+        return 'Micro ou caméra non disponible.';
+    }
 
     async function startRecording(useVideo) {
+        if (state.isRecording) {
+            return;
+        }
+
         kind = useVideo ? 'video' : 'audio';
+        recorderMime = pickRecorderMime(useVideo);
+
+        if (!recorderMime) {
+            setStatus('Enregistrement non supporté par ce navigateur.', true);
+            return;
+        }
+
         try {
-            stream = await navigator.mediaDevices.getUserMedia(useVideo ? { video: true, audio: true } : { audio: true });
+            stream = await navigator.mediaDevices.getUserMedia(
+                useVideo ? { video: { facingMode: 'user' }, audio: true } : { audio: true },
+            );
+
             if (useVideo && liveVideo) {
                 liveVideo.srcObject = stream;
+                liveVideo.muted = true;
+                liveVideo.playsInline = true;
                 liveVideo.classList.remove('hidden');
+                try {
+                    await liveVideo.play();
+                } catch {
+                    /* autoplay bloqué — preview live optionnelle */
+                }
             }
-            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType: recorderMime });
             chunks = [];
             mediaRecorder.ondataavailable = (e) => {
                 if (e.data.size > 0) {
                     chunks.push(e.data);
                 }
             };
-            mediaRecorder.onstop = () => uploadRecording();
+            mediaRecorder.onstop = () => {
+                state.isRecording = false;
+                state.uploadPromise = uploadRecording();
+            };
             mediaRecorder.start(250);
-            if (statusEl) {
-                statusEl.textContent = useVideo ? 'Enregistrement vidéo…' : 'Enregistrement audio…';
-            }
+            state.isRecording = true;
+
+            setStatus(useVideo ? 'Enregistrement vidéo en cours…' : 'Enregistrement audio en cours…');
+            btnAudio?.setAttribute('disabled', 'disabled');
+            btnVideo?.setAttribute('disabled', 'disabled');
             btnStop?.classList.remove('hidden');
-        } catch {
-            if (statusEl) {
-                statusEl.textContent = 'Micro ou caméra non disponible.';
-            }
+        } catch (err) {
+            setStatus(mediaUnavailableMessage(err), true);
+            stream?.getTracks().forEach((t) => t.stop());
+            stream = null;
         }
     }
 
     function stopRecording() {
-        mediaRecorder?.stop();
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            return;
+        }
+
+        mediaRecorder.stop();
         stream?.getTracks().forEach((t) => t.stop());
+        stream = null;
         liveVideo?.classList.add('hidden');
+        if (liveVideo) {
+            liveVideo.srcObject = null;
+        }
         btnStop?.classList.add('hidden');
+        btnAudio?.removeAttribute('disabled');
+        btnVideo?.removeAttribute('disabled');
     }
 
     async function uploadRecording() {
-        if (! uploadUrl || ! pageId || chunks.length === 0) {
+        if (!uploadUrl || !pageId || chunks.length === 0) {
             return;
         }
-        const blob = new Blob(chunks, { type: kind === 'video' ? 'video/webm' : 'audio/webm' });
+
+        const ext = extensionForMime(recorderMime || (kind === 'video' ? 'video/webm' : 'audio/webm'));
+        const blob = new Blob(chunks, { type: recorderMime || (kind === 'video' ? 'video/webm' : 'audio/webm') });
         const form = new FormData();
         form.append('page_id', pageId);
         form.append('kind', kind);
-        form.append('recording', blob, kind === 'video' ? 'video.webm' : 'audio.webm');
+        form.append('recording', blob, `${kind}.${ext}`);
 
-        if (statusEl) {
-            statusEl.textContent = 'Envoi en cours…';
-        }
+        setStatus('Envoi de l\'enregistrement…');
 
         try {
             const res = await csrfFetch(uploadUrl, {
                 method: 'POST',
                 body: form,
             });
-            if (! res.ok) {
+            if (!res.ok) {
                 throw new Error(await readErrorMessage(res, 'upload failed'));
             }
             const data = await res.json();
-            workspaceState.set(panel, {
-                recordingPath: data.path,
-                recordingKind: data.kind,
-                recordingUrl: data.url,
-            });
+            state.recordingPath = data.path;
+            state.recordingKind = data.kind;
+            state.recordingUrl = data.url;
+            panel.dataset.recordingPath = data.path;
+            panel.dataset.recordingKind = data.kind;
+
             if (preview) {
                 preview.classList.remove('hidden');
                 preview.innerHTML = kind === 'video'
                     ? `<video controls class="w-full max-h-64 rounded-xl" src="${data.url}"></video>`
                     : `<audio controls class="w-full" src="${data.url}"></audio>`;
             }
-            if (statusEl) {
-                statusEl.textContent = 'Enregistrement sauvegardé ✓';
-            }
+
+            setStatus('Enregistrement sauvegardé ✓');
             markPlayerDirty(panel);
         } catch (err) {
-            if (statusEl) {
-                statusEl.textContent = err?.message && err.message !== 'upload failed'
+            setStatus(
+                err?.message && err.message !== 'upload failed'
                     ? err.message
-                    : 'Erreur lors de l\'envoi.';
-            }
+                    : 'Erreur lors de l\'envoi.',
+                true,
+            );
+        } finally {
+            state.uploadPromise = null;
+            chunks = [];
         }
     }
 
