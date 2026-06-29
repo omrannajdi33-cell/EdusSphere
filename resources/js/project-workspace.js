@@ -30,9 +30,9 @@ document.addEventListener('alpine:init', () => {
             if (cfg.allowsWrite && cfg.allowsUpload) {
                 steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
                 steps.push({ id: 'upload', label: 'Fichier', icon: '📎' });
-            } elseif (cfg.allowsWrite) {
+            } else if (cfg.allowsWrite) {
                 steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
-            } elseif (cfg.allowsUpload) {
+            } else if (cfg.allowsUpload) {
                 steps.push({ id: 'upload', label: 'Téléversement', icon: '📎' });
             }
 
