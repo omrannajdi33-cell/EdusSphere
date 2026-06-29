@@ -59,11 +59,24 @@
         @forelse ($activities as $activity)
             <article class="es-activity-card">
                 <div class="flex items-start justify-between gap-3 mb-4">
-                    <x-status-badge :status="match($activity->status) { 'published' => 'published', default => 'draft' }" :label="config('activity.statuses.'.$activity->status)"/>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-status-badge :status="match($activity->status) { 'published' => 'published', default => 'draft' }" :label="config('activity.statuses.'.$activity->status)"/>
+                        @if ($activity->isHomework())
+                            <span class="inline-flex items-center rounded-lg bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">📋 Devoir</span>
+                        @endif
+                    </div>
                     <span class="text-xs font-bold text-es-muted">{{ $activity->pages_count }} étape(s)</span>
                 </div>
                 <h2 class="text-xl font-extrabold text-es-ink leading-tight">{{ $activity->title }}</h2>
                 <p class="text-sm font-semibold text-es-muted mt-2">{{ $activity->subject->name }} · {{ $activity->skill->name }}</p>
+                @if ($activity->isHomework())
+                    <p class="text-xs font-bold text-amber-700 mt-2">
+                        {{ $activity->homeworkSlotLabel() }}
+                        @if ($activity->due_at)
+                            · {{ $activity->due_at->translatedFormat('d/m/Y H:i') }}
+                        @endif
+                    </p>
+                @endif
 
                 <div class="flex flex-wrap gap-2 mt-6 pt-4 border-t border-stone-100">
                     @if ($activity->status === 'draft')

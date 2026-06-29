@@ -20,10 +20,18 @@ class StudentDashboardStats
         }
 
         $activities = Activity::with(['subject', 'skill'])
+            ->notHomework()
             ->where('status', 'published')
             ->whereHas('assignedStudents', fn ($q) => $q->where('students.id', $student->id))
             ->latest('published_at')
             ->get();
+
+        $homework = Activity::query()
+            ->homework()
+            ->assignedToStudent($student)
+            ->get();
+
+        $homeworkPending = $homework->filter(fn (Activity $a) => $a->isPendingForStudent($student))->count();
 
         $progressions = Progression::query()
             ->where('student_id', $student->id)
@@ -65,6 +73,7 @@ class StudentDashboardStats
 
         return [
             'activities_count' => $activities->count(),
+            'homework_pending_count' => $homeworkPending,
             'lessons_count' => $lessons->count(),
             'exams_active_count' => $examsActive,
             'in_progress_count' => $inProgress->count(),
@@ -80,6 +89,7 @@ class StudentDashboardStats
     {
         return [
             'activities_count' => 0,
+            'homework_pending_count' => 0,
             'lessons_count' => 0,
             'exams_active_count' => 0,
             'in_progress_count' => 0,

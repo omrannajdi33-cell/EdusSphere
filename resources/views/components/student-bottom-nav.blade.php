@@ -7,6 +7,7 @@ $items = [
     ['label' => 'Accueil', 'href' => route('student.dashboard'), 'key' => 'home', 'icon' => $navIcons['home']],
     ['label' => 'Leçons', 'href' => route('student.lessons.index'), 'key' => 'lessons', 'icon' => $navIcons['document']],
     ['label' => 'Activités', 'href' => route('student.activities.index'), 'key' => 'activities', 'icon' => $navIcons['clipboard']],
+    ['label' => 'Devoirs', 'href' => route('student.homework.index'), 'key' => 'homework', 'icon' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
     [
         'label' => 'Points',
         'href' => route('student.points.index'),
@@ -24,6 +25,7 @@ $desktopItems = [
     ['label' => 'Points', 'href' => route('student.points.index'), 'key' => 'points', 'highlight' => true],
     ['label' => 'Leçons', 'href' => route('student.lessons.index'), 'key' => 'lessons'],
     ['label' => 'Activités', 'href' => route('student.activities.index'), 'key' => 'activities'],
+    ['label' => 'Devoirs', 'href' => route('student.homework.index'), 'key' => 'homework'],
     ['label' => 'Examens', 'href' => route('student.exams.index'), 'key' => 'exams'],
     ['label' => 'Matières', 'href' => route('student.subjects.index'), 'key' => 'subjects'],
     ['label' => 'Horaire', 'href' => route('student.schedule.index'), 'key' => 'schedule'],

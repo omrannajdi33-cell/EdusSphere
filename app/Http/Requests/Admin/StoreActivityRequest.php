@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Http\Requests\Admin\ActivityHomeworkRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +25,15 @@ class StoreActivityRequest extends FormRequest
             ],
             'lesson_id' => ['nullable', 'exists:lessons,id'],
             'status' => ['nullable', Rule::in(['draft', 'published', 'archived'])],
+            ...ActivityHomeworkRules::rules($this),
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_homework' => $this->boolean('is_homework'),
+        ]);
     }
 
     public function messages(): array
@@ -34,6 +43,13 @@ class StoreActivityRequest extends FormRequest
             'subject_id.required' => 'Choisis une matière.',
             'skill_id.required' => 'Choisis une compétence.',
             'skill_id.exists' => 'Cette compétence ne correspond pas à la matière choisie.',
+            ...ActivityHomeworkRules::messages(),
         ];
+    }
+
+    /** @return array<string, mixed> */
+    public function validated($key = null, $default = null): array
+    {
+        return ActivityHomeworkRules::normalize(parent::validated());
     }
 }

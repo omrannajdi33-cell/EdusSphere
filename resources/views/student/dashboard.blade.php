@@ -63,6 +63,17 @@
             <span class="text-sm font-extrabold text-es-ink group-hover:text-es-primary">Activités</span>
             <span class="text-xs font-bold text-es-primary mt-1 block">{{ $stats['activities_count'] }} disponible(s)</span>
         </a>
+        <a href="{{ route('student.homework.index') }}" class="es-quick-link group">
+            <span class="text-2xl block mb-1">📋</span>
+            <span class="text-sm font-extrabold text-es-ink group-hover:text-es-primary">Devoirs</span>
+            <span class="text-xs font-bold text-amber-600 mt-1 block">
+                @if (($stats['homework_pending_count'] ?? 0) > 0)
+                    {{ $stats['homework_pending_count'] }} à faire
+                @else
+                    À jour
+                @endif
+            </span>
+        </a>
         <a href="{{ route('student.lessons.index') }}" class="es-quick-link group">
             <span class="text-2xl block mb-1">📚</span>
             <span class="text-sm font-extrabold text-es-ink group-hover:text-es-primary">Leçons</span>

@@ -158,6 +158,7 @@ Route::prefix('student')
         Route::get('/lessons/{lesson}', [StudentLessonController::class, 'show'])->name('lessons.show');
         Route::post('/lessons/{lesson}/annotations', [LessonAnnotationController::class, 'save'])->name('lessons.annotations.save');
         Route::get('/activities', [StudentActivityController::class, 'index'])->name('activities.index');
+        Route::get('/homework', [\App\Http\Controllers\Student\HomeworkController::class, 'index'])->name('homework.index');
         Route::get('/activities/{activity}/play', [StudentActivityController::class, 'play'])->name('activities.play');
         Route::post('/activities/{activity}/save', [StudentActivityController::class, 'save'])->name('activities.save');
         Route::post('/activities/{activity}/recording', [StudentActivityController::class, 'uploadRecording'])->name('activities.recording.upload');

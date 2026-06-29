@@ -94,6 +94,71 @@
                     <p class="text-xs text-es-muted mt-1">L'élève pourra consulter cette leçon pendant l'activité.</p>
                 </div>
 
+                @php
+                    $isHomework = (bool) old('is_homework', $activity->is_homework ?? false);
+                    $dueValue = old('due_at', $activity->due_at?->format('Y-m-d\TH:i'));
+                    $homeworkSlot = old('homework_slot', $activity->homework_slot);
+                @endphp
+                <div
+                    class="rounded-2xl border border-stone-200 bg-stone-50/80 p-5 space-y-4"
+                    x-data="{ isHomework: @json($isHomework) }"
+                >
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="is_homework"
+                            value="1"
+                            class="mt-1 rounded border-stone-300 text-es-primary focus:ring-es-primary"
+                            x-model="isHomework"
+                            @checked($isHomework)
+                        >
+                        <span>
+                            <span class="font-extrabold text-es-ink block">C'est un devoir</span>
+                            <span class="text-sm text-es-muted">Les devoirs apparaissent dans une section dédiée pour les élèves, séparée des activités en classe.</span>
+                        </span>
+                    </label>
+
+                    <div x-show="isHomework" x-cloak class="space-y-4 pt-2 border-t border-stone-200">
+                        <div>
+                            <label for="due_at" class="es-label">Date limite</label>
+                            <input
+                                type="datetime-local"
+                                id="due_at"
+                                name="due_at"
+                                value="{{ $dueValue }}"
+                                class="es-input @error('due_at') es-input-error @enderror"
+                            >
+                            @error('due_at')<p class="es-field-error">{{ $message }}</p>@enderror
+                        </div>
+
+                        <fieldset>
+                            <legend class="es-label mb-3">Quand le devoir doit-il être fait ?</legend>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach (config('activity.homework_slots') as $slotKey => $slotLabel)
+                                    <label @class([
+                                        'es-homework-slot-option',
+                                        'es-homework-slot-option-active' => $homeworkSlot === $slotKey,
+                                    ])>
+                                        <input
+                                            type="radio"
+                                            name="homework_slot"
+                                            value="{{ $slotKey }}"
+                                            class="sr-only"
+                                            @checked($homeworkSlot === $slotKey)
+                                        >
+                                        <span class="text-2xl mb-2 block" aria-hidden="true">{{ $slotKey === 'during_school' ? '🏫' : '🏠' }}</span>
+                                        <span class="font-extrabold text-es-ink">{{ $slotLabel }}</span>
+                                        <span class="text-xs text-es-muted mt-1 block">
+                                            {{ $slotKey === 'during_school' ? 'À faire en classe ou pendant les heures scolaires.' : 'À faire à la maison après les cours.' }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('homework_slot')<p class="es-field-error mt-2">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
+                </div>
+
                 <div class="flex flex-wrap gap-3 pt-4">
                     <x-button type="submit">{{ $isNew ? 'Continuer → Contenu' : 'Enregistrer et continuer' }}</x-button>
                 </div>
@@ -353,6 +418,15 @@
                         <p class="text-es-muted mt-1">{{ $activity->subject->name }} · {{ $activity->skill->name }}</p>
                         @if ($activity->description)
                             <p class="mt-3 text-sm">{{ $activity->description }}</p>
+                        @endif
+                        @if ($activity->isHomework())
+                            <div class="mt-4 inline-flex flex-wrap items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-sm font-bold text-amber-900">
+                                <span>📋 Devoir</span>
+                                <span>· {{ $activity->homeworkSlotLabel() }}</span>
+                                @if ($activity->due_at)
+                                    <span>· Pour le {{ $activity->due_at->translatedFormat('d M Y · H:i') }}</span>
+                                @endif
+                            </div>
                         @endif
                     </div>
 

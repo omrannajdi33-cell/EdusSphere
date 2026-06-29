@@ -7,6 +7,11 @@ return [
         'archived' => 'Archivé',
     ],
 
+    'homework_slots' => [
+        'during_school' => 'Pendant l\'école',
+        'after_school' => 'Après l\'école',
+    ],
+
     'workflow_statuses' => [
         'in_progress' => 'En cours',
         'submitted' => 'Soumise',

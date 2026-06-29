@@ -23,6 +23,7 @@ class ActivityController extends Controller
 
         $activities = $student
             ? Activity::with(['subject', 'skill'])
+                ->notHomework()
                 ->where('status', 'published')
                 ->whereHas('assignedStudents', fn ($q) => $q->where('students.id', $student->id))
                 ->latest('published_at')
@@ -82,7 +83,7 @@ class ActivityController extends Controller
             : collect();
 
         return view('student.activities.player', [
-            'activeNav' => 'activities',
+            'activeNav' => $activity->isHomework() ? 'homework' : 'activities',
             'activity' => $activity,
             'progression' => $progression,
             'answers' => $answers,
