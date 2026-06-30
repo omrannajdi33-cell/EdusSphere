@@ -519,8 +519,16 @@ class ActivityEngineTest extends TestCase
             ->where('activity_id', $activity->id)
             ->firstOrFail();
 
-        $this->assertNotNull($progression->result_photo_path);
-        Storage::disk('private')->assertExists($progression->result_photo_path);
+        $this->assertNotEmpty($progression->resultPhotoPaths());
+        Storage::disk('private')->assertExists($progression->resultPhotoPaths()[0]);
+
+        $this->actingAs($this->studentUser)
+            ->post(route('student.activities.result-photo.upload', $activity), [
+                'photo' => UploadedFile::fake()->create('resultat-2.jpg', 100, 'image/jpeg'),
+            ])
+            ->assertOk();
+
+        $this->assertCount(2, $progression->fresh()->resultPhotoPaths());
 
         $this->actingAs($this->studentUser)
             ->postJson(route('student.activities.submit', $activity))
@@ -529,10 +537,12 @@ class ActivityEngineTest extends TestCase
         $this->actingAs($this->teacher)
             ->get(route('admin.activities.corrections.show', [$activity, $this->student]))
             ->assertOk()
-            ->assertSee('Photo du résultat');
+            ->assertSee('Photos du résultat');
+
+        $photoPath = $progression->fresh()->resultPhotoPaths()[0];
 
         $this->actingAs($this->teacher)
-            ->get(route('activities.result-photo.show', [$activity, $this->student]))
+            ->get(route('activities.result-photo.show', [$activity, $this->student]).'?path='.urlencode($photoPath))
             ->assertOk();
     }
 
@@ -552,7 +562,7 @@ class ActivityEngineTest extends TestCase
         $this->actingAs($this->studentUser)
             ->postJson(route('student.activities.submit', $activity))
             ->assertStatus(422)
-            ->assertJson(['message' => 'Prends une photo de ton résultat avant de soumettre.']);
+            ->assertJson(['message' => 'Prends au moins une photo de ton résultat avant de soumettre.']);
     }
 
     public function test_teacher_can_delete_activity(): void

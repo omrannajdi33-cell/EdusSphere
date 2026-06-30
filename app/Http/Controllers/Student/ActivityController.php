@@ -198,8 +198,9 @@ class ActivityController extends Controller
             'photo' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,heic,heif'],
         ]);
 
-        if ($progression->result_photo_path && PrivateStorage::exists($progression->result_photo_path)) {
-            PrivateStorage::delete($progression->result_photo_path);
+        $photos = $progression->resultPhotoPaths();
+        if (count($photos) >= 12) {
+            return response()->json(['message' => 'Tu peux ajouter au maximum 12 photos.'], 422);
         }
 
         $file = $data['photo'];
@@ -210,15 +211,17 @@ class ActivityController extends Controller
             PrivateStorage::DISK,
         );
 
-        $progression->update(['result_photo_path' => $path]);
+        $photos[] = $path;
+        $progression->update(['result_photos' => $photos]);
 
         return response()->json([
             'path' => $path,
-            'url' => route('activities.result-photo.show', [$activity, $student]),
+            'url' => route('activities.result-photo.show', [$activity, $student], absolute: false).'?path='.urlencode($path),
+            'photos' => $photos,
         ]);
     }
 
-    public function deleteResultPhoto(Activity $activity): JsonResponse
+    public function deleteResultPhoto(Request $request, Activity $activity): JsonResponse
     {
         $student = auth()->user()->student;
         abort_unless($activity->isVisibleToStudent($student), 404);
@@ -231,13 +234,27 @@ class ActivityController extends Controller
         abort_if(! $progression, 404);
         abort_if(in_array($progression->workflow_status, ['submitted', 'corrected'], true), 423, 'Activité déjà soumise.');
 
-        if ($progression->result_photo_path && PrivateStorage::exists($progression->result_photo_path)) {
-            PrivateStorage::delete($progression->result_photo_path);
+        $data = $request->validate([
+            'path' => ['required', 'string', 'max:500'],
+        ]);
+
+        $path = $data['path'];
+        $prefix = 'activities/'.$activity->id.'/students/'.$student->id.'/';
+        abort_unless(str_starts_with($path, $prefix), 403);
+        abort_unless(in_array($path, $progression->resultPhotoPaths(), true), 404);
+
+        if (PrivateStorage::exists($path)) {
+            PrivateStorage::delete($path);
         }
 
-        $progression->update(['result_photo_path' => null]);
+        $photos = array_values(array_filter(
+            $progression->resultPhotoPaths(),
+            fn (string $stored) => $stored !== $path,
+        ));
 
-        return response()->json(['ok' => true]);
+        $progression->update(['result_photos' => $photos ?: null]);
+
+        return response()->json(['ok' => true, 'photos' => $photos]);
     }
 
     /**
@@ -300,9 +317,11 @@ class ActivityController extends Controller
         );
 
         if ($activity->requiresResultPhoto()) {
-            $photoPath = $progression?->result_photo_path;
-            if (blank($photoPath) || ! PrivateStorage::exists($photoPath)) {
-                return response()->json(['message' => 'Prends une photo de ton résultat avant de soumettre.'], 422);
+            $photos = $progression?->resultPhotoPaths() ?? [];
+            $hasStoredPhoto = collect($photos)->contains(fn (string $path) => PrivateStorage::exists($path));
+
+            if (! $hasStoredPhoto) {
+                return response()->json(['message' => 'Prends au moins une photo de ton résultat avant de soumettre.'], 422);
             }
         }
 

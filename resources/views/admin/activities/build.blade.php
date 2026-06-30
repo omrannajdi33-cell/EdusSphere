@@ -186,8 +186,8 @@
                             @checked($requireResultPhoto)
                         >
                         <span>
-                            <span class="font-extrabold text-es-ink block">Photo du résultat (iPad / tablette)</span>
-                            <span class="text-sm text-es-muted">L'élève devra prendre une photo de son travail terminé avant de soumettre. Idéal pour une feuille manuscrite ou un produit final.</span>
+                            <span class="font-extrabold text-es-ink block">Photos du résultat (iPad / tablette)</span>
+                            <span class="text-sm text-es-muted">L'élève pourra prendre une ou plusieurs photos de son travail terminé avant de soumettre.</span>
                         </span>
                     </label>
                 </div>

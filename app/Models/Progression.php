@@ -16,7 +16,7 @@ class Progression extends Model
         'workflow_status',
         'submitted_at',
         'time_spent_seconds',
-        'result_photo_path',
+        'result_photos',
     ];
 
     protected function casts(): array
@@ -24,7 +24,22 @@ class Progression extends Model
         return [
             'percent_complete' => 'decimal:2',
             'submitted_at' => 'datetime',
+            'result_photos' => 'array',
         ];
+    }
+
+    /** @return list<string> */
+    public function resultPhotoPaths(): array
+    {
+        return collect($this->result_photos ?? [])
+            ->filter(fn ($path) => is_string($path) && $path !== '')
+            ->values()
+            ->all();
+    }
+
+    public function hasResultPhotos(): bool
+    {
+        return $this->resultPhotoPaths() !== [];
     }
 
     public function student(): BelongsTo

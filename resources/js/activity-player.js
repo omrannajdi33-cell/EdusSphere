@@ -641,7 +641,7 @@ function initActivityPlayer(root) {
             await waitForPendingResultPhoto(root);
 
             if (root.dataset.requireResultPhoto === '1' && !hasResultPhoto(root)) {
-                updateSaveStatus('error', 'Prends une photo de ton résultat avant de soumettre.');
+                updateSaveStatus('error', 'Prends au moins une photo de ton résultat avant de soumettre.');
                 toggleResultPhotoPanel(root, true);
                 return;
             }

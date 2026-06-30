@@ -43,7 +43,8 @@
     data-require-result-photo="1"
     data-result-photo-upload-url="{{ auth()->check() && !($previewMode ?? false) && !($correctionMode ?? false) && !($readOnly && !($isReturned ?? false)) ? route('student.activities.result-photo.upload', $activity) : '' }}"
     data-result-photo-delete-url="{{ auth()->check() && !($previewMode ?? false) && !($correctionMode ?? false) && !($readOnly && !($isReturned ?? false)) ? route('student.activities.result-photo.delete', $activity) : '' }}"
-    data-result-photo-path="{{ $progression?->result_photo_path ?? '' }}"
+    data-result-photo-show-url="{{ ($student ?? auth()->user()?->student) ? route('activities.result-photo.show', [$activity, $student ?? auth()->user()->student]) : '' }}"
+    data-result-photo-count="{{ count($progression?->resultPhotoPaths() ?? []) }}"
     @endif
     data-initial-page="{{ $startPage }}"
     data-total-pages="{{ $totalPages }}"

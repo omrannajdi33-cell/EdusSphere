@@ -6,11 +6,12 @@ use App\Models\Activity;
 use App\Models\Progression;
 use App\Models\Student;
 use App\Support\PrivateStorage;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ActivityResultPhotoController extends Controller
 {
-    public function __invoke(Activity $activity, Student $student): Response
+    public function __invoke(Request $request, Activity $activity, Student $student): Response
     {
         $user = auth()->user();
         abort_unless($user, 403);
@@ -27,10 +28,14 @@ class ActivityResultPhotoController extends Controller
             ->where('student_id', $student->id)
             ->first();
 
-        $path = $progression?->result_photo_path;
+        $path = (string) $request->query('path', '');
         $prefix = 'activities/'.$activity->id.'/students/'.$student->id.'/';
 
-        abort_unless($path && str_starts_with($path, $prefix), 404);
+        if ($path === '' || ! str_starts_with($path, $prefix)) {
+            abort(404);
+        }
+
+        abort_unless(in_array($path, $progression?->resultPhotoPaths() ?? [], true), 404);
         abort_unless(PrivateStorage::exists($path), 404);
 
         $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
