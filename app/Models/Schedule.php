@@ -10,6 +10,7 @@ class Schedule extends Model
 {
     protected $fillable = [
         'subject_id',
+        'school_level_id',
         'title',
         'color',
         'day_of_week',
@@ -50,31 +51,18 @@ class Schedule extends Model
         return $this->belongsToMany(Notion::class, 'schedule_notion')->withTimestamps();
     }
 
-    public function targetedStudents(): BelongsToMany
+    public function schoolLevel(): BelongsTo
     {
-        return $this->belongsToMany(Student::class, 'schedule_student')->withTimestamps();
-    }
-
-    public function studentItems(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(ScheduleStudentItem::class)->orderBy('sort_order')->orderBy('id');
+        return $this->belongsTo(SchoolLevel::class);
     }
 
     public function isVisibleToStudent(?Student $student): bool
     {
-        if (! $student) {
+        if (! $student?->school_level_id || ! $this->school_level_id) {
             return false;
         }
 
-        if (! $this->relationLoaded('targetedStudents')) {
-            $this->load('targetedStudents');
-        }
-
-        if ($this->targetedStudents->isEmpty()) {
-            return true;
-        }
-
-        return $this->targetedStudents->contains('id', $student->id);
+        return (int) $this->school_level_id === (int) $student->school_level_id;
     }
 
     public function subject(): BelongsTo
@@ -116,10 +104,6 @@ class Schedule extends Model
         }
 
         if ($this->relationLoaded('notions') && $this->notions->isNotEmpty()) {
-            return true;
-        }
-
-        if ($this->relationLoaded('studentItems') && $this->studentItems->isNotEmpty()) {
             return true;
         }
 

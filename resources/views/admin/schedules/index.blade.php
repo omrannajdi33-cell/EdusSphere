@@ -2,20 +2,29 @@
 
 @section('admin-content')
 <div class="es-page-enter es-schedule-admin">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
-            <h1 class="es-page-title">Horaire</h1>
+            <h1 class="es-page-title">Horaire — {{ $activeLevel->name }}</h1>
             <p class="es-page-subtitle">
                 Semaine du {{ $grid['week_start']->translatedFormat('j F') }}
                 au {{ $grid['week_end']->translatedFormat('j F Y') }}
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <x-button href="{{ route('admin.schedules.index', ['week' => $prevWeek]) }}" variant="secondary" class="es-btn-sm">←</x-button>
-            <x-button href="{{ route('admin.schedules.index', ['week' => now()->startOfWeek()->toDateString()]) }}" variant="secondary" class="es-btn-sm">Aujourd'hui</x-button>
-            <x-button href="{{ route('admin.schedules.index', ['week' => $nextWeek]) }}" variant="secondary" class="es-btn-sm">→</x-button>
+            <x-button href="{{ route('admin.schedules.index', ['level' => $activeLevel->id, 'week' => $prevWeek]) }}" variant="secondary" class="es-btn-sm">←</x-button>
+            <x-button href="{{ route('admin.schedules.index', ['level' => $activeLevel->id, 'week' => now()->startOfWeek()->toDateString()]) }}" variant="secondary" class="es-btn-sm">Aujourd'hui</x-button>
+            <x-button href="{{ route('admin.schedules.index', ['level' => $activeLevel->id, 'week' => $nextWeek]) }}" variant="secondary" class="es-btn-sm">→</x-button>
             <x-button type="button" class="es-btn-sm" @click="$dispatch('open-schedule-modal', { mode: 'specific', schedule_date: '{{ now()->toDateString() }}' })">+ Date</x-button>
         </div>
+    </div>
+
+    <div class="es-tab-bar mb-6">
+        @foreach ($calendarLevels as $level)
+            <a
+                href="{{ route('admin.schedules.index', ['level' => $level->id, 'week' => $grid['week_start']->toDateString()]) }}"
+                @class(['es-tab', 'es-tab-active' => $level->id === $activeLevel->id])
+            >{{ $level->name }}</a>
+        @endforeach
     </div>
 
     <x-card class="overflow-x-auto mb-4 !p-4 md:!p-6">
@@ -69,11 +78,12 @@
                                         'exam_ids' => $slot['exam_ids'] ?? [],
                                         'project_ids' => $slot['project_ids'] ?? [],
                                         'notion_ids' => $slot['notion_ids'] ?? [],
-                                        'student_ids' => $slot['student_ids'] ?? [],
-                                        'student_items' => $slot['student_items'] ?? [],
                                     ]))"
                                 >
                                     <span class="es-schedule-slot-compact-label">{{ $slot['grid_label'] }}</span>
+                                    @if (! empty($slot['device_summary']))
+                                        <span class="es-schedule-slot-devices" title="Matériel requis">{{ $slot['device_summary'] }}</span>
+                                    @endif
                                     @if ($slot['has_notes'] ?? false)
                                         <span class="es-schedule-slot-note-dot" aria-hidden="true"></span>
                                     @endif
@@ -98,7 +108,7 @@
         </div>
     </x-card>
 
-    <p class="text-sm text-es-muted">Clique un cours pour planifier matériel, notions, activités, examens, projets et le travail par élève.</p>
+    <p class="text-sm text-es-muted">Un calendrier par niveau. 📱 = tablette (stylet, vidéo) · 💻 = ordinateur — comptés automatiquement selon les activités, examens et projets liés.</p>
 </div>
 
 <div
@@ -106,13 +116,14 @@
         'dayLabels' => $dayLabels,
         'periods' => $grid['period_defs'],
         'week' => $grid['week_start']->toDateString(),
+        'levelId' => $activeLevel->id,
+        'levelName' => $activeLevel->name,
         'storeUrl' => route('admin.schedules.store'),
         'updateUrl' => url('/admin/schedules'),
-        'activities' => $linkableActivities->map(fn ($a) => ['id' => $a->id, 'title' => $a->title, 'subject_id' => $a->subject_id, 'subject' => $a->subject?->name])->values(),
-        'exams' => $linkableExams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title, 'subject_id' => $e->subject_id, 'subject' => $e->subject?->name])->values(),
-        'projects' => $linkableProjects->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'subject_id' => $p->subject_id, 'subject' => $p->subject?->name])->values(),
+        'activities' => $linkableActivities->map(fn ($a) => ['id' => $a->id, 'title' => $a->title, 'subject_id' => $a->subject_id])->values(),
+        'exams' => $linkableExams->map(fn ($e) => ['id' => $e->id, 'title' => $e->title, 'subject_id' => $e->subject_id])->values(),
+        'projects' => $linkableProjects->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'subject_id' => $p->subject_id])->values(),
         'notions' => $linkableNotions->map(fn ($n) => ['id' => $n->id, 'title' => $n->title, 'subject_id' => $n->subject_id, 'category' => $n->category?->name])->values(),
-        'students' => $students->map(fn ($s) => ['id' => $s->id, 'name' => $s->full_name])->values(),
     ]))"
     x-on:open-schedule-modal.window="open($event.detail)"
     @keydown.escape.window="close()"
@@ -123,8 +134,8 @@
         <div class="es-schedule-modal relative w-full max-w-4xl max-h-[92vh] overflow-y-auto" @click.outside="close()">
             <div class="flex items-start justify-between gap-4 mb-6">
                 <div>
-                    <h2 class="text-2xl font-black text-es-ink" x-text="editing ? 'Détail du cours' : 'Planifier un cours'"></h2>
-                    <p class="text-sm text-es-muted mt-1">Horaire, notions, contenus liés et plan personnalisé par élève.</p>
+                    <h2 class="text-2xl font-black text-es-ink" x-text="editing ? 'Modifier le créneau' : 'Planifier un créneau'"></h2>
+                    <p class="text-sm text-es-muted mt-1">Niveau : <span class="font-bold" x-text="config.levelName"></span></p>
                 </div>
                 <button type="button" class="rounded-xl p-2 text-es-muted hover:bg-stone-100 hover:text-es-ink" @click="close()" aria-label="Fermer">✕</button>
             </div>
@@ -133,6 +144,8 @@
                 @csrf
                 <template x-if="editing"><input type="hidden" name="_method" value="PUT"></template>
                 <input type="hidden" name="week" :value="week">
+                <input type="hidden" name="level" :value="config.levelId">
+                <input type="hidden" name="school_level_id" :value="config.levelId">
 
                 <div class="grid gap-6 lg:grid-cols-2">
                     <div class="space-y-4">
@@ -145,12 +158,10 @@
                                 @endforeach
                             </select>
                         </div>
-
                         <div>
                             <label class="es-label">Titre du cours</label>
                             <input type="text" name="title" x-model="form.title" class="es-input" placeholder="Ex. Fractions, Lecture…">
                         </div>
-
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="es-label">Période</label>
@@ -168,12 +179,10 @@
                                 </select>
                             </div>
                         </div>
-
                         <div x-show="form.mode === 'specific'" x-cloak>
                             <label class="es-label">Date</label>
                             <input type="date" name="schedule_date" x-model="form.schedule_date" class="es-input" :required="form.mode === 'specific'">
                         </div>
-
                         <div x-show="form.mode === 'recurring'" x-cloak>
                             <label class="es-label">Jour</label>
                             <select name="day_of_week" x-model="form.day_of_week" class="es-select" :required="form.mode === 'recurring'">
@@ -182,7 +191,6 @@
                                 @endforeach
                             </select>
                         </div>
-
                         <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 space-y-3">
                             <label class="flex items-start gap-3 cursor-pointer">
                                 <input type="checkbox" name="use_custom_time" value="1" class="mt-1 rounded border-stone-300 text-es-primary focus:ring-es-primary" x-model="form.use_custom_time">
@@ -201,30 +209,24 @@
                                     <input type="time" name="ends_at" x-model="form.ends_at" class="es-input" :required="form.use_custom_time">
                                 </div>
                             </div>
-                            <p class="text-xs font-semibold text-es-muted" x-show="form.use_custom_time" x-cloak>
-                                <span x-show="form.mode === 'recurring'">→ Appliqué <strong>toujours</strong> pour ce créneau hebdomadaire.</span>
-                                <span x-show="form.mode === 'specific'">→ Horaire <strong>exceptionnel</strong> pour cette date seulement.</span>
-                            </p>
                         </div>
                     </div>
-
                     <div class="space-y-4">
                         <div>
                             <label class="es-label">Matériel nécessaire</label>
-                            <textarea name="materials" x-model="form.materials" class="es-textarea es-schedule-notes" rows="4" placeholder="Un élément par ligne"></textarea>
+                            <textarea name="materials" x-model="form.materials" class="es-textarea es-schedule-notes" rows="3" placeholder="Un élément par ligne"></textarea>
                         </div>
                         <div>
-                            <label class="es-label">Ce que je planifie</label>
-                            <textarea name="plan" x-model="form.plan" class="es-textarea es-schedule-notes" rows="4" placeholder="Un point par ligne"></textarea>
+                            <label class="es-label">Notes de planification</label>
+                            <textarea name="plan" x-model="form.plan" class="es-textarea es-schedule-notes" rows="3" placeholder="Un point par ligne"></textarea>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid gap-6 lg:grid-cols-2 mt-6 pt-6 border-t border-stone-100">
+                <div class="grid gap-4 sm:grid-cols-2 mt-6 pt-6 border-t border-stone-100">
                     <div>
-                        <label class="es-label">Notions travaillées</label>
-                        <p class="text-xs text-es-muted mb-3">Notions de la banque (par matière).</p>
-                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
+                        <label class="es-label">Notions</label>
+                        <div class="es-schedule-link-list max-h-40 overflow-y-auto mt-2">
                             <template x-for="notion in filteredNotions()" :key="'n-' + notion.id">
                                 <label class="es-schedule-link-item">
                                     <input type="checkbox" name="notion_ids[]" :value="notion.id" :checked="isLinked('notion_ids', notion.id)" @change="toggleLink('notion_ids', notion.id)">
@@ -234,126 +236,48 @@
                                     </span>
                                 </label>
                             </template>
-                            <p x-show="filteredNotions().length === 0" class="text-sm text-es-muted py-4 text-center">Aucune notion pour cette matière. <a href="{{ route('admin.notions.index') }}" class="es-link">Créer des notions</a></p>
+                            <p x-show="filteredNotions().length === 0" class="text-sm text-es-muted py-4 text-center">Aucune notion pour cette matière.</p>
                         </div>
                     </div>
                     <div>
-                        <label class="es-label">Projets liés</label>
-                        <p class="text-xs text-es-muted mb-3">Projets publiés pendant ce cours.</p>
-                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
-                            <template x-for="project in filteredProjects()" :key="'p-' + project.id">
-                                <label class="es-schedule-link-item">
-                                    <input type="checkbox" name="project_ids[]" :value="project.id" :checked="isLinked('project_ids', project.id)" @change="toggleLink('project_ids', project.id)">
-                                    <span class="min-w-0">
-                                        <span class="font-bold text-es-ink block truncate" x-text="project.title"></span>
-                                        <span class="text-xs text-es-muted" x-text="project.subject"></span>
-                                    </span>
-                                </label>
-                            </template>
-                            <p x-show="filteredProjects().length === 0" class="text-sm text-es-muted py-4 text-center">Aucun projet publié pour cette matière.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid gap-6 lg:grid-cols-2 mt-6 pt-6 border-t border-stone-100">
-                    <div>
-                        <label class="es-label">Activités liées</label>
-                        <p class="text-xs text-es-muted mb-3">Coche les activités prévues pendant ce cours.</p>
-                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
+                        <label class="es-label">Activités</label>
+                        <div class="es-schedule-link-list max-h-40 overflow-y-auto mt-2">
                             <template x-for="activity in filteredActivities()" :key="'a-' + activity.id">
                                 <label class="es-schedule-link-item">
                                     <input type="checkbox" name="activity_ids[]" :value="activity.id" :checked="isLinked('activity_ids', activity.id)" @change="toggleLink('activity_ids', activity.id)">
-                                    <span class="min-w-0">
-                                        <span class="font-bold text-es-ink block truncate" x-text="activity.title"></span>
-                                        <span class="text-xs text-es-muted" x-text="activity.subject"></span>
-                                    </span>
+                                    <span class="font-bold text-es-ink truncate" x-text="activity.title"></span>
                                 </label>
                             </template>
-                            <p x-show="filteredActivities().length === 0" class="text-sm text-es-muted py-4 text-center">Aucune activité publiée pour cette matière.</p>
+                            <p x-show="filteredActivities().length === 0" class="text-sm text-es-muted py-4 text-center">Aucune activité publiée.</p>
                         </div>
                     </div>
                     <div>
-                        <label class="es-label">Examens liés</label>
-                        <p class="text-xs text-es-muted mb-3">Coche les examens prévus pendant ce cours.</p>
-                        <div class="es-schedule-link-list max-h-44 overflow-y-auto">
+                        <label class="es-label">Examens</label>
+                        <div class="es-schedule-link-list max-h-40 overflow-y-auto mt-2">
                             <template x-for="exam in filteredExams()" :key="'e-' + exam.id">
                                 <label class="es-schedule-link-item">
                                     <input type="checkbox" name="exam_ids[]" :value="exam.id" :checked="isLinked('exam_ids', exam.id)" @change="toggleLink('exam_ids', exam.id)">
-                                    <span class="min-w-0">
-                                        <span class="font-bold text-es-ink block truncate" x-text="exam.title"></span>
-                                        <span class="text-xs text-es-muted" x-text="exam.subject"></span>
-                                    </span>
+                                    <span class="font-bold text-es-ink truncate" x-text="exam.title"></span>
                                 </label>
                             </template>
-                            <p x-show="filteredExams().length === 0" class="text-sm text-es-muted py-4 text-center">Aucun examen disponible pour cette matière.</p>
+                            <p x-show="filteredExams().length === 0" class="text-sm text-es-muted py-4 text-center">Aucun examen disponible.</p>
                         </div>
                     </div>
-                </div>
-
-                <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
                     <div>
-                        <label class="es-label">Limiter à certains élèves (optionnel)</label>
-                        <p class="text-xs text-es-muted mb-3">Vide = visible par toute la classe. Sinon, seuls les élèves cochés voient ce créneau.</p>
-                        <div class="es-schedule-link-list max-h-36 overflow-y-auto">
-                            <template x-for="student in config.students" :key="'st-' + student.id">
+                        <label class="es-label">Projets</label>
+                        <div class="es-schedule-link-list max-h-40 overflow-y-auto mt-2">
+                            <template x-for="project in filteredProjects()" :key="'p-' + project.id">
                                 <label class="es-schedule-link-item">
-                                    <input type="checkbox" name="student_ids[]" :value="student.id" :checked="isLinked('student_ids', student.id)" @change="toggleLink('student_ids', student.id)">
-                                    <span class="font-semibold text-es-ink" x-text="student.name"></span>
+                                    <input type="checkbox" name="project_ids[]" :value="project.id" :checked="isLinked('project_ids', project.id)" @change="toggleLink('project_ids', project.id)">
+                                    <span class="font-bold text-es-ink truncate" x-text="project.title"></span>
                                 </label>
                             </template>
+                            <p x-show="filteredProjects().length === 0" class="text-sm text-es-muted py-4 text-center">Aucun projet publié.</p>
                         </div>
-                    </div>
-
-                    <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 space-y-4">
-                        <div>
-                            <p class="font-extrabold text-es-ink">Plan par élève</p>
-                            <p class="text-xs text-es-muted mt-1">Indique précisément ce que chaque élève doit faire (activité, examen ou projet).</p>
-                        </div>
-                        <div>
-                            <label class="es-label">Élève</label>
-                            <select x-model="planStudentId" class="es-select">
-                                <option value="">— Choisir un élève —</option>
-                                <template x-for="student in config.students" :key="'plan-' + student.id">
-                                    <option :value="String(student.id)" x-text="student.name"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div x-show="planStudentId" x-cloak class="grid gap-4 sm:grid-cols-3">
-                            <div>
-                                <p class="text-xs font-bold text-es-muted mb-2">Activités</p>
-                                <template x-for="activity in filteredActivities()" :key="'pa-' + activity.id">
-                                    <label class="flex items-center gap-2 text-sm py-1">
-                                        <input type="checkbox" :checked="studentHasItem('activity', activity.id)" @change="toggleStudentItem('activity', activity.id)">
-                                        <span class="truncate" x-text="activity.title"></span>
-                                    </label>
-                                </template>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-es-muted mb-2">Examens</p>
-                                <template x-for="exam in filteredExams()" :key="'pe-' + exam.id">
-                                    <label class="flex items-center gap-2 text-sm py-1">
-                                        <input type="checkbox" :checked="studentHasItem('exam', exam.id)" @change="toggleStudentItem('exam', exam.id)">
-                                        <span class="truncate" x-text="exam.title"></span>
-                                    </label>
-                                </template>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-es-muted mb-2">Projets</p>
-                                <template x-for="project in filteredProjects()" :key="'pp-' + project.id">
-                                    <label class="flex items-center gap-2 text-sm py-1">
-                                        <input type="checkbox" :checked="studentHasItem('project', project.id)" @change="toggleStudentItem('project', project.id)">
-                                        <span class="truncate" x-text="project.title"></span>
-                                    </label>
-                                </template>
-                            </div>
-                        </div>
-                        <template x-for="(item, idx) in form.student_items" :key="'si-' + idx">
-                            <input type="hidden" :name="'student_items[' + idx + '][student_id]'" :value="item.student_id">
-                            <input type="hidden" :name="'student_items[' + idx + '][item_type]'" :value="item.item_type">
-                            <input type="hidden" :name="'student_items[' + idx + '][item_id]'" :value="item.item_id">
-                        </template>
                     </div>
                 </div>
+
+                <p x-show="!form.subject_id" class="text-sm text-amber-700 font-bold mt-4">Choisis une matière pour voir les contenus disponibles.</p>
 
                 <div class="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-stone-100">
                     <x-button type="submit" x-text="editing ? 'Enregistrer' : 'Ajouter'"></x-button>
@@ -365,6 +289,7 @@
                 @csrf
                 @method('DELETE')
                 <input type="hidden" name="week" :value="week">
+                <input type="hidden" name="level" :value="config.levelId">
                 <x-button type="submit" variant="danger">Supprimer ce créneau</x-button>
             </form>
         </div>
@@ -381,7 +306,6 @@ function scheduleModal(config) {
         week: config.week,
         formAction: config.storeUrl,
         deleteUrl: '',
-        planStudentId: '',
         form: {
             subject_id: '',
             title: '',
@@ -398,8 +322,6 @@ function scheduleModal(config) {
             exam_ids: [],
             project_ids: [],
             notion_ids: [],
-            student_ids: [],
-            student_items: [],
         },
         defaultTimeHint() {
             const p = config.periods[this.form.period_number] || config.periods[1];
@@ -407,19 +329,19 @@ function scheduleModal(config) {
             return 'Par défaut : P' + this.form.period_number + ' · ' + p.starts_at.slice(0, 5) + '–' + p.ends_at.slice(0, 5);
         },
         filteredActivities() {
-            if (!this.form.subject_id) return config.activities;
+            if (!this.form.subject_id) return [];
             return config.activities.filter((a) => String(a.subject_id) === String(this.form.subject_id));
         },
         filteredExams() {
-            if (!this.form.subject_id) return config.exams;
+            if (!this.form.subject_id) return [];
             return config.exams.filter((e) => String(e.subject_id) === String(this.form.subject_id));
         },
         filteredProjects() {
-            if (!this.form.subject_id) return config.projects;
+            if (!this.form.subject_id) return [];
             return config.projects.filter((p) => String(p.subject_id) === String(this.form.subject_id));
         },
         filteredNotions() {
-            if (!this.form.subject_id) return config.notions;
+            if (!this.form.subject_id) return [];
             return config.notions.filter((n) => String(n.subject_id) === String(this.form.subject_id));
         },
         isLinked(field, id) {
@@ -435,36 +357,10 @@ function scheduleModal(config) {
                 this.form[field].push(key);
             }
         },
-        studentHasItem(type, id) {
-            if (!this.planStudentId) return false;
-            return this.form.student_items.some((item) =>
-                String(item.student_id) === String(this.planStudentId)
-                && item.item_type === type
-                && String(item.item_id) === String(id)
-            );
-        },
-        toggleStudentItem(type, id) {
-            if (!this.planStudentId) return;
-            const sid = String(this.planStudentId);
-            const iid = String(id);
-            const index = this.form.student_items.findIndex((item) =>
-                String(item.student_id) === sid && item.item_type === type && String(item.item_id) === iid
-            );
-            if (index >= 0) {
-                this.form.student_items.splice(index, 1);
-            } else {
-                this.form.student_items.push({
-                    student_id: sid,
-                    item_type: type,
-                    item_id: iid,
-                });
-            }
-        },
         open(detail = {}) {
             this.editing = Boolean(detail.id);
             this.formAction = this.editing ? `${config.updateUrl}/${detail.id}` : config.storeUrl;
             this.deleteUrl = this.editing ? `${config.updateUrl}/${detail.id}` : '';
-            this.planStudentId = '';
             const period = String(detail.period_number || 1);
             const periodDef = config.periods[period] || config.periods[1] || { starts_at: '08:30', ends_at: '09:45' };
             this.form = {
@@ -483,13 +379,6 @@ function scheduleModal(config) {
                 exam_ids: (detail.exam_ids || []).map(String),
                 project_ids: (detail.project_ids || []).map(String),
                 notion_ids: (detail.notion_ids || []).map(String),
-                student_ids: (detail.student_ids || []).map(String),
-                student_items: (detail.student_items || []).map((item) => ({
-                    student_id: String(item.student_id),
-                    item_type: item.item_type,
-                    item_id: String(item.item_id),
-                    notes: item.notes || '',
-                })),
             };
             this.openModal = true;
         },

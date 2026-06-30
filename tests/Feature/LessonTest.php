@@ -69,4 +69,75 @@ class LessonTest extends TestCase
             ->assertOk()
             ->assertSee($lesson->title);
     }
+
+    public function test_teacher_can_add_external_links_and_student_sees_them(): void
+    {
+        $this->actingAs($this->teacher)
+            ->post(route('admin.lessons.store'), [
+                'title' => 'Les fractions',
+                'subject_id' => $this->subject->id,
+                'skill_id' => $this->skill->id,
+                'external_links' => [
+                    ['label' => 'Khan Academy', 'url' => 'https://example.com/fractions'],
+                    ['label' => '', 'url' => ''],
+                ],
+            ])
+            ->assertRedirect();
+
+        $lesson = Lesson::where('title', 'Les fractions')->firstOrFail();
+        $lesson->update(['status' => 'published', 'published_at' => now()]);
+
+        $this->assertSame('https://example.com/fractions', $lesson->externalLinksForDisplay()[0]['url']);
+
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+
+        $this->actingAs($student)
+            ->get(route('student.lessons.show', $lesson))
+            ->assertOk()
+            ->assertSee('Liens à consulter')
+            ->assertSee('Khan Academy')
+            ->assertSee('https://example.com/fractions', false);
+    }
+
+    public function test_teacher_can_filter_lessons_by_search_and_category(): void
+    {
+        $this->seed(\Database\Seeders\SchoolLevelSeeder::class);
+        $level = \App\Models\SchoolLevel::where('name', 'Primaire 5')->firstOrFail();
+
+        Lesson::create([
+            'school_level_id' => $level->id,
+            'subject_id' => $this->subject->id,
+            'skill_id' => $this->skill->id,
+            'title' => '📚 Lecture avancée',
+            'category' => 'Lecture',
+            'description' => 'Test',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        Lesson::create([
+            'school_level_id' => $level->id,
+            'subject_id' => $this->subject->id,
+            'skill_id' => $this->skill->id,
+            'title' => '🔢 Les fractions',
+            'category' => 'Nombres',
+            'description' => 'Test',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        config(['schedule.calendar_levels' => ['Primaire 5']]);
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.lessons.index', ['level' => $level->id, 'q' => 'fractions']))
+            ->assertOk()
+            ->assertSee('Les fractions')
+            ->assertDontSee('Lecture avancée');
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.lessons.index', ['level' => $level->id, 'category' => 'Lecture']))
+            ->assertOk()
+            ->assertSee('Lecture avancée')
+            ->assertDontSee('Les fractions');
+    }
 }

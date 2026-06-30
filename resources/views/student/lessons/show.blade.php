@@ -9,14 +9,30 @@
             <x-subject-icon :icon="$lesson->subject->icon" :color="$lesson->subject->color" size="lg"/>
             <div>
                 <h1 class="es-page-title">{{ $lesson->title }}</h1>
-                <p class="es-page-subtitle">{{ $lesson->subject->name }} · {{ $lesson->skill->name }}</p>
+                <p class="es-page-subtitle">{{ $lesson->subject->name }} · {{ $lesson->skill->name }}@if ($lesson->category) · {{ $lesson->category }}@endif</p>
             </div>
         </div>
     </div>
 
     @if ($lesson->description)
+        <x-card class="mb-6 !p-0 overflow-hidden">
+            <x-lesson-content :content="$lesson->description" class="p-6"/>
+        </x-card>
+    @endif
+
+    @if ($lesson->hasExternalLinks())
         <x-card class="mb-6">
-            <p class="text-base leading-relaxed whitespace-pre-wrap">{{ $lesson->description }}</p>
+            <h2 class="text-lg font-extrabold text-es-ink mb-1">Liens à consulter</h2>
+            <p class="text-sm text-es-muted mb-4">Ressources optionnelles proposées par ton professeur.</p>
+            <div class="flex flex-wrap gap-3">
+                @foreach ($lesson->externalLinksForDisplay() as $link)
+                    <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="es-lesson-external-link">
+                        <span aria-hidden="true">🔗</span>
+                        <span>{{ $link['label'] !== '' ? $link['label'] : 'Ouvrir le lien' }}</span>
+                        <span class="text-xs opacity-70" aria-hidden="true">↗</span>
+                    </a>
+                @endforeach
+            </div>
         </x-card>
     @endif
 

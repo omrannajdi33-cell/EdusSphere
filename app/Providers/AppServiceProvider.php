@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityPage;
+use App\Models\ExamPage;
 use App\Models\Grade;
 use App\Models\Point;
 use App\Models\Student;
+use App\Observers\ActivityPageDeviceTypeObserver;
+use App\Observers\ExamPageDeviceTypeObserver;
 use App\Policies\GradePolicy;
 use App\Policies\PointPolicy;
 use App\Policies\StudentPolicy;
@@ -33,6 +37,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Grade::class, GradePolicy::class);
         Gate::policy(Point::class, PointPolicy::class);
+
+        ActivityPage::observe(ActivityPageDeviceTypeObserver::class);
+        ExamPage::observe(ExamPageDeviceTypeObserver::class);
 
         View::composer('layouts.student', function ($view) {
             $student = auth()->user()?->student;

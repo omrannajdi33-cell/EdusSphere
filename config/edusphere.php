@@ -8,12 +8,22 @@ return [
         'tablet' => [
             'label' => 'Tablette',
             'icon' => '📱',
-            'hint' => 'Les élèves utilisent une tablette.',
+            'hint' => 'Écriture ou dessin au stylet, enregistrement audio/vidéo.',
         ],
         'computer' => [
             'label' => 'Ordinateur',
             'icon' => '💻',
-            'hint' => 'Les élèves utilisent un ordinateur.',
+            'hint' => 'Questions interactives, lecture, rédaction clavier.',
         ],
+    ],
+
+    /** Types d'étape activité/examen nécessitant une tablette (stylet, vidéo, canvas). */
+    'tablet_page_types' => [
+        'pdf_worksheet',
+        'free_write',
+        'oral_recording',
+        'recitation',
+        'rich_document',
+        'math_scroll',
     ],
 ];

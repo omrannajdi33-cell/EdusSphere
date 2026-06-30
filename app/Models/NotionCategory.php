@@ -11,11 +11,17 @@ class NotionCategory extends Model
 {
     protected $fillable = [
         'subject_id',
+        'school_level_id',
         'skill_id',
         'name',
         'description',
         'display_order',
     ];
+
+    public function schoolLevel(): BelongsTo
+    {
+        return $this->belongsTo(SchoolLevel::class);
+    }
 
     public function subject(): BelongsTo
     {

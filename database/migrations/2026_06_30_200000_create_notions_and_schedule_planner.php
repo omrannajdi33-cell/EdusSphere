@@ -90,7 +90,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('schedule_id')->constrained()->cascadeOnDelete();
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
-            $table->enum('item_type', ['activity', 'exam', 'project']);
+            $table->enum('item_type', ['activity', 'exam', 'project', 'lesson']);
             $table->unsignedBigInteger('item_id');
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->text('notes')->nullable();

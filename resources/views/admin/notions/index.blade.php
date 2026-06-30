@@ -4,9 +4,18 @@
 <div class="es-page-enter">
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
         <div>
-            <h1 class="es-page-title">Notions</h1>
+            <h1 class="es-page-title">Notions — {{ $activeLevel->name }}</h1>
             <p class="es-page-subtitle">Organise les notions par catégories — assignables à l'horaire, aux activités, examens et projets.</p>
         </div>
+    </div>
+
+    <div class="es-tab-bar mb-6">
+        @foreach ($calendarLevels as $level)
+            <a
+                href="{{ route('admin.notions.index', ['level' => $level->id, 'subject' => $subject?->id]) }}"
+                @class(['es-tab', 'es-tab-active' => $level->id === $activeLevel->id])
+            >{{ $level->name }}</a>
+        @endforeach
     </div>
 
     @if (session('success'))
@@ -25,6 +34,7 @@
 
     <x-card class="mb-8 !p-4">
         <form method="GET" class="flex flex-wrap gap-3 items-end">
+            <input type="hidden" name="level" value="{{ $activeLevel->id }}">
             <div class="min-w-[12rem]">
                 <label class="es-label">Matière</label>
                 <select name="subject" class="es-select" onchange="this.form.submit()">
@@ -130,6 +140,7 @@
                     <form method="POST" action="{{ route('admin.notion-categories.store') }}" class="space-y-4">
                         @csrf
                         <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+                        <input type="hidden" name="school_level_id" value="{{ $activeLevel->id }}">
                         <x-input label="Nom de la catégorie" name="name" placeholder="Ex. Conjugaison" required/>
                         <div>
                             <label class="es-label">Compétence liée (optionnel)</label>

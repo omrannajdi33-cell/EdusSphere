@@ -117,7 +117,6 @@ class ActivityEngineTest extends TestCase
                 'description' => 'Test',
                 'subject_id' => $this->subject->id,
                 'skill_id' => $this->skill->id,
-                'device_type' => 'tablet',
             ])
             ->assertRedirect(route('admin.activities.build', ['activity' => Activity::where('title', 'Mon quiz')->first(), 'step' => 2]));
 
@@ -460,30 +459,47 @@ class ActivityEngineTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_teacher_can_set_device_type_on_activity(): void
+    public function test_device_type_is_inferred_from_activity_pages(): void
     {
         $this->actingAs($this->teacher)
             ->post(route('admin.activities.store'), [
-                'title' => 'Activité ordinateur',
-                'description' => 'Sur PC',
+                'title' => 'Activité auto matériel',
+                'description' => 'Test',
                 'subject_id' => $this->subject->id,
                 'skill_id' => $this->skill->id,
-                'device_type' => 'computer',
             ])
             ->assertRedirect();
 
-        $activity = Activity::where('title', 'Activité ordinateur')->firstOrFail();
+        $activity = Activity::where('title', 'Activité auto matériel')->firstOrFail();
         $this->assertSame('computer', $activity->device_type);
 
         $this->actingAs($this->teacher)
-            ->get(route('admin.activities.index', ['device' => 'computer']))
-            ->assertOk()
-            ->assertSee('Activité ordinateur');
+            ->post(route('admin.activities.pages.store', $activity), [
+                'title' => 'Écriture libre',
+                'type' => 'free_write',
+                'body' => 'Consignes',
+            ])
+            ->assertRedirect();
+
+        $activity->refresh();
+        $this->assertSame('tablet', $activity->device_type);
     }
 
     public function test_config_has_eight_page_types_and_ten_question_types(): void
     {
         $this->assertCount(8, config('activity.page_types'));
         $this->assertCount(10, config('activity.question_types'));
+    }
+
+    public function test_teacher_can_delete_activity(): void
+    {
+        $activity = $this->makeDraftActivity();
+
+        $this->actingAs($this->teacher)
+            ->delete(route('admin.activities.destroy', $activity))
+            ->assertRedirect(route('admin.activities.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('activities', ['id' => $activity->id]);
     }
 }

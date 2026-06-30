@@ -37,6 +37,11 @@ class Project extends Model
         ];
     }
 
+    public function inferredDeviceType(): string
+    {
+        return app(\App\Services\DeviceTypeResolver::class)->forProject($this);
+    }
+
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);

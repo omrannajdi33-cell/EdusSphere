@@ -24,7 +24,6 @@ class StoreActivityRequest extends FormRequest
                 Rule::exists('skills', 'id')->where(fn ($q) => $q->where('subject_id', $this->input('subject_id'))),
             ],
             'lesson_id' => ['nullable', 'exists:lessons,id'],
-            'device_type' => ['required', Rule::in(array_keys(config('edusphere.device_types', [])))],
             'status' => ['nullable', Rule::in(['draft', 'published', 'archived'])],
             ...ActivityHomeworkRules::rules($this),
         ];
@@ -44,7 +43,6 @@ class StoreActivityRequest extends FormRequest
             'subject_id.required' => 'Choisis une matière.',
             'skill_id.required' => 'Choisis une compétence.',
             'skill_id.exists' => 'Cette compétence ne correspond pas à la matière choisie.',
-            'device_type.required' => 'Indique si l\'activité se fait sur tablette ou ordinateur.',
             ...ActivityHomeworkRules::messages(),
         ];
     }

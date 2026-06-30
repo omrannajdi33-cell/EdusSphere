@@ -68,7 +68,6 @@ class HomeworkTest extends TestCase
                 'description' => 'Colorie les régions.',
                 'subject_id' => $this->subject->id,
                 'skill_id' => $this->skill->id,
-                'device_type' => 'computer',
                 'is_homework' => '1',
                 'due_at' => now()->addDays(3)->format('Y-m-d\TH:i'),
                 'homework_slot' => Activity::HOMEWORK_AFTER_SCHOOL,
@@ -89,7 +88,6 @@ class HomeworkTest extends TestCase
                 'title' => 'Sans date',
                 'subject_id' => $this->subject->id,
                 'skill_id' => $this->skill->id,
-                'device_type' => 'tablet',
                 'is_homework' => '1',
             ])
             ->assertSessionHasErrors(['due_at', 'homework_slot']);

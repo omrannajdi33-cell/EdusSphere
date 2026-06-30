@@ -13,6 +13,7 @@ use App\Models\Skill;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Support\SubjectWorkspace;
+use App\Services\DeviceTypeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -56,6 +57,7 @@ class ActivityController extends Controller
         $activity = Activity::create([
             ...$request->validated(),
             'status' => 'draft',
+            'device_type' => DeviceTypeResolver::COMPUTER,
         ]);
 
         return redirect()

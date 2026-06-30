@@ -56,6 +56,34 @@
 
             <x-input label="Durée estimée (minutes)" name="estimated_duration_min" type="number" min="5" max="480" value="{{ old('estimated_duration_min', $lesson->estimated_duration_min) }}"/>
 
+            <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4 space-y-4"
+                x-data="{
+                    links: @js(collect(old('external_links', $lesson->external_links ?? []))->map(fn ($l) => ['label' => $l['label'] ?? '', 'url' => $l['url'] ?? ''])->whenEmpty(fn () => collect([['label' => '', 'url' => '']]))->values()->all()),
+                    addLink() { this.links.push({ label: '', url: '' }); },
+                    removeLink(index) { if (this.links.length > 1) this.links.splice(index, 1); },
+                }">
+                <div>
+                    <p class="font-extrabold text-es-ink">Liens à consulter (optionnel)</p>
+                    <p class="text-sm text-es-muted mt-1">Sites web, vidéos ou ressources externes que l'élève peut ouvrir s'il le souhaite.</p>
+                </div>
+                <template x-for="(link, index) in links" :key="index">
+                    <div class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end rounded-xl border border-stone-200 bg-white p-4">
+                        <div>
+                            <label class="es-label" x-text="'Libellé ' + (index + 1)"></label>
+                            <input type="text" :name="'external_links[' + index + '][label]'" x-model="link.label" class="es-input w-full" maxlength="160" placeholder="Ex. Vidéo explicative">
+                        </div>
+                        <div>
+                            <label class="es-label">Adresse web</label>
+                            <input type="url" :name="'external_links[' + index + '][url]'" x-model="link.url" class="es-input w-full" maxlength="2048" placeholder="https://…">
+                        </div>
+                        <button type="button" class="es-btn es-btn-secondary es-btn-sm mb-0.5" x-show="links.length > 1" @click="removeLink(index)">Retirer</button>
+                    </div>
+                </template>
+                <button type="button" class="es-btn es-btn-secondary es-btn-sm" @click="addLink()">+ Ajouter un lien</button>
+                @error('external_links')<p class="es-field-error">{{ $message }}</p>@enderror
+                @error('external_links.*.url')<p class="es-field-error">{{ $message }}</p>@enderror
+            </div>
+
             <div class="flex gap-3 pt-2">
                 <x-button type="submit">{{ $isEdit ? 'Enregistrer' : 'Créer la leçon' }}</x-button>
                 <x-button href="{{ route('admin.lessons.index') }}" variant="secondary">Annuler</x-button>

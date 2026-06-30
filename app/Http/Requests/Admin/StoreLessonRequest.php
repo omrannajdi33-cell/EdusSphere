@@ -22,7 +22,24 @@ class StoreLessonRequest extends FormRequest
             'school_level_id' => ['nullable', 'exists:school_levels,id'],
             'estimated_duration_min' => ['nullable', 'integer', 'min:5', 'max:480'],
             'status' => ['nullable', Rule::in(['draft', 'published'])],
+            'external_links' => ['nullable', 'array', 'max:10'],
+            'external_links.*.label' => ['nullable', 'string', 'max:160'],
+            'external_links.*.url' => ['nullable', 'url', 'max:2048'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $links = collect((array) $this->input('external_links', []))
+            ->map(fn ($link) => [
+                'label' => trim((string) ($link['label'] ?? '')),
+                'url' => trim((string) ($link['url'] ?? '')),
+            ])
+            ->filter(fn (array $link) => $link['label'] !== '' || $link['url'] !== '')
+            ->values()
+            ->all();
+
+        $this->merge(['external_links' => $links === [] ? null : $links]);
     }
 
     public function messages(): array
@@ -31,6 +48,7 @@ class StoreLessonRequest extends FormRequest
             'title.required' => 'Le titre est obligatoire.',
             'subject_id.required' => 'Choisis une matière.',
             'skill_id.required' => 'Choisis une compétence.',
+            'external_links.*.url.url' => 'Chaque lien doit être une adresse web valide (https://…).',
         ];
     }
 }

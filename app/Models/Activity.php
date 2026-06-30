@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasDeviceType;
+use App\Models\Grade;
+use App\Models\MediaFile;
+use App\Models\ScheduleStudentItem;
+use App\Support\PrivateStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +16,42 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Activity extends Model
 {
     use HasDeviceType;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Activity $activity): void {
+            $pageIds = $activity->pages()->pluck('id');
+
+            MediaFile::query()
+                ->where(function (Builder $query) use ($activity, $pageIds): void {
+                    $query->where('activity_id', $activity->id);
+
+                    if ($pageIds->isNotEmpty()) {
+                        $query->orWhereIn('activity_page_id', $pageIds);
+                    }
+                })
+                ->each(function (MediaFile $media): void {
+                    $path = $media->storagePath();
+
+                    if ($path && PrivateStorage::exists($path)) {
+                        PrivateStorage::disk()->delete($path);
+                    }
+
+                    $media->delete();
+                });
+
+            ScheduleStudentItem::query()
+                ->where('item_type', 'activity')
+                ->where('item_id', $activity->id)
+                ->delete();
+
+            Grade::query()
+                ->where('type', 'activity')
+                ->where('source_id', $activity->id)
+                ->delete();
+        });
+    }
+
     public const HOMEWORK_DURING_SCHOOL = 'during_school';
 
     public const HOMEWORK_AFTER_SCHOOL = 'after_school';

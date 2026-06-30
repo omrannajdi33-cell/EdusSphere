@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Notion;
 use App\Models\NotionCategory;
+use App\Models\SchoolLevel;
 use App\Models\Skill;
 use App\Models\Subject;
 use Illuminate\Database\Seeder;
@@ -25,47 +26,58 @@ class OfficialNotionsSeeder extends Seeder
 
     public function run(): void
     {
-        $catalog = config('official_notions', []);
+        $catalogByLevel = config('official_notions', []);
         $categoryOrder = 0;
         $notionCount = 0;
 
-        foreach ($catalog as $subjectName => $categories) {
-            $subject = $this->resolveSubject($subjectName);
+        foreach ($catalogByLevel as $levelName => $catalog) {
+            $level = SchoolLevel::where('name', $levelName)->first();
 
-            foreach ($categories as $categoryName => $meta) {
-                $categoryOrder++;
-                $skill = isset($meta['skill'])
-                    ? Skill::query()
-                        ->where('subject_id', $subject->id)
-                        ->where('name', $meta['skill'])
-                        ->first()
-                    : null;
+            if (! $level) {
+                $this->command?->warn("Niveau ignoré (introuvable) : {$levelName}");
 
-                $category = NotionCategory::updateOrCreate(
-                    [
-                        'subject_id' => $subject->id,
-                        'name' => $categoryName,
-                    ],
-                    [
-                        'skill_id' => $skill?->id,
-                        'description' => $this->categoryDescription($subjectName, $categoryName),
-                        'display_order' => $categoryOrder,
-                    ],
-                );
+                continue;
+            }
 
-                foreach ($meta['notions'] as $index => $title) {
-                    Notion::updateOrCreate(
-                        [
-                            'notion_category_id' => $category->id,
-                            'title' => $title,
-                        ],
+            foreach ($catalog as $subjectName => $categories) {
+                $subject = $this->resolveSubject($subjectName);
+
+                foreach ($categories as $categoryName => $meta) {
+                    $categoryOrder++;
+                    $skill = isset($meta['skill'])
+                        ? Skill::query()
+                            ->where('subject_id', $subject->id)
+                            ->where('name', $meta['skill'])
+                            ->first()
+                        : null;
+
+                    $category = NotionCategory::updateOrCreate(
                         [
                             'subject_id' => $subject->id,
-                            'content' => $this->notionParagraph($title, $categoryName, $subjectName),
-                            'display_order' => $index + 1,
+                            'school_level_id' => $level->id,
+                            'name' => $categoryName,
+                        ],
+                        [
+                            'skill_id' => $skill?->id,
+                            'description' => $this->categoryDescription($subjectName, $categoryName),
+                            'display_order' => $categoryOrder,
                         ],
                     );
-                    $notionCount++;
+
+                    foreach ($meta['notions'] as $index => $title) {
+                        Notion::updateOrCreate(
+                            [
+                                'notion_category_id' => $category->id,
+                                'title' => $title,
+                            ],
+                            [
+                                'subject_id' => $subject->id,
+                                'content' => $this->notionParagraph($title, $categoryName, $subjectName, $levelName),
+                                'display_order' => $index + 1,
+                            ],
+                        );
+                        $notionCount++;
+                    }
                 }
             }
         }
@@ -104,10 +116,10 @@ class OfficialNotionsSeeder extends Seeder
         return $categoryName;
     }
 
-    private function notionParagraph(string $title, string $categoryName, string $subjectName): string
+    private function notionParagraph(string $title, string $categoryName, string $subjectName, string $levelName): string
     {
         $label = $subjectName === 'Sciences' ? 'Science et technologie' : $subjectName;
 
-        return "Dans le cadre de {$label} ({$categoryName}), l'élève développe la notion « {$title} » prévue au programme québécois.";
+        return "Au {$levelName}, dans le cadre de {$label} ({$categoryName}), l'élève développe la notion « {$title} » prévue au programme québécois.";
     }
 }

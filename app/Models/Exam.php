@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasDeviceType;
+use App\Models\Grade;
+use App\Models\ScheduleStudentItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,6 +13,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Exam extends Model
 {
     use HasDeviceType;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Exam $exam): void {
+            ScheduleStudentItem::query()
+                ->where('item_type', 'exam')
+                ->where('item_id', $exam->id)
+                ->delete();
+
+            Grade::query()
+                ->where('type', 'exam')
+                ->where('source_id', $exam->id)
+                ->delete();
+        });
+    }
+
     protected $fillable = [
         'subject_id',
         'skill_id',

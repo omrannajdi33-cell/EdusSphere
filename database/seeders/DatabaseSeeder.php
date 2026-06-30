@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
                 SkillSeeder::class,
                 ProductionAdminSeeder::class,
                 OfficialNotionsSeeder::class,
+                OfficialLessonsSeeder::class,
             ]);
 
             return;
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
             PointRewardSeeder::class,
             SubjectSeeder::class,
             SkillSeeder::class,
+            OfficialNotionsSeeder::class,
             DemoUserSeeder::class,
             DemoContentSeeder::class,
         ]);

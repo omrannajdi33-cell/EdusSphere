@@ -5,9 +5,10 @@ namespace Tests\Feature;
 use App\Models\Notion;
 use App\Models\NotionCategory;
 use App\Models\Schedule;
-use App\Models\Student;
+use App\Models\SchoolLevel;
 use App\Models\Subject;
 use App\Models\User;
+use Database\Seeders\SchoolLevelSeeder;
 use Database\Seeders\SubjectSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,16 +24,19 @@ class NotionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(SubjectSeeder::class);
+        $this->seed([SubjectSeeder::class, SchoolLevelSeeder::class]);
         $this->teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
         $this->subject = Subject::firstOrFail();
     }
 
     public function test_teacher_can_create_category_and_notion(): void
     {
+        $level = SchoolLevel::where('name', 'Primaire 5')->firstOrFail();
+
         $this->actingAs($this->teacher)
             ->post(route('admin.notion-categories.store'), [
                 'subject_id' => $this->subject->id,
+                'school_level_id' => $level->id,
                 'name' => 'Grammaire',
             ])
             ->assertRedirect();
@@ -53,16 +57,13 @@ class NotionTest extends TestCase
         ]);
     }
 
-    public function test_schedule_can_link_notion_and_student_plan(): void
+    public function test_schedule_can_link_notion_for_level(): void
     {
-        $student = Student::create([
-            'user_id' => User::factory()->create(['role' => User::ROLE_STUDENT])->id,
-            'first_name' => 'Noa',
-            'last_name' => 'Test',
-        ]);
+        $level = SchoolLevel::where('name', 'Primaire 5')->firstOrFail();
 
         $category = NotionCategory::create([
             'subject_id' => $this->subject->id,
+            'school_level_id' => $level->id,
             'name' => 'Vocabulaire',
             'display_order' => 1,
         ]);
@@ -77,18 +78,18 @@ class NotionTest extends TestCase
 
         $this->actingAs($this->teacher)
             ->post(route('admin.schedules.store'), [
+                'school_level_id' => $level->id,
                 'subject_id' => $this->subject->id,
                 'title' => 'Maths',
                 'period_number' => 1,
                 'mode' => 'recurring',
                 'day_of_week' => 1,
                 'notion_ids' => [$notion->id],
-                'student_ids' => [$student->id],
             ])
             ->assertRedirect();
 
         $schedule = Schedule::firstOrFail();
         $this->assertTrue($schedule->notions()->where('notion_id', $notion->id)->exists());
-        $this->assertTrue($schedule->targetedStudents()->where('student_id', $student->id)->exists());
+        $this->assertSame($level->id, $schedule->school_level_id);
     }
 }

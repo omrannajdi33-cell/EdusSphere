@@ -26,17 +26,18 @@ class ScheduleStudentItem extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function resolveItem(): Activity|Exam|Project|null
+    public function resolveItem(): Activity|Exam|Project|Lesson|null
     {
         return match ($this->item_type) {
             'activity' => Activity::find($this->item_id),
             'exam' => Exam::find($this->item_id),
             'project' => Project::find($this->item_id),
+            'lesson' => Lesson::find($this->item_id),
             default => null,
         };
     }
 
-    /** @return array{id: int, type: string, title: string, url: string|null} */
+    /** @return array{id: int, type: string, title: string, notes: string|null, sort_order: int, url: string|null} */
     public function toDisplayArray(): array
     {
         $item = $this->resolveItem();
@@ -44,7 +45,15 @@ class ScheduleStudentItem extends Model
             'activity' => $item instanceof Activity ? $item->title : 'Activité',
             'exam' => $item instanceof Exam ? $item->title : 'Examen',
             'project' => $item instanceof Project ? $item->title : 'Projet',
+            'lesson' => $item instanceof Lesson ? $item->title : 'Leçon',
             default => 'Élément',
+        };
+
+        $url = match ($this->item_type) {
+            'activity' => $item instanceof Activity ? route('student.activities.play', $item) : null,
+            'project' => $item instanceof Project ? route('student.projects.work', $item) : null,
+            'lesson' => $item instanceof Lesson ? route('student.lessons.show', $item) : null,
+            default => null,
         };
 
         return [
@@ -53,6 +62,7 @@ class ScheduleStudentItem extends Model
             'title' => $title,
             'notes' => $this->notes,
             'sort_order' => $this->sort_order,
+            'url' => $url,
         ];
     }
 }

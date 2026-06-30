@@ -18,11 +18,6 @@
 
             <x-input label="Description" name="description" value="{{ old('description', $exam->description) }}" />
 
-            <x-device-type-picker
-                :value="old('device_type', $exam->device_type ?? 'tablet')"
-                :error="$errors->first('device_type')"
-            />
-
             @php
                 $defaultSubjectId = old('subject_id', $exam->subject_id ?? $subjects->first()?->id);
                 $filteredSkills = $skills->where('subject_id', $defaultSubjectId);

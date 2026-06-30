@@ -16,6 +16,7 @@ class StoreNotionCategoryRequest extends FormRequest
     {
         return [
             'subject_id' => ['required', 'exists:subjects,id'],
+            'school_level_id' => ['required', 'exists:school_levels,id'],
             'skill_id' => [
                 'nullable',
                 Rule::exists('skills', 'id')->where(fn ($q) => $q->where('subject_id', $this->input('subject_id'))),

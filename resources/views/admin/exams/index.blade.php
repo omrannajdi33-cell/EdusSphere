@@ -54,7 +54,7 @@
                         @if ($exam->status !== 'closed')
                             <form method="POST" action="{{ route('admin.exams.close', $exam) }}">@csrf<x-button type="submit" variant="secondary" class="es-btn-sm">Fermer</x-button></form>
                         @endif
-                        <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" onsubmit="return confirm('Supprimer ?')">
+                        <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" onsubmit="return confirm('Supprimer cet examen et toutes les tentatives associées ?')">
                             @csrf @method('DELETE')
                             <x-button type="submit" variant="danger" class="es-btn-sm">Suppr.</x-button>
                         </form>

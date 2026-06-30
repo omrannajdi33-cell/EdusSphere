@@ -24,4 +24,10 @@ return [
         6 => 'Samedi',
         7 => 'Dimanche',
     ],
+
+    /** Niveaux avec un calendrier distinct (nomenclature québécoise). */
+    'calendar_levels' => [
+        'Primaire 2',
+        'Primaire 5',
+    ],
 ];

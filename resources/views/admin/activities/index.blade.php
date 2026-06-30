@@ -95,6 +95,10 @@
                     @endif
                     <x-button href="{{ route('admin.activities.submissions', $activity) }}" variant="secondary" class="es-btn-sm">Copies</x-button>
                     <x-button href="{{ route('admin.activities.preview', $activity) }}" variant="secondary" class="es-btn-sm">Aperçu</x-button>
+                    <form method="POST" action="{{ route('admin.activities.destroy', $activity) }}" onsubmit="return confirm('Supprimer cette activité et toutes ses copies ?')">
+                        @csrf @method('DELETE')
+                        <x-button type="submit" variant="danger" class="es-btn-sm">Suppr.</x-button>
+                    </form>
                 </div>
             </article>
         @empty

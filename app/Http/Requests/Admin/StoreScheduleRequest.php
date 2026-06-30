@@ -15,8 +15,13 @@ class StoreScheduleRequest extends FormRequest
     public function rules(): array
     {
         $maxPeriod = config('schedule.periods_per_day', 4);
+        $calendarLevelIds = \App\Models\SchoolLevel::query()
+            ->whereIn('name', config('schedule.calendar_levels', []))
+            ->pluck('id')
+            ->all();
 
         return [
+            'school_level_id' => ['required', 'integer', Rule::in($calendarLevelIds)],
             'subject_id' => ['required', 'exists:subjects,id'],
             'title' => ['nullable', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
@@ -56,13 +61,6 @@ class StoreScheduleRequest extends FormRequest
             'project_ids.*' => ['integer', 'exists:projects,id'],
             'notion_ids' => ['nullable', 'array'],
             'notion_ids.*' => ['integer', 'exists:notions,id'],
-            'student_ids' => ['nullable', 'array'],
-            'student_ids.*' => ['integer', 'exists:students,id'],
-            'student_items' => ['nullable', 'array'],
-            'student_items.*.student_id' => ['required_with:student_items', 'integer', 'exists:students,id'],
-            'student_items.*.item_type' => ['required_with:student_items', 'in:activity,exam,project'],
-            'student_items.*.item_id' => ['required_with:student_items', 'integer'],
-            'student_items.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -70,13 +68,13 @@ class StoreScheduleRequest extends FormRequest
     {
         $this->merge([
             'use_custom_time' => $this->boolean('use_custom_time'),
-            'student_items' => array_values(array_filter((array) $this->input('student_items', []), fn ($item) => ! empty($item['student_id']) && ! empty($item['item_type']) && ! empty($item['item_id']))),
         ]);
     }
 
     public function messages(): array
     {
         return [
+            'school_level_id.required' => 'Choisis un niveau scolaire.',
             'subject_id.required' => 'Choisis une matière.',
             'period_number.required' => 'Choisis une période.',
             'day_of_week.required' => 'Choisis un jour de la semaine.',

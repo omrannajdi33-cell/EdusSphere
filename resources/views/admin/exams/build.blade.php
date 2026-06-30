@@ -19,9 +19,15 @@
             <h1 class="es-page-title mt-3">{{ $exam->title }}</h1>
             <p class="es-page-subtitle">Création en plusieurs étapes — tout reste sur cette page</p>
         </div>
-        @if ($exam->status === 'open')
-            <span class="es-badge es-badge-success">Ouvert</span>
-        @endif
+        <div class="flex flex-wrap items-center gap-2">
+            @if ($exam->status === 'open')
+                <span class="es-badge es-badge-success">Ouvert</span>
+            @endif
+            <form method="POST" action="{{ route('admin.exams.destroy', $exam) }}" onsubmit="return confirm('Supprimer cet examen et toutes les tentatives associées ?')">
+                @csrf @method('DELETE')
+                <x-button type="submit" variant="danger" class="es-btn-sm">Supprimer</x-button>
+            </form>
+        </div>
     </div>
 
     {{-- Barre de progression --}}
@@ -67,10 +73,17 @@
                     <textarea name="description" rows="2" class="es-textarea">{{ old('description', $exam->description) }}</textarea>
                 </div>
 
-                <x-device-type-picker
-                    :value="old('device_type', $exam->device_type ?? 'tablet')"
-                    :error="$errors->first('device_type')"
-                />
+                <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                    <p class="font-extrabold text-es-ink">Matériel requis</p>
+                    @if ($exam->pages_count > 0)
+                        <div class="flex items-center gap-2 mt-2">
+                            <x-device-type-badge :device-type="$exam->device_type" size="md"/>
+                            <span class="text-sm text-es-muted">Détecté automatiquement selon le contenu de l'examen.</span>
+                        </div>
+                    @else
+                        <p class="text-sm text-es-muted mt-2">Tablette (stylet, vidéo) ou ordinateur — déterminé automatiquement quand tu ajoutes des étapes.</p>
+                    @endif
+                </div>
 
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>

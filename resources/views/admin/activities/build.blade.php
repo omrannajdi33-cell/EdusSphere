@@ -16,6 +16,10 @@
             <div class="flex flex-wrap gap-2">
                 <x-button href="{{ route('admin.activities.preview', $activity) }}" variant="secondary" class="es-btn-sm">Aperçu élève</x-button>
                 <x-button href="{{ route('admin.activities.submissions', $activity) }}" variant="secondary" class="es-btn-sm">Copies soumises</x-button>
+                <form method="POST" action="{{ route('admin.activities.destroy', $activity) }}" onsubmit="return confirm('Supprimer cette activité et toutes ses copies ?')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" class="es-btn-sm">Supprimer</x-button>
+                </form>
             </div>
         @endunless
     </div>
@@ -94,10 +98,17 @@
                     <p class="text-xs text-es-muted mt-1">L'élève pourra consulter cette leçon pendant l'activité.</p>
                 </div>
 
-                <x-device-type-picker
-                    :value="old('device_type', $activity->device_type ?? 'tablet')"
-                    :error="$errors->first('device_type')"
-                />
+                <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
+                    <p class="font-extrabold text-es-ink">Matériel requis</p>
+                    @if ($activity->exists && $activity->pages()->count() > 0)
+                        <div class="flex items-center gap-2 mt-2">
+                            <x-device-type-badge :device-type="$activity->device_type" size="md"/>
+                            <span class="text-sm text-es-muted">Détecté automatiquement selon les étapes.</span>
+                        </div>
+                    @else
+                        <p class="text-sm text-es-muted mt-2">Tablette (stylet, vidéo) ou ordinateur — déterminé automatiquement quand tu ajoutes des étapes.</p>
+                    @endif
+                </div>
 
                 @php
                     $isHomework = (bool) old('is_homework', $activity->is_homework ?? false);

@@ -9,6 +9,7 @@ use App\Models\Exam;
 use App\Models\ReportPeriod;
 use App\Models\Skill;
 use App\Models\Subject;
+use App\Services\DeviceTypeResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -41,7 +42,7 @@ class ExamController extends Controller
             'skill_id' => Skill::orderBy('name')->value('id'),
             'report_period_id' => $period?->id,
             'title' => 'Nouvel examen',
-            'device_type' => 'tablet',
+            'device_type' => DeviceTypeResolver::COMPUTER,
             'duration_minutes' => 30,
             'max_attempts' => 1,
             'weight_percent' => 0,

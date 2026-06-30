@@ -10,18 +10,56 @@ use App\Models\SchoolLevel;
 use App\Models\Skill;
 use App\Models\Subject;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class LessonController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $calendarLevels = SchoolLevel::query()
+            ->whereIn('name', config('schedule.calendar_levels', []))
+            ->orderBy('display_order')
+            ->get();
+
+        $levelId = $request->integer('level');
+        $activeLevel = $calendarLevels->firstWhere('id', $levelId) ?? $calendarLevels->first();
+
+        $search = trim($request->string('q')->toString());
+        $subjectId = $request->integer('subject') ?: null;
+        $category = trim($request->string('category')->toString());
+
+        $categoriesQuery = Lesson::query()
+            ->when($activeLevel, fn ($q) => $q->where('school_level_id', $activeLevel->id))
+            ->whereNotNull('category')
+            ->distinct()
+            ->orderBy('category');
+
+        $categories = $categoriesQuery->pluck('category');
+
+        $lessons = Lesson::with(['subject', 'skill', 'schoolLevel'])
+            ->when($activeLevel, fn ($q) => $q->where('school_level_id', $activeLevel->id))
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+            ->when($category !== '', fn ($q) => $q->where('category', $category))
+            ->when($search !== '', fn ($q) => $q->where('title', 'like', '%'.$search.'%'))
+            ->orderBy('category')
+            ->orderBy('title')
+            ->paginate(24)
+            ->withQueryString();
+
         return view('admin.lessons.index', [
             'adminNav' => 'lessons',
-            'lessons' => Lesson::with(['subject', 'skill', 'schoolLevel'])
-                ->latest()
-                ->paginate(12),
+            'calendarLevels' => $calendarLevels,
+            'activeLevel' => $activeLevel,
+            'subjects' => Subject::ordered()->get(),
+            'categories' => $categories,
+            'filters' => [
+                'q' => $search,
+                'subject' => $subjectId,
+                'category' => $category,
+            ],
+            'lessons' => $lessons,
         ]);
     }
 

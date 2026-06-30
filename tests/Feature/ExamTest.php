@@ -72,7 +72,6 @@ class ExamTest extends TestCase
                 'skill_id' => $this->skill->id,
                 'report_period_id' => $this->period->id,
                 'weight_percent' => 50,
-                'device_type' => 'tablet',
                 'duration_minutes' => 45,
                 'max_attempts' => 1,
                 'opens_at' => now()->subHour()->format('Y-m-d\TH:i'),
@@ -82,7 +81,7 @@ class ExamTest extends TestCase
             ->assertRedirect(route('admin.exams.build', $exam));
 
         $exam->refresh();
-        $this->assertSame('tablet', $exam->device_type);
+        $this->assertSame('computer', $exam->device_type);
 
         $page = ExamPage::create([
             'exam_id' => $exam->id,
@@ -171,5 +170,28 @@ class ExamTest extends TestCase
             ->assertOk()
             ->assertSee('100%')
             ->assertSee('100/100');
+    }
+
+    public function test_teacher_can_delete_exam(): void
+    {
+        $exam = Exam::create([
+            'subject_id' => $this->subject->id,
+            'skill_id' => $this->skill->id,
+            'report_period_id' => $this->period->id,
+            'weight_percent' => 25,
+            'title' => 'Examen à supprimer',
+            'duration_minutes' => 30,
+            'max_attempts' => 1,
+            'opens_at' => now()->subHour(),
+            'closes_at' => now()->addDay(),
+            'status' => 'draft',
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->delete(route('admin.exams.destroy', $exam))
+            ->assertRedirect(route('admin.exams.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('exams', ['id' => $exam->id]);
     }
 }
