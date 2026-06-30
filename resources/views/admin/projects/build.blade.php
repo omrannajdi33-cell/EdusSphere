@@ -174,11 +174,7 @@
                 </div>
 
                 <div class="rounded-2xl border border-stone-200 bg-stone-50/80 p-5 space-y-3">
-                    <p class="font-extrabold text-es-ink">Sections obligatoires pour l'élève</p>
-                    <label class="flex items-center gap-2 text-sm font-semibold">
-                        <input type="checkbox" name="require_sources" value="1" class="es-checkbox" @checked(old('require_sources', $project->require_sources ?? true))>
-                        Sources documentaires consultées
-                    </label>
+                    <p class="font-extrabold text-es-ink">Section obligatoire pour l'élève</p>
                     <label class="flex items-center gap-2 text-sm font-semibold">
                         <input type="checkbox" name="require_bibliography" value="1" class="es-checkbox" @checked(old('require_bibliography', $project->require_bibliography ?? true))>
                         Bibliographie
@@ -219,7 +215,6 @@
                     <input type="hidden" name="project_type" value="{{ $project->project_type }}">
                     <input type="hidden" name="submission_format" value="{{ $project->submission_format }}">
                     <input type="hidden" name="due_at" value="{{ $project->due_at?->format('Y-m-d\TH:i') }}">
-                    <input type="hidden" name="require_sources" value="{{ $project->require_sources ? '1' : '0' }}">
                     <input type="hidden" name="require_bibliography" value="{{ $project->require_bibliography ? '1' : '0' }}">
                     <input type="hidden" name="next_step" value="3">
 

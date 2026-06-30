@@ -32,19 +32,19 @@ return [
 
     'submission_formats' => [
         'online' => [
-            'label' => 'Rédiger sur le site',
+            'label' => 'Rédaction sur le site',
             'icon' => '✍️',
-            'description' => 'L\'élève écrit directement dans EduSphere.',
+            'description' => 'L\'élève rédige directement dans EduSphere.',
         ],
         'upload' => [
-            'label' => 'Téléverser un fichier',
-            'icon' => '📎',
-            'description' => 'L\'élève dépose un PDF ou un document.',
+            'label' => 'Produit final (fichier)',
+            'icon' => '📄',
+            'description' => 'L\'élève dépose son travail terminé (PDF, Word…).',
         ],
         'both' => [
-            'label' => 'Rédiger ou téléverser',
+            'label' => 'Rédaction + produit final',
             'icon' => '📄',
-            'description' => 'L\'élève choisit : écrire en ligne ou déposer un fichier.',
+            'description' => 'Deux étapes distinctes : rédiger sur le site, puis déposer le produit final.',
         ],
     ],
 

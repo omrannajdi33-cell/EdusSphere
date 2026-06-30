@@ -64,7 +64,6 @@ class ProjectTest extends TestCase
             'skill_ids' => [$this->skill->id],
             'project_type' => 'research',
             'submission_format' => 'online',
-            'require_sources' => '1',
             'require_bibliography' => '1',
             ...$overrides,
         ];
@@ -128,7 +127,6 @@ class ProjectTest extends TestCase
                 'weight_percent' => 25,
                 'project_type' => 'research',
                 'submission_format' => 'online',
-                'require_sources' => '1',
                 'require_bibliography' => '1',
             ])
             ->assertRedirect(route('admin.projects.create'))
@@ -141,22 +139,21 @@ class ProjectTest extends TestCase
             ->assertSee('Sélectionne au moins une compétence évaluée');
     }
 
-    public function test_student_can_save_and_submit_project_with_sources(): void
+    public function test_student_can_save_and_submit_project_with_bibliography(): void
     {
         $project = $this->createPublishedProject();
 
         $this->actingAs($this->studentUser)
             ->get(route('student.projects.work', $project))
             ->assertOk()
-            ->assertSee('Consignes');
+            ->assertSee('Consignes')
+            ->assertSee('Bibliographie')
+            ->assertDontSee('Sources');
 
         $this->actingAs($this->studentUser)
             ->postJson(route('student.projects.save', $project), [
                 'content' => 'Voici mon compte rendu complet.',
                 'research_notes' => "- Point 1\n- Point 2",
-                'sources' => [
-                    ['type' => 'website', 'title' => 'Wikipedia', 'author' => '', 'url' => 'https://example.com', 'notes' => ''],
-                ],
                 'bibliography' => [
                     ['type' => 'book', 'title' => 'Mon livre', 'author' => 'Dupont', 'year' => '2020', 'publisher' => 'Flammarion'],
                 ],
@@ -207,7 +204,7 @@ class ProjectTest extends TestCase
         $this->actingAs($this->teacher)
             ->get(route('admin.projects.corrections.show', [$project, $this->student]))
             ->assertOk()
-            ->assertSee('Travail rédigé');
+            ->assertSee('Rédaction');
 
         $this->actingAs($this->teacher)
             ->post(route('admin.projects.corrections.finalize', [$project, $this->student]), [

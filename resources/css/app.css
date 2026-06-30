@@ -1007,6 +1007,16 @@
         @apply shadow-sm;
     }
 
+    .es-project-step-card {
+        @apply border border-stone-100;
+    }
+
+    .es-project-prose {
+        @apply text-es-ink leading-relaxed text-base whitespace-pre-wrap break-words;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
     .es-project-work textarea.es-textarea {
         @apply min-h-[280px] leading-relaxed text-base;
     }
@@ -1016,7 +1026,7 @@
     }
 
     .es-project-step-pill {
-        @apply flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-2 min-w-[4.5rem] text-center transition-all;
+        @apply flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 min-w-[5rem] max-w-[6.5rem] text-center transition-all;
         @apply bg-white border border-stone-200 text-es-muted;
     }
 
@@ -1029,12 +1039,20 @@
         @apply border-emerald-300 bg-emerald-50 text-emerald-800;
     }
 
+    .es-project-step-icon {
+        @apply text-base leading-none;
+    }
+
     .es-project-step-num {
-        @apply text-xs font-black tabular-nums;
+        @apply text-[10px] font-black tabular-nums opacity-70;
     }
 
     .es-project-step-label {
-        @apply text-[10px] font-bold leading-tight max-w-[4.5rem] truncate;
+        @apply text-[10px] font-bold leading-tight w-full px-0.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .es-project-nav {

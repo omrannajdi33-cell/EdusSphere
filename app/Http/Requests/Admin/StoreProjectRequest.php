@@ -63,7 +63,7 @@ class StoreProjectRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'require_sources' => $this->boolean('require_sources', true),
+            'require_sources' => false,
             'require_bibliography' => $this->boolean('require_bibliography', true),
             'skill_ids' => array_values(array_filter((array) $this->input('skill_ids', []))),
         ]);

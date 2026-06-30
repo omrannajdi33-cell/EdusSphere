@@ -178,19 +178,16 @@ class ProjectController extends Controller
         }
 
         if ($project->allowsUpload() && ! $project->allowsOnlineWrite() && $submission->files()->count() === 0) {
-            return response()->json(['message' => 'Téléverse au moins un fichier avant de soumettre.'], 422);
+            return response()->json(['message' => 'Dépose ton produit final avant de soumettre.'], 422);
         }
 
         if ($project->allowsUpload() && $project->allowsOnlineWrite()) {
-            $hasContent = filled(trim(strip_tags($submission->content ?? '')));
-            $hasFile = $submission->files()->exists();
-            if (! $hasContent && ! $hasFile) {
-                return response()->json(['message' => 'Rédige ton travail ou téléverse un fichier avant de soumettre.'], 422);
+            if (blank(trim(strip_tags($submission->content ?? '')))) {
+                return response()->json(['message' => 'Rédige ton travail avant de soumettre.'], 422);
             }
-        }
-
-        if ($project->require_sources && empty($submission->sources)) {
-            return response()->json(['message' => 'Ajoute au moins une source documentaire.'], 422);
+            if (! $submission->files()->exists()) {
+                return response()->json(['message' => 'Dépose ton produit final avant de soumettre.'], 422);
+            }
         }
 
         if ($project->require_bibliography && empty($submission->bibliography)) {

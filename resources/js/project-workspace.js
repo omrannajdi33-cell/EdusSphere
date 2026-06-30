@@ -4,7 +4,6 @@ document.addEventListener('alpine:init', () => {
         steps: [],
         content: config.content || '',
         researchNotes: config.researchNotes || '',
-        sources: config.sources || [],
         bibliography: config.bibliography || [],
         files: config.files || [],
         canEdit: config.canEdit,
@@ -23,17 +22,12 @@ document.addEventListener('alpine:init', () => {
                 { id: 'research', label: 'Recherche', icon: '🔍' },
             ];
 
-            if (cfg.requireSources) {
-                steps.push({ id: 'sources', label: 'Sources', icon: '📑' });
+            if (cfg.allowsWrite) {
+                steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
             }
 
-            if (cfg.allowsWrite && cfg.allowsUpload) {
-                steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
-                steps.push({ id: 'upload', label: 'Fichier', icon: '📎' });
-            } else if (cfg.allowsWrite) {
-                steps.push({ id: 'write', label: 'Rédaction', icon: '✍️' });
-            } else if (cfg.allowsUpload) {
-                steps.push({ id: 'upload', label: 'Téléversement', icon: '📎' });
+            if (cfg.allowsUpload) {
+                steps.push({ id: 'final', label: 'Produit final', icon: '📄' });
             }
 
             if (cfg.requireBibliography) {
@@ -55,6 +49,11 @@ document.addEventListener('alpine:init', () => {
 
         get isLastStep() {
             return this.stepIndex >= this.steps.length - 1;
+        },
+
+        get progressPercent() {
+            if (this.steps.length <= 1) return 100;
+            return Math.round((this.stepIndex / (this.steps.length - 1)) * 100);
         },
 
         isStep(id) {
@@ -81,16 +80,8 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        addSource() {
-            this.sources.push({ type: 'website', title: '', author: '', url: '', notes: '', accessed_at: '' });
-        },
-
         addBiblio() {
             this.bibliography.push({ type: 'book', title: '', author: '', year: '', publisher: '', url: '', notes: '' });
-        },
-
-        filledSources() {
-            return this.sources.filter(s => (s.title || '').trim() !== '');
         },
 
         filledBibliography() {
@@ -118,7 +109,6 @@ document.addEventListener('alpine:init', () => {
                     body: JSON.stringify({
                         content: this.content,
                         research_notes: this.researchNotes,
-                        sources: this.sources,
                         bibliography: this.bibliography,
                     }),
                 });
@@ -158,7 +148,7 @@ document.addEventListener('alpine:init', () => {
                 event.target.value = '';
                 await this.save();
             } catch (e) {
-                alert(e.message || 'Impossible de téléverser le fichier.');
+                alert(e.message || 'Impossible de déposer le fichier.');
             }
         },
 

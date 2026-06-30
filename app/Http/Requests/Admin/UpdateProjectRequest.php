@@ -64,7 +64,7 @@ class UpdateProjectRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'require_sources' => $this->boolean('require_sources'),
+            'require_sources' => false,
             'require_bibliography' => $this->boolean('require_bibliography'),
             'skill_ids' => array_values(array_filter((array) $this->input('skill_ids', []))),
         ]);

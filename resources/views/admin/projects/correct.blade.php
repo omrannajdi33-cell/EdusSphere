@@ -35,36 +35,20 @@
 
             @if ($project->allowsOnlineWrite() && filled($submission->content))
                 <section class="es-card p-5">
-                    <h2 class="font-extrabold text-lg mb-3">Travail rédigé</h2>
-                    <div class="prose prose-sm max-w-none whitespace-pre-wrap text-es-ink leading-relaxed">{{ $submission->content }}</div>
+                    <h2 class="font-extrabold text-lg mb-3">Rédaction</h2>
+                    <div class="prose prose-sm max-w-none es-project-prose">{{ $submission->content }}</div>
                 </section>
             @endif
 
             @if ($submission->files->isNotEmpty())
                 <section class="es-card p-5">
-                    <h2 class="font-extrabold text-lg mb-3">Fichiers déposés</h2>
+                    <h2 class="font-extrabold text-lg mb-3">Produit final</h2>
                     <ul class="space-y-2">
                         @foreach ($submission->files as $file)
                             <li>
                                 <a href="{{ route('project-submission-files.show', [$project, $file]) }}" class="es-link font-bold" target="_blank">
                                     📎 {{ $file->displayName() }}
                                 </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </section>
-            @endif
-
-            @if ($project->require_sources && ! empty($submission->sources))
-                <section class="es-card p-5">
-                    <h2 class="font-extrabold text-lg mb-3">Sources</h2>
-                    <ul class="space-y-3 text-sm">
-                        @foreach ($submission->sources as $source)
-                            <li class="rounded-xl bg-stone-50 p-3 border border-stone-100">
-                                <p class="font-bold">{{ $source['title'] ?? '' }}</p>
-                                @if (! empty($source['author']))<p class="text-es-muted">{{ $source['author'] }}</p>@endif
-                                @if (! empty($source['url']))<a href="{{ $source['url'] }}" class="es-link text-xs" target="_blank">{{ $source['url'] }}</a>@endif
-                                @if (! empty($source['notes']))<p class="mt-1 text-es-muted">{{ $source['notes'] }}</p>@endif
                             </li>
                         @endforeach
                     </ul>
