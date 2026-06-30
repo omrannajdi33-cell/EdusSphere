@@ -29,7 +29,7 @@ class OfficialLessonsSeederTest extends TestCase
         $this->assertTrue(
             Lesson::where('school_level_id', $level->id)
                 ->where('title', 'like', '%Compréhension de textes%')
-                ->where('status', 'published')
+                ->where('status', 'draft')
                 ->exists()
         );
 

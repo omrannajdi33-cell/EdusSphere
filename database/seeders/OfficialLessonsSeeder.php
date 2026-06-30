@@ -12,9 +12,7 @@ use Illuminate\Database\Seeder;
 use RuntimeException;
 
 /**
- * Importe les leçons textuelles depuis les fichiers sources (format « Lecon seed »).
- *
- * Production : php artisan db:seed --class=OfficialLessonsSeeder --force
+ * Importe les leçons textuelles en brouillon (publication manuelle par le prof).
  */
 class OfficialLessonsSeeder extends Seeder
 {
@@ -69,26 +67,29 @@ class OfficialLessonsSeeder extends Seeder
                     $this->plainTitle($plainTitle),
                 ]));
 
-                Lesson::updateOrCreate(
-                    ['source_ref' => $sourceRef],
-                    [
-                        'school_level_id' => $level->id,
-                        'subject_id' => $subject->id,
-                        'category' => $entry['domain'],
-                        'skill_id' => $skill->id,
-                        'title' => $title,
-                        'description' => $description,
-                        'status' => 'published',
-                        'published_at' => now(),
-                        'estimated_duration_min' => 15,
-                    ],
-                );
+                $lesson = Lesson::firstOrNew(['source_ref' => $sourceRef]);
+                $lesson->fill([
+                    'school_level_id' => $level->id,
+                    'subject_id' => $subject->id,
+                    'category' => $entry['domain'],
+                    'skill_id' => $skill->id,
+                    'title' => $title,
+                    'description' => $description,
+                    'estimated_duration_min' => 15,
+                ]);
+
+                if (! $lesson->exists) {
+                    $lesson->status = 'draft';
+                    $lesson->published_at = null;
+                }
+
+                $lesson->save();
 
                 $imported++;
             }
         }
 
-        $this->command?->info("Leçons officielles : {$imported} leçon(s) importée(s).");
+        $this->command?->info("Leçons officielles : {$imported} leçon(s) importée(s) en brouillon.");
         if ($skipped > 0) {
             $this->command?->warn("Ignorées : {$skipped}.");
         }
