@@ -40,6 +40,7 @@ use App\Http\Controllers\Student\BulletinController;
 use App\Http\Controllers\Student\PointRedemptionController;
 use App\Http\Controllers\Student\PointsController;
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
+use App\Http\Controllers\Student\ProfileController as StudentProfileController;
 use App\Http\Controllers\Student\ProjectController as StudentProjectController;
 use App\Http\Controllers\Student\ScheduleController as StudentScheduleController;
 use App\Models\Activity;
