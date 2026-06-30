@@ -20,7 +20,8 @@ _generate_todo_data.py
 .laravel-tmp
 todo-list.html
 cahier-de-charge.md
-docs/cadrage
+docs/
+*.md
 phpunit.xml
 .phpunit.result.cache
 .phpunit.cache

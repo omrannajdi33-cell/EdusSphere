@@ -112,6 +112,19 @@ Safari → URL Railway → **Partager** → **Sur l’écran d’accueil**
 | Unexposed service | Pas de domaine | Generate Domain dans Networking |
 | Healthcheck failure | Variables manquantes ou nginx pas démarré | Vérifier `APP_KEY` + références MySQL, puis Redeploy |
 | **Application failed to respond (502)** | Serveur arrêté ou mauvaise config | Voir ci-dessous |
+| **Failed to build an image** (logs vides ou « Reading file: .gitattributes ») | Builder Metal Railway, cache BuildKit, ou manque de RAM pendant le build | Voir ci-dessous |
+
+### Build — « Failed to build an image »
+
+Si le build échoue **sans logs détaillés** (seulement *Diagnosis › Reading file: .gitattributes*) :
+
+1. **Settings → Build → Use Metal Build Environment** → **désactiver** → Redeploy
+2. Vérifier **Settings → Build → Dockerfile Path** = `Dockerfile` (racine du repo)
+3. **Settings → Source → Root Directory** : laisser **vide**
+4. **Clear build cache** (Redeploy → cocher « Clear cache » si disponible)
+5. Si ça persiste : copier les **Build Logs** complets (pas seulement le résumé) et vérifier la ligne d’erreur après l’étape Diagnosis
+
+Le `Dockerfile` production compile les assets Vite + PHP en multi-stage ; un build complet prend ~2–3 min. Sur le plan Hobby, un timeout ou un OOM pendant `install-php-extensions` peut faire échouer le build sans message clair.
 
 ### 502 — « Application failed to respond »
 

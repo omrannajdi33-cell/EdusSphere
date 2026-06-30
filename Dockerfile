@@ -5,6 +5,8 @@ FROM node:22-alpine AS assets
 
 WORKDIR /app
 
+ENV NODE_OPTIONS=--max-old-space-size=2048
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -36,11 +38,9 @@ RUN composer install \
 
 FROM php:8.4-cli-bookworm AS production
 
-RUN apt-get update && apt-get install -y \
-    libpng-dev libonig-dev libxml2-dev libzip-dev libicu-dev \
-    --no-install-recommends \
-    && docker-php-ext-install pdo_mysql mbstring gd zip intl opcache \
-    && rm -rf /var/lib/apt/lists/*
+# install-php-extensions uses less RAM than docker-php-ext-install (Railway builders).
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_mysql mbstring gd zip intl opcache
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
