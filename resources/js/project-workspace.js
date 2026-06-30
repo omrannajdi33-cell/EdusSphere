@@ -10,10 +10,19 @@ document.addEventListener('alpine:init', () => {
         saveState: 'idle',
         saveLabel: '',
         submitting: false,
+        guide: config.bibliographyGuide || { styles: {}, documents: {}, fallback: {} },
+        bibGuideStyle: config.bibliographyGuide?.default_style || 'dionne',
+        bibGuideDoc: 'books',
+        bibGuideCase: 'book_whole',
+        activeBiblioIndex: 0,
 
         init() {
             this.steps = this.buildSteps(config);
             this.saveLabel = this.canEdit ? 'Sauvegarde auto' : '';
+            this.bibliography.forEach((entry) => this.normalizeBiblioEntry(entry));
+            if (this.bibliography.length > 0) {
+                this.syncGuideFromEntry(this.bibliography[0]);
+            }
         },
 
         buildSteps(cfg) {
@@ -56,6 +65,24 @@ document.addEventListener('alpine:init', () => {
             return Math.round((this.stepIndex / (this.steps.length - 1)) * 100);
         },
 
+        get bibGuideContent() {
+            const doc = this.guide.documents?.[this.bibGuideDoc];
+            const cases = doc?.cases ?? {};
+            const caseMeta = cases[this.bibGuideCase] ?? Object.values(cases)[0];
+            const format = caseMeta?.formats?.[this.bibGuideStyle];
+
+            if (format) {
+                return format;
+            }
+
+            return this.guide.fallback?.[this.bibGuideStyle] ?? {
+                title: 'Aide-mémoire',
+                structure: '',
+                example: '',
+                tips: [],
+            };
+        },
+
         isStep(id) {
             return this.currentStep?.id === id;
         },
@@ -80,8 +107,125 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        documentOptions() {
+            return Object.entries(this.guide.documents ?? {}).map(([key, meta]) => ({
+                key,
+                label: meta.label,
+            }));
+        },
+
+        caseOptions(docKey) {
+            const cases = this.guide.documents?.[docKey]?.cases ?? {};
+
+            return Object.entries(cases).map(([key, meta]) => ({
+                key,
+                label: meta.label,
+            }));
+        },
+
+        styleOptions() {
+            return Object.entries(this.guide.styles ?? {}).map(([key, meta]) => ({
+                key,
+                label: meta.label,
+                description: meta.description,
+            }));
+        },
+
+        firstCaseForDoc(docKey) {
+            const cases = this.caseOptions(docKey);
+            return cases[0]?.key ?? '';
+        },
+
+        normalizeBiblioEntry(entry) {
+            if (! entry.style) {
+                entry.style = this.guide.default_style || 'dionne';
+            }
+
+            if (! entry.document_type) {
+                entry.document_type = this.legacyDocumentType(entry.type);
+            }
+
+            if (! entry.document_case || ! this.guide.documents?.[entry.document_type]?.cases?.[entry.document_case]) {
+                entry.document_case = this.firstCaseForDoc(entry.document_type);
+            }
+        },
+
+        legacyDocumentType(type) {
+            const map = {
+                book: 'books',
+                article: 'journals',
+                website: 'web',
+                video: 'audio_video',
+                thesis: 'academic',
+            };
+
+            return map[type] ?? 'books';
+        },
+
+        setActiveBiblio(index) {
+            this.activeBiblioIndex = index;
+            const entry = this.bibliography[index];
+            if (entry) {
+                this.syncGuideFromEntry(entry);
+            }
+        },
+
+        syncGuideFromEntry(entry) {
+            this.bibGuideStyle = entry.style || this.guide.default_style || 'dionne';
+            this.bibGuideDoc = entry.document_type || 'books';
+            this.bibGuideCase = entry.document_case || this.firstCaseForDoc(this.bibGuideDoc);
+        },
+
+        applyGuideToActiveEntry() {
+            const entry = this.bibliography[this.activeBiblioIndex];
+            if (! entry) return;
+
+            entry.style = this.bibGuideStyle;
+            entry.document_type = this.bibGuideDoc;
+            entry.document_case = this.bibGuideCase;
+            this.save();
+        },
+
+        onGuideChange() {
+            if (! this.guide.documents?.[this.bibGuideDoc]?.cases?.[this.bibGuideCase]) {
+                this.bibGuideCase = this.firstCaseForDoc(this.bibGuideDoc);
+            }
+
+            this.applyGuideToActiveEntry();
+        },
+
+        onEntryDocChange(entry) {
+            entry.document_case = this.firstCaseForDoc(entry.document_type);
+            this.syncGuideFromEntry(entry);
+            this.save();
+        },
+
+        onEntryCaseChange(entry) {
+            this.syncGuideFromEntry(entry);
+            this.save();
+        },
+
+        onEntryStyleChange(entry) {
+            this.syncGuideFromEntry(entry);
+            this.save();
+        },
+
         addBiblio() {
-            this.bibliography.push({ type: 'book', title: '', author: '', year: '', publisher: '', url: '', notes: '' });
+            const entry = {
+                style: this.bibGuideStyle,
+                document_type: this.bibGuideDoc,
+                document_case: this.bibGuideCase,
+                title: '',
+                author: '',
+                year: '',
+                publisher: '',
+                url: '',
+                notes: '',
+            };
+
+            this.bibliography.push(entry);
+            this.activeBiblioIndex = this.bibliography.length - 1;
+            this.save();
         },
 
         filledBibliography() {
@@ -93,7 +237,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async save() {
-            if (!this.canEdit) return;
+            if (! this.canEdit) return;
 
             this.saveState = 'saving';
             this.saveLabel = 'Enregistrement…';
@@ -113,7 +257,7 @@ document.addEventListener('alpine:init', () => {
                     }),
                 });
 
-                if (!res.ok) throw new Error('save failed');
+                if (! res.ok) throw new Error('save failed');
 
                 this.saveState = 'saved';
                 this.saveLabel = 'Enregistré ✓';
@@ -131,7 +275,7 @@ document.addEventListener('alpine:init', () => {
 
         async uploadFile(event) {
             const file = event.target.files?.[0];
-            if (!file || !this.canEdit) return;
+            if (! file || ! this.canEdit) return;
 
             const form = new FormData();
             form.append('file', file);
@@ -143,7 +287,7 @@ document.addEventListener('alpine:init', () => {
                     body: form,
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'upload failed');
+                if (! res.ok) throw new Error(data.message || 'upload failed');
                 this.files.push(data.file);
                 event.target.value = '';
                 await this.save();
@@ -153,7 +297,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async removeFile(id) {
-            if (!this.canEdit || !confirm('Supprimer ce fichier ?')) return;
+            if (! this.canEdit || ! confirm('Supprimer ce fichier ?')) return;
 
             const url = `${config.deleteFileUrl}/${id}`;
 
@@ -162,7 +306,7 @@ document.addEventListener('alpine:init', () => {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': config.csrf, Accept: 'application/json' },
                 });
-                if (!res.ok) throw new Error('delete failed');
+                if (! res.ok) throw new Error('delete failed');
                 this.files = this.files.filter(f => f.id !== id);
             } catch {
                 alert('Impossible de supprimer le fichier.');
@@ -170,8 +314,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         async submitProject() {
-            if (!this.canEdit || this.submitting) return;
-            if (!confirm('Soumettre ton projet ? Tu ne pourras plus le modifier sans renvoi du professeur.')) return;
+            if (! this.canEdit || this.submitting) return;
+            if (! confirm('Soumettre ton projet ? Tu ne pourras plus le modifier sans renvoi du professeur.')) return;
 
             this.submitting = true;
             await this.save();
@@ -182,7 +326,7 @@ document.addEventListener('alpine:init', () => {
                     headers: { 'X-CSRF-TOKEN': config.csrf, Accept: 'application/json' },
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'submit failed');
+                if (! res.ok) throw new Error(data.message || 'submit failed');
                 window.location.href = data.url;
             } catch (e) {
                 alert(e.message || 'Impossible de soumettre.');

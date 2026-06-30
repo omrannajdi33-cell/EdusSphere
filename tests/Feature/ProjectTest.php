@@ -148,14 +148,22 @@ class ProjectTest extends TestCase
             ->assertOk()
             ->assertSee('Consignes')
             ->assertSee('Bibliographie')
-            ->assertDontSee('Sources');
+            ->assertSee('Aide-mémoire');
 
         $this->actingAs($this->studentUser)
             ->postJson(route('student.projects.save', $project), [
                 'content' => 'Voici mon compte rendu complet.',
                 'research_notes' => "- Point 1\n- Point 2",
                 'bibliography' => [
-                    ['type' => 'book', 'title' => 'Mon livre', 'author' => 'Dupont', 'year' => '2020', 'publisher' => 'Flammarion'],
+                    [
+                        'style' => 'dionne',
+                        'document_type' => 'books',
+                        'document_case' => 'book_whole',
+                        'title' => 'Mon livre',
+                        'author' => 'Dupont',
+                        'year' => '2020',
+                        'publisher' => 'Flammarion',
+                    ],
                 ],
             ])
             ->assertOk();

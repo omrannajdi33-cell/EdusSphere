@@ -1059,6 +1059,10 @@
         padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
     }
 
+    .es-biblio-guide {
+        @apply min-w-0;
+    }
+
     .es-project-nav .es-btn {
         @apply min-h-[3rem] text-base;
     }

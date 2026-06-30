@@ -25,18 +25,18 @@
     </header>
 
     <div class="es-correction-grid">
-        <div class="space-y-4">
+        <div class="space-y-4 min-w-0">
             @if (filled($submission->research_notes))
-                <section class="es-card p-5">
+                <section class="es-card p-5 min-w-0 overflow-hidden">
                     <h2 class="font-extrabold text-lg mb-3">Notes de recherche</h2>
-                    <div class="whitespace-pre-wrap text-es-ink leading-relaxed">{{ $submission->research_notes }}</div>
+                    <div class="es-project-prose">{{ $submission->research_notes }}</div>
                 </section>
             @endif
 
             @if ($project->allowsOnlineWrite() && filled($submission->content))
-                <section class="es-card p-5">
+                <section class="es-card p-5 min-w-0 overflow-hidden">
                     <h2 class="font-extrabold text-lg mb-3">Rédaction</h2>
-                    <div class="prose prose-sm max-w-none es-project-prose">{{ $submission->content }}</div>
+                    <div class="es-project-prose">{{ $submission->content }}</div>
                 </section>
             @endif
 
@@ -56,17 +56,31 @@
             @endif
 
             @if ($project->require_bibliography && ! empty($submission->bibliography))
-                <section class="es-card p-5">
+                @php $bibGuide = config('bibliography_guide'); @endphp
+                <section class="es-card p-5 min-w-0 overflow-hidden">
                     <h2 class="font-extrabold text-lg mb-3">Bibliographie</h2>
                     <ul class="space-y-3 text-sm">
                         @foreach ($submission->bibliography as $entry)
-                            <li class="rounded-xl bg-stone-50 p-3 border border-stone-100">
-                                <p class="font-bold">{{ $entry['title'] ?? '' }}</p>
-                                <p class="text-es-muted">
+                            @php
+                                $docLabel = $bibGuide['documents'][$entry['document_type'] ?? '']['label'] ?? null;
+                                $caseLabel = $bibGuide['documents'][$entry['document_type'] ?? '']['cases'][$entry['document_case'] ?? '']['label'] ?? null;
+                                $styleLabel = $bibGuide['styles'][$entry['style'] ?? '']['label'] ?? null;
+                            @endphp
+                            <li class="rounded-xl bg-stone-50 p-3 border border-stone-100 min-w-0">
+                                @if ($styleLabel || $docLabel)
+                                    <p class="text-[11px] font-bold uppercase tracking-wide text-es-muted mb-1">
+                                        {{ collect([$styleLabel, $docLabel, $caseLabel])->filter()->join(' · ') }}
+                                    </p>
+                                @endif
+                                <p class="font-bold break-words">{{ $entry['title'] ?? '' }}</p>
+                                <p class="text-es-muted break-words">
                                     {{ $entry['author'] ?? '' }}
                                     @if (! empty($entry['year'])) · {{ $entry['year'] }}@endif
                                     @if (! empty($entry['publisher'])) · {{ $entry['publisher'] }}@endif
                                 </p>
+                                @if (! empty($entry['url']))
+                                    <a href="{{ $entry['url'] }}" class="es-link text-xs break-all" target="_blank">{{ $entry['url'] }}</a>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

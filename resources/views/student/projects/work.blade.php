@@ -2,9 +2,21 @@
 
 @section('student-content')
 @php
+    $bibliographyGuide = config('bibliography_guide');
     $bibliography = old('bibliography', $submission->bibliography ?? []);
+    $defaultBiblioEntry = [
+        'style' => $bibliographyGuide['default_style'] ?? 'dionne',
+        'document_type' => 'books',
+        'document_case' => 'book_whole',
+        'title' => '',
+        'author' => '',
+        'year' => '',
+        'publisher' => '',
+        'url' => '',
+        'notes' => '',
+    ];
     if (empty($bibliography)) {
-        $bibliography = [['type' => 'book', 'title' => '', 'author' => '', 'year' => '', 'publisher' => '', 'notes' => '']];
+        $bibliography = [$defaultBiblioEntry];
     }
 @endphp
 
@@ -24,9 +36,10 @@
         allowsWrite: @json($project->allowsOnlineWrite()),
         allowsUpload: @json($project->allowsUpload()),
         requireBibliography: @json($project->require_bibliography),
+        bibliographyGuide: @js($bibliographyGuide),
     })"
 >
-    <div class="es-container py-5 max-w-3xl">
+    <div class="es-container py-5 max-w-5xl">
         <a href="{{ route('student.projects.index') }}" class="es-link text-sm font-bold">← Mes projets</a>
 
         <header class="mt-3 mb-5">
@@ -153,39 +166,159 @@
         </section>
 
         {{-- Bibliographie --}}
-        <section x-show="isStep('biblio')" x-cloak class="space-y-3">
+        <section x-show="isStep('biblio')" x-cloak class="space-y-4">
             <div class="es-card es-project-step-card p-5">
-                <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div>
                         <h2 class="font-extrabold text-lg">📚 Bibliographie</h2>
-                        <p class="text-sm text-es-muted">Liste tes références (livres, sites, articles…).</p>
+                        <p class="text-sm text-es-muted">Choisis le style et le type de document, puis remplis ta référence. L'aide-mémoire à droite te montre comment la présenter.</p>
                     </div>
-                    <button type="button" class="es-btn es-btn-secondary es-btn-sm" x-show="canEdit" @click="addBiblio()">+ Référence</button>
+                    <button type="button" class="es-btn es-btn-secondary es-btn-sm shrink-0" x-show="canEdit" @click="addBiblio()">+ Référence</button>
                 </div>
-                <template x-for="(entry, index) in bibliography" :key="index">
-                    <div class="rounded-2xl border border-stone-200 p-4 mb-3 space-y-3 bg-stone-50/50">
-                        <p class="text-xs font-bold text-es-muted" x-text="'Référence ' + (index + 1)"></p>
-                        <div>
-                            <label class="es-label">Titre *</label>
-                            <input type="text" x-model="entry.title" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <div>
-                                <label class="es-label">Auteur</label>
-                                <input type="text" x-model="entry.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start">
+                    <div class="space-y-3 min-w-0">
+                        <template x-for="(entry, index) in bibliography" :key="index">
+                            <div
+                                class="rounded-2xl border p-4 space-y-3 transition-colors"
+                                :class="activeBiblioIndex === index ? 'border-es-primary bg-violet-50/30' : 'border-stone-200 bg-stone-50/50'"
+                                @click="setActiveBiblio(index)"
+                            >
+                                <p class="text-xs font-bold text-es-muted" x-text="'Référence ' + (index + 1)"></p>
+
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label class="es-label">Style bibliographique</label>
+                                        <select
+                                            x-model="entry.style"
+                                            @change="onEntryStyleChange(entry)"
+                                            @focus="setActiveBiblio(index)"
+                                            :disabled="!canEdit"
+                                            class="es-select w-full"
+                                        >
+                                            <template x-for="opt in styleOptions()" :key="opt.key">
+                                                <option :value="opt.key" x-text="opt.label"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="es-label">Type de document</label>
+                                        <select
+                                            x-model="entry.document_type"
+                                            @change="onEntryDocChange(entry)"
+                                            @focus="setActiveBiblio(index)"
+                                            :disabled="!canEdit"
+                                            class="es-select w-full"
+                                        >
+                                            <template x-for="opt in documentOptions()" :key="opt.key">
+                                                <option :value="opt.key" x-text="opt.label"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="es-label">Cas de figure</label>
+                                    <select
+                                        x-model="entry.document_case"
+                                        @change="onEntryCaseChange(entry)"
+                                        @focus="setActiveBiblio(index)"
+                                        :disabled="!canEdit"
+                                        class="es-select w-full"
+                                    >
+                                        <template x-for="opt in caseOptions(entry.document_type)" :key="opt.key">
+                                            <option :value="opt.key" x-text="opt.label"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="es-label">Titre *</label>
+                                    <input type="text" x-model="entry.title" @input.debounce.800ms="save()" @focus="setActiveBiblio(index)" :disabled="!canEdit" class="es-input w-full">
+                                </div>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label class="es-label">Auteur</label>
+                                        <input type="text" x-model="entry.author" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                                    </div>
+                                    <div>
+                                        <label class="es-label">Année</label>
+                                        <input type="text" x-model="entry.year" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="es-label">Éditeur / revue / site</label>
+                                    <input type="text" x-model="entry.publisher" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
+                                </div>
+                                <div>
+                                    <label class="es-label">URL (si source en ligne)</label>
+                                    <input type="url" x-model="entry.url" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full" placeholder="https://…">
+                                </div>
+                                <button type="button" x-show="canEdit && bibliography.length > 1" class="text-sm font-bold text-red-600" @click.stop="bibliography.splice(index, 1); save()">Supprimer</button>
                             </div>
-                            <div>
-                                <label class="es-label">Année</label>
-                                <input type="text" x-model="entry.year" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="es-label">Éditeur / revue</label>
-                            <input type="text" x-model="entry.publisher" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full">
-                        </div>
-                        <button type="button" x-show="canEdit && bibliography.length > 1" class="text-sm font-bold text-red-600" @click="bibliography.splice(index, 1); save()">Supprimer</button>
+                        </template>
                     </div>
-                </template>
+
+                    <aside class="es-biblio-guide lg:sticky lg:top-4">
+                        <div class="rounded-2xl border border-violet-200 bg-violet-50/50 p-4 space-y-4">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-wider text-es-primary">Aide-mémoire</p>
+                                <h3 class="font-extrabold text-base mt-1">Comment citer ta source</h3>
+                                <p class="text-xs text-es-muted mt-1">Comme le guide Collecto (BANQ) : choisis le style, le type et le cas pour voir le modèle.</p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="es-label text-xs">1. Style bibliographique</label>
+                                    <select x-model="bibGuideStyle" @change="onGuideChange()" class="es-select w-full text-sm">
+                                        <template x-for="opt in styleOptions()" :key="opt.key">
+                                            <option :value="opt.key" x-text="opt.label"></option>
+                                        </template>
+                                    </select>
+                                    <p class="text-[11px] text-es-muted mt-1" x-text="guide.styles?.[bibGuideStyle]?.description"></p>
+                                </div>
+                                <div>
+                                    <label class="es-label text-xs">2. Type de document</label>
+                                    <select x-model="bibGuideDoc" @change="bibGuideCase = firstCaseForDoc(bibGuideDoc); onGuideChange()" class="es-select w-full text-sm">
+                                        <template x-for="opt in documentOptions()" :key="opt.key">
+                                            <option :value="opt.key" x-text="opt.label"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="es-label text-xs">3. Cas de figure</label>
+                                    <select x-model="bibGuideCase" @change="onGuideChange()" class="es-select w-full text-sm">
+                                        <template x-for="opt in caseOptions(bibGuideDoc)" :key="opt.key">
+                                            <option :value="opt.key" x-text="opt.label"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="rounded-xl bg-white border border-stone-200 p-3 space-y-3 text-sm min-w-0">
+                                <p class="font-extrabold text-es-ink" x-text="bibGuideContent.title"></p>
+                                <div>
+                                    <p class="text-[11px] font-bold uppercase tracking-wide text-es-muted mb-1">Structure</p>
+                                    <p class="es-project-prose text-sm" x-text="bibGuideContent.structure"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] font-bold uppercase tracking-wide text-es-muted mb-1">Exemple</p>
+                                    <p class="es-project-prose text-sm italic text-es-ink/90" x-text="bibGuideContent.example"></p>
+                                </div>
+                                <template x-if="(bibGuideContent.tips ?? []).length">
+                                    <div>
+                                        <p class="text-[11px] font-bold uppercase tracking-wide text-es-muted mb-1">Conseils</p>
+                                        <ul class="space-y-1 text-xs text-es-muted list-disc pl-4">
+                                            <template x-for="(tip, tipIndex) in bibGuideContent.tips" :key="tipIndex">
+                                                <li x-text="tip"></li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </section>
 
@@ -222,7 +355,7 @@
         </section>
 
         <footer class="es-project-nav fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-md px-4 py-3 safe-area-pb">
-            <div class="es-container max-w-3xl flex items-center gap-3">
+            <div class="es-container max-w-5xl flex items-center gap-3">
                 <button type="button" class="es-btn es-btn-secondary flex-1" @click="goPrev()" :disabled="isFirstStep">
                     ← Précédent
                 </button>
