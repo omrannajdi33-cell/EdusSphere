@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\ActivityPage;
+use App\Models\Project;
+use App\Models\ProjectSubmissionFile;
 use App\Models\ExamPage;
 use App\Models\Grade;
 use App\Models\Point;
@@ -50,6 +52,18 @@ class AppServiceProvider extends ServiceProvider
                 ? app(BehaviorPointService::class)->totalFor($student)
                 : 0);
             $view->with('scheduleTheme', app(\App\Services\StudentScheduleThemeService::class)->resolve(student: $student));
+        });
+
+        \Illuminate\Support\Facades\Route::bind('submissionFile', function (string $value, $route) {
+            $project = $route->parameter('project');
+            if (! $project instanceof Project) {
+                $project = Project::query()->findOrFail($project);
+            }
+
+            return ProjectSubmissionFile::query()
+                ->whereKey($value)
+                ->whereHas('submission', fn ($query) => $query->where('project_id', $project->id))
+                ->firstOrFail();
         });
     }
 }

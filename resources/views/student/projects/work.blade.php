@@ -14,6 +14,7 @@
         'publisher' => '',
         'url' => '',
         'notes' => '',
+        'citation' => '',
     ];
     if (empty($bibliography)) {
         $bibliography = [$defaultBiblioEntry];
@@ -254,6 +255,21 @@
                                     <label class="es-label">URL (si source en ligne)</label>
                                     <input type="url" x-model="entry.url" @input.debounce.800ms="save()" :disabled="!canEdit" class="es-input w-full" placeholder="https://…">
                                 </div>
+
+                                <div class="rounded-xl border border-violet-200 bg-white p-3 space-y-2">
+                                    <label class="es-label">Note bibliographique *</label>
+                                    <p class="text-xs text-es-muted">Rédige ici ta référence complète, en suivant le modèle de l'aide-mémoire à droite.</p>
+                                    <textarea
+                                        x-model="entry.citation"
+                                        @input.debounce.800ms="save()"
+                                        @focus="setActiveBiblio(index)"
+                                        :disabled="!canEdit"
+                                        rows="4"
+                                        class="es-textarea w-full text-sm leading-relaxed"
+                                        :placeholder="activeBiblioIndex === index ? ('Ex. : ' + bibGuideContent.example) : 'Rédige ta note bibliographique selon le modèle…'"
+                                    ></textarea>
+                                </div>
+
                                 <button type="button" x-show="canEdit && bibliography.length > 1" class="text-sm font-bold text-red-600" @click.stop="bibliography.splice(index, 1); save()">Supprimer</button>
                             </div>
                         </template>
@@ -347,7 +363,7 @@
                     @if ($project->require_bibliography)
                     <div class="flex justify-between gap-4 py-2 border-b border-stone-100">
                         <dt class="font-bold text-es-muted">Bibliographie</dt>
-                        <dd class="font-bold shrink-0" :class="filledBibliography().length ? 'text-emerald-600' : 'text-amber-600'" x-text="filledBibliography().length ? filledBibliography().length + ' réf.' : 'À compléter'"></dd>
+                        <dd class="font-bold shrink-0" :class="filledBibliography().length ? 'text-emerald-600' : 'text-amber-600'" x-text="filledBibliography().length ? filledBibliography().length + ' note(s)' : 'Notes à rédiger'"></dd>
                     </div>
                     @endif
                 </dl>

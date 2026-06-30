@@ -221,6 +221,7 @@ document.addEventListener('alpine:init', () => {
                 publisher: '',
                 url: '',
                 notes: '',
+                citation: '',
             };
 
             this.bibliography.push(entry);
@@ -229,7 +230,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         filledBibliography() {
-            return this.bibliography.filter(b => (b.title || '').trim() !== '');
+            return this.bibliography.filter(b => (b.citation || '').trim() !== '');
         },
 
         hasWorkContent() {

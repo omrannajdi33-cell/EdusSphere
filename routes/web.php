@@ -67,7 +67,7 @@ Route::middleware('auth')->get('/activity-media/{activity}/{media}', ActivityMed
 
 Route::middleware('auth')->get('/project-media/{project}/{media}', ProjectMediaController::class)->name('project-media.show');
 
-Route::middleware('auth')->get('/projects/{project}/submission-files/{file}', ProjectSubmissionFileController::class)->name('project-submission-files.show');
+Route::middleware('auth')->get('/projects/{project}/submission-files/{submissionFile}', ProjectSubmissionFileController::class)->name('project-submission-files.show');
 
 Route::middleware('auth')->get('/activities/{activity}/students/{student}/recording', ActivityRecordingController::class)->name('activities.recording.show');
 
@@ -190,7 +190,7 @@ Route::prefix('student')
         Route::get('/projects/{project}/work', [StudentProjectController::class, 'work'])->name('projects.work');
         Route::post('/projects/{project}/save', [StudentProjectController::class, 'save'])->name('projects.save');
         Route::post('/projects/{project}/upload', [StudentProjectController::class, 'upload'])->name('projects.upload');
-        Route::delete('/projects/{project}/files/{file}', [StudentProjectController::class, 'deleteFile'])->name('projects.files.destroy');
+        Route::delete('/projects/{project}/files/{submissionFile}', [StudentProjectController::class, 'deleteFile'])->name('projects.files.destroy');
         Route::post('/projects/{project}/submit', [StudentProjectController::class, 'submit'])->name('projects.submit');
         Route::get('/activities/{activity}/play', [StudentActivityController::class, 'play'])->name('activities.play');
         Route::post('/activities/{activity}/save', [StudentActivityController::class, 'save'])->name('activities.save');

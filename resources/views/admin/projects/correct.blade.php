@@ -72,14 +72,18 @@
                                         {{ collect([$styleLabel, $docLabel, $caseLabel])->filter()->join(' · ') }}
                                     </p>
                                 @endif
-                                <p class="font-bold break-words">{{ $entry['title'] ?? '' }}</p>
-                                <p class="text-es-muted break-words">
-                                    {{ $entry['author'] ?? '' }}
-                                    @if (! empty($entry['year'])) · {{ $entry['year'] }}@endif
-                                    @if (! empty($entry['publisher'])) · {{ $entry['publisher'] }}@endif
-                                </p>
+                                @if (! empty($entry['citation']))
+                                    <p class="font-bold text-es-ink es-project-prose">{{ $entry['citation'] }}</p>
+                                @else
+                                    <p class="font-bold break-words">{{ $entry['title'] ?? '' }}</p>
+                                    <p class="text-es-muted break-words">
+                                        {{ $entry['author'] ?? '' }}
+                                        @if (! empty($entry['year'])) · {{ $entry['year'] }}@endif
+                                        @if (! empty($entry['publisher'])) · {{ $entry['publisher'] }}@endif
+                                    </p>
+                                @endif
                                 @if (! empty($entry['url']))
-                                    <a href="{{ $entry['url'] }}" class="es-link text-xs break-all" target="_blank">{{ $entry['url'] }}</a>
+                                    <a href="{{ $entry['url'] }}" class="es-link text-xs break-all mt-1 inline-block" target="_blank">{{ $entry['url'] }}</a>
                                 @endif
                             </li>
                         @endforeach

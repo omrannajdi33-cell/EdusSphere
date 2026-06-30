@@ -18,4 +18,13 @@ final class PrivateStorage
     {
         return filled($path) && self::disk()->exists($path);
     }
+
+    public static function delete(?string $path): bool
+    {
+        if (! filled($path)) {
+            return false;
+        }
+
+        return self::disk()->delete($path);
+    }
 }

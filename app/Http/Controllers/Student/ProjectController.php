@@ -89,13 +89,14 @@ class ProjectController extends Controller
             'bibliography.*.publisher' => ['nullable', 'string', 'max:255'],
             'bibliography.*.url' => ['nullable', 'string', 'max:500'],
             'bibliography.*.notes' => ['nullable', 'string', 'max:1000'],
+            'bibliography.*.citation' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $submission->update([
             'content' => $data['content'] ?? $submission->content,
             'research_notes' => $data['research_notes'] ?? $submission->research_notes,
             'sources' => $this->cleanEntries($data['sources'] ?? []),
-            'bibliography' => $this->cleanEntries($data['bibliography'] ?? []),
+            'bibliography' => $this->cleanBibliographyEntries($data['bibliography'] ?? []),
             'last_saved_at' => now(),
         ]);
 
@@ -143,24 +144,25 @@ class ProjectController extends Controller
             'file' => [
                 'id' => $record->id,
                 'name' => $record->displayName(),
-                'url' => route('project-submission-files.show', [$project, $record], false),
+                'url' => route('project-submission-files.show', [$project, $record]),
             ],
         ]);
     }
 
-    public function deleteFile(Project $project, ProjectSubmissionFile $file): JsonResponse
+    public function deleteFile(Project $project, ProjectSubmissionFile $submissionFile): JsonResponse
     {
         $student = auth()->user()->student;
         abort_unless($student && $project->isVisibleToStudent($student), 404);
 
-        $submission = $file->submission;
+        $submission = $submissionFile->submission;
+        abort_unless($submission && $submission->project_id === $project->id, 404);
         abort_unless($submission->student_id === $student->id, 403);
         abort_if($submission->isLocked(), 423, 'Projet déjà soumis.');
 
-        if ($file->path) {
-            PrivateStorage::delete($file->path);
+        if ($submissionFile->path) {
+            PrivateStorage::delete($submissionFile->path);
         }
-        $file->delete();
+        $submissionFile->delete();
 
         return response()->json(['ok' => true]);
     }
@@ -193,8 +195,13 @@ class ProjectController extends Controller
             }
         }
 
-        if ($project->require_bibliography && empty($submission->bibliography)) {
-            return response()->json(['message' => 'Ajoute au moins une entrée bibliographique.'], 422);
+        if ($project->require_bibliography) {
+            $hasCitation = collect($submission->bibliography ?? [])
+                ->contains(fn ($entry) => filled(trim($entry['citation'] ?? '')));
+
+            if (! $hasCitation) {
+                return response()->json(['message' => 'Rédige au moins une note bibliographique selon le modèle.'], 422);
+            }
         }
 
         $submission->update([
@@ -208,6 +215,17 @@ class ProjectController extends Controller
             'ok' => true,
             'url' => route('student.projects.index'),
         ]);
+    }
+
+    /** @param  array<int, array<string, mixed>>  $entries */
+    private function cleanBibliographyEntries(array $entries): array
+    {
+        return collect($entries)
+            ->filter(fn ($entry) => is_array($entry) && (
+                filled(trim($entry['citation'] ?? '')) || filled(trim($entry['title'] ?? ''))
+            ))
+            ->values()
+            ->all();
     }
 
     /** @param  array<int, array<string, mixed>>  $entries */

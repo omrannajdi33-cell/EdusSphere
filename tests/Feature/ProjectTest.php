@@ -12,7 +12,9 @@ use App\Models\Subject;
 use App\Models\User;
 use Database\Seeders\SkillSeeder;
 use Database\Seeders\SubjectSeeder;
+use App\Models\ProjectSubmissionFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
@@ -148,6 +150,7 @@ class ProjectTest extends TestCase
             ->assertOk()
             ->assertSee('Consignes')
             ->assertSee('Bibliographie')
+            ->assertSee('Note bibliographique')
             ->assertSee('Aide-mémoire');
 
         $this->actingAs($this->studentUser)
@@ -163,6 +166,7 @@ class ProjectTest extends TestCase
                         'author' => 'Dupont',
                         'year' => '2020',
                         'publisher' => 'Flammarion',
+                        'citation' => 'Marie Dupont, Mon livre, (Montréal : Flammarion, 2020).',
                     ],
                 ],
             ])
@@ -225,5 +229,34 @@ class ProjectTest extends TestCase
             'project_id' => $project->id,
             'workflow_status' => 'corrected',
         ]);
+    }
+
+    public function test_teacher_can_download_submission_file(): void
+    {
+        Storage::fake('private');
+
+        $project = $this->createPublishedProject(['submission_format' => 'upload']);
+
+        $submission = ProjectSubmission::create([
+            'project_id' => $project->id,
+            'student_id' => $this->student->id,
+            'workflow_status' => 'in_progress',
+        ]);
+
+        $path = 'projects/'.$project->id.'/students/'.$this->student->id.'/test.pdf';
+        Storage::disk('private')->put($path, 'contenu produit final');
+
+        $file = ProjectSubmissionFile::create([
+            'project_submission_id' => $submission->id,
+            'filename' => 'produit-final.pdf',
+            'label' => 'Produit final',
+            'path' => $path,
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 21,
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->get(route('project-submission-files.show', [$project, $file]))
+            ->assertOk();
     }
 }
