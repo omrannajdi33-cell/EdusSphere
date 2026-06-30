@@ -33,6 +33,7 @@ class StoreActivityRequest extends FormRequest
     {
         $this->merge([
             'is_homework' => $this->boolean('is_homework'),
+            'require_result_photo' => $this->boolean('require_result_photo'),
         ]);
     }
 

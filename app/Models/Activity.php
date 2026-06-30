@@ -64,6 +64,7 @@ class Activity extends Model
         'description',
         'device_type',
         'is_homework',
+        'require_result_photo',
         'due_at',
         'homework_slot',
         'status',
@@ -74,6 +75,7 @@ class Activity extends Model
     {
         return [
             'is_homework' => 'boolean',
+            'require_result_photo' => 'boolean',
             'due_at' => 'datetime',
             'published_at' => 'datetime',
         ];
@@ -153,6 +155,11 @@ class Activity extends Model
     public function isHomework(): bool
     {
         return (bool) $this->is_homework;
+    }
+
+    public function requiresResultPhoto(): bool
+    {
+        return (bool) $this->require_result_photo;
     }
 
     public function homeworkSlotLabel(): ?string

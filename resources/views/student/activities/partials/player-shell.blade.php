@@ -38,7 +38,13 @@
     data-correction="{{ $correctionMode ? '1' : '0' }}"
     data-readonly="{{ $readOnly && ! $correctionMode ? '1' : '0' }}"
     data-returned="{{ $isReturned ? '1' : '0' }}"
-    data-recording-url="{{ $recordingUrlOverride ?? (auth()->check() && !($previewMode ?? false) ? route('student.activities.recording.upload', $activity, false) : '') }}"
+    data-recording-url="{{ $recordingUrlOverride ?? (auth()->check() && !($previewMode ?? false) ? route('student.activities.recording.upload', $activity) : '') }}"
+    @if ($activity->requiresResultPhoto())
+    data-require-result-photo="1"
+    data-result-photo-upload-url="{{ auth()->check() && !($previewMode ?? false) && !($correctionMode ?? false) && !($readOnly && !($isReturned ?? false)) ? route('student.activities.result-photo.upload', $activity) : '' }}"
+    data-result-photo-delete-url="{{ auth()->check() && !($previewMode ?? false) && !($correctionMode ?? false) && !($readOnly && !($isReturned ?? false)) ? route('student.activities.result-photo.delete', $activity) : '' }}"
+    data-result-photo-path="{{ $progression?->result_photo_path ?? '' }}"
+    @endif
     data-initial-page="{{ $startPage }}"
     data-total-pages="{{ $totalPages }}"
     data-home-url="{{ route('student.dashboard', absolute: false) }}"
@@ -332,6 +338,17 @@
                 </section>
             @endforeach
         </div>
+
+        @if ($activity->requiresResultPhoto() && ! ($correctionMode ?? false))
+            <div class="shrink-0 border-t border-sky-100 px-4 md:px-5 py-3 bg-sky-50/40 hidden" data-result-photo-wrapper>
+                @include('student.activities.partials.result-photo-panel', [
+                    'activity' => $activity,
+                    'progression' => $progression,
+                    'student' => $student ?? auth()->user()?->student,
+                    'readOnly' => $readOnly,
+                ])
+            </div>
+        @endif
 
         <footer class="ap-player-footer shrink-0 border-t border-stone-200 px-4 md:px-5 py-2.5 flex flex-wrap items-center gap-2 bg-stone-50/60 {{ $correctionMode ? 'justify-end' : 'justify-between' }}">
             @unless ($correctionMode)

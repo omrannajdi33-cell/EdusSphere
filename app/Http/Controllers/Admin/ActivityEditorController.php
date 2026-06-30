@@ -131,12 +131,18 @@ class ActivityEditorController extends Controller
             ->where('student_id', $student->id)
             ->first();
 
+        $progression = Progression::query()
+            ->where('activity_id', $activity->id)
+            ->where('student_id', $student->id)
+            ->first();
+
         return view('admin.activities.correct', [
             'adminNav' => 'corrections',
             'activity' => $activity,
             'student' => $student,
             'answers' => $answers,
             'correction' => $correction,
+            'progression' => $progression,
             'suggestedScore' => $corrections->suggestedScore($activity, $student),
         ]);
     }

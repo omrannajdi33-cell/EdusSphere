@@ -1,4 +1,5 @@
 import { initSubjectWorkspaces, collectWorkspaceData, waitForPendingUploads } from './subject-workspaces';
+import { initResultPhoto, waitForPendingResultPhoto, hasResultPhoto, toggleResultPhotoPanel } from './activity-result-photo';
 import { initSheetWorkspaces, getSheetDimensions, ensureSheetPageReady } from './sheet-workspace';
 import { csrfFetch, csrfToken, readErrorMessage } from './csrf-fetch';
 function initActivityPlayer(root) {
@@ -206,6 +207,7 @@ function initActivityPlayer(root) {
     });
 
     initSubjectWorkspaces(root);
+    initResultPhoto(root);
     initSheetWorkspaces(root);
 
     root.addEventListener('activity-player:resize-sheet', () => {
@@ -432,6 +434,8 @@ function initActivityPlayer(root) {
             submitBtn.classList.toggle('hidden', !isLast);
         }
 
+        toggleResultPhotoPanel(root, isLast && root.dataset.requireResultPhoto === '1');
+
         if (state?.needsCanvas) {
             requestAnimationFrame(() => resizeCanvas(pageEl));
         }
@@ -634,6 +638,14 @@ function initActivityPlayer(root) {
         await saveNow(true);
         try {
             await waitForPendingUploads(root);
+            await waitForPendingResultPhoto(root);
+
+            if (root.dataset.requireResultPhoto === '1' && !hasResultPhoto(root)) {
+                updateSaveStatus('error', 'Prends une photo de ton résultat avant de soumettre.');
+                toggleResultPhotoPanel(root, true);
+                return;
+            }
+
             const res = await csrfFetch(submitUrl, { method: 'POST' });
             if (res.status === 419) {
                 throw new Error('session expired');

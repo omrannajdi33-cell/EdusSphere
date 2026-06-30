@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\ActivityMediaController;
 use App\Http\Controllers\ActivityRecordingController;
+use App\Http\Controllers\ActivityResultPhotoController;
 use App\Http\Controllers\LessonMediaController;
 use App\Http\Controllers\ProjectMediaController;
 use App\Http\Controllers\ProjectSubmissionFileController;
@@ -71,6 +72,8 @@ Route::middleware('auth')->get('/project-media/{project}/{media}', ProjectMediaC
 Route::middleware('auth')->get('/projects/{project}/submission-files/{submissionFile}', ProjectSubmissionFileController::class)->name('project-submission-files.show');
 
 Route::middleware('auth')->get('/activities/{activity}/students/{student}/recording', ActivityRecordingController::class)->name('activities.recording.show');
+
+Route::middleware('auth')->get('/activities/{activity}/students/{student}/result-photo', ActivityResultPhotoController::class)->name('activities.result-photo.show');
 
 Route::prefix('admin')
     ->middleware(['auth', 'role:'.User::ROLE_TEACHER])
@@ -197,6 +200,8 @@ Route::prefix('student')
         Route::post('/activities/{activity}/save', [StudentActivityController::class, 'save'])->name('activities.save');
         Route::post('/activities/{activity}/recording', [StudentActivityController::class, 'uploadRecording'])->name('activities.recording.upload');
         Route::get('/activities/{activity}/recording', [StudentActivityController::class, 'showRecording'])->name('activities.recording');
+        Route::post('/activities/{activity}/result-photo', [StudentActivityController::class, 'uploadResultPhoto'])->name('activities.result-photo.upload');
+        Route::delete('/activities/{activity}/result-photo', [StudentActivityController::class, 'deleteResultPhoto'])->name('activities.result-photo.delete');
         Route::post('/activities/{activity}/submit', [StudentActivityController::class, 'submit'])->name('activities.submit');
         Route::get('/exams', [StudentExamController::class, 'index'])->name('exams.index');
         Route::post('/exams/{exam}/start', [StudentExamController::class, 'start'])->name('exams.start');

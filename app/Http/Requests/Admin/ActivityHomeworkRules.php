@@ -13,6 +13,7 @@ class ActivityHomeworkRules
     {
         return [
             'is_homework' => ['sometimes', 'boolean'],
+            'require_result_photo' => ['sometimes', 'boolean'],
             'due_at' => ['nullable', 'required_if:is_homework,1,true', 'date'],
             'homework_slot' => [
                 'nullable',

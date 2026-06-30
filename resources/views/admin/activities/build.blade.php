@@ -175,6 +175,23 @@
                     </div>
                 </div>
 
+                @php $requireResultPhoto = (bool) old('require_result_photo', $activity->require_result_photo ?? false); @endphp
+                <div class="rounded-2xl border border-sky-200 bg-sky-50/70 p-5">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="require_result_photo"
+                            value="1"
+                            class="mt-1 rounded border-stone-300 text-es-primary focus:ring-es-primary"
+                            @checked($requireResultPhoto)
+                        >
+                        <span>
+                            <span class="font-extrabold text-es-ink block">Photo du résultat (iPad / tablette)</span>
+                            <span class="text-sm text-es-muted">L'élève devra prendre une photo de son travail terminé avant de soumettre. Idéal pour une feuille manuscrite ou un produit final.</span>
+                        </span>
+                    </label>
+                </div>
+
                 <div class="flex flex-wrap gap-3 pt-4">
                     <x-button type="submit">{{ $isNew ? 'Continuer → Contenu' : 'Enregistrer et continuer' }}</x-button>
                 </div>

@@ -16,6 +16,7 @@ class Progression extends Model
         'workflow_status',
         'submitted_at',
         'time_spent_seconds',
+        'result_photo_path',
     ];
 
     protected function casts(): array

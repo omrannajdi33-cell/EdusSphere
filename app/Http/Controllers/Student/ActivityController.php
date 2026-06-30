@@ -180,6 +180,66 @@ class ActivityController extends Controller
         ]);
     }
 
+    public function uploadResultPhoto(Request $request, Activity $activity): JsonResponse
+    {
+        $student = auth()->user()->student;
+        abort_unless($activity->isVisibleToStudent($student), 404);
+        abort_unless($student, 403);
+        abort_unless($activity->requiresResultPhoto(), 422, 'Cette activité n\'accepte pas de photo de résultat.');
+
+        $progression = Progression::firstOrCreate(
+            ['student_id' => $student->id, 'activity_id' => $activity->id],
+            ['last_page' => 1, 'percent_complete' => 0, 'workflow_status' => 'in_progress'],
+        );
+
+        abort_if(in_array($progression->workflow_status, ['submitted', 'corrected'], true), 423, 'Activité déjà soumise.');
+
+        $data = $request->validate([
+            'photo' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,heic,heif'],
+        ]);
+
+        if ($progression->result_photo_path && PrivateStorage::exists($progression->result_photo_path)) {
+            PrivateStorage::delete($progression->result_photo_path);
+        }
+
+        $file = $data['photo'];
+        $ext = $file->getClientOriginalExtension() ?: 'jpg';
+        $path = $file->storeAs(
+            'activities/'.$activity->id.'/students/'.$student->id,
+            'result-'.Str::uuid().'.'.$ext,
+            PrivateStorage::DISK,
+        );
+
+        $progression->update(['result_photo_path' => $path]);
+
+        return response()->json([
+            'path' => $path,
+            'url' => route('activities.result-photo.show', [$activity, $student]),
+        ]);
+    }
+
+    public function deleteResultPhoto(Activity $activity): JsonResponse
+    {
+        $student = auth()->user()->student;
+        abort_unless($activity->isVisibleToStudent($student), 404);
+        abort_unless($student, 403);
+
+        $progression = Progression::where('student_id', $student->id)
+            ->where('activity_id', $activity->id)
+            ->first();
+
+        abort_if(! $progression, 404);
+        abort_if(in_array($progression->workflow_status, ['submitted', 'corrected'], true), 423, 'Activité déjà soumise.');
+
+        if ($progression->result_photo_path && PrivateStorage::exists($progression->result_photo_path)) {
+            PrivateStorage::delete($progression->result_photo_path);
+        }
+
+        $progression->update(['result_photo_path' => null]);
+
+        return response()->json(['ok' => true]);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -238,6 +298,13 @@ class ActivityController extends Controller
             $progression && in_array($progression->workflow_status, ['submitted', 'corrected'], true),
             423,
         );
+
+        if ($activity->requiresResultPhoto()) {
+            $photoPath = $progression?->result_photo_path;
+            if (blank($photoPath) || ! PrivateStorage::exists($photoPath)) {
+                return response()->json(['message' => 'Prends une photo de ton résultat avant de soumettre.'], 422);
+            }
+        }
 
         Progression::updateOrCreate(
             ['student_id' => $student->id, 'activity_id' => $activity->id],

@@ -4,6 +4,7 @@ namespace Tests\Feature\Activities;
 
 use App\Models\Activity;
 use App\Models\ActivityPage;
+use App\Models\Progression;
 use App\Models\Question;
 use App\Models\Skill;
 use App\Models\Student;
@@ -489,6 +490,69 @@ class ActivityEngineTest extends TestCase
     {
         $this->assertCount(8, config('activity.page_types'));
         $this->assertCount(10, config('activity.question_types'));
+    }
+
+    public function test_student_can_upload_result_photo_and_teacher_can_view_it(): void
+    {
+        Storage::fake('private');
+
+        $activity = $this->makeDraftActivity();
+        $activity->update(['require_result_photo' => true]);
+        ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Travail',
+            'type' => 'free_write',
+            'content' => ['body' => 'Fais l\'exercice sur ta feuille.'],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $this->actingAs($this->studentUser)
+            ->post(route('student.activities.result-photo.upload', $activity), [
+                'photo' => UploadedFile::fake()->create('resultat.jpg', 100, 'image/jpeg'),
+            ])
+            ->assertOk()
+            ->assertJsonStructure(['path', 'url']);
+
+        $progression = Progression::query()
+            ->where('student_id', $this->student->id)
+            ->where('activity_id', $activity->id)
+            ->firstOrFail();
+
+        $this->assertNotNull($progression->result_photo_path);
+        Storage::disk('private')->assertExists($progression->result_photo_path);
+
+        $this->actingAs($this->studentUser)
+            ->postJson(route('student.activities.submit', $activity))
+            ->assertOk();
+
+        $this->actingAs($this->teacher)
+            ->get(route('admin.activities.corrections.show', [$activity, $this->student]))
+            ->assertOk()
+            ->assertSee('Photo du résultat');
+
+        $this->actingAs($this->teacher)
+            ->get(route('activities.result-photo.show', [$activity, $this->student]))
+            ->assertOk();
+    }
+
+    public function test_submit_requires_result_photo_when_option_enabled(): void
+    {
+        $activity = $this->makeDraftActivity();
+        $activity->update(['require_result_photo' => true]);
+        ActivityPage::create([
+            'activity_id' => $activity->id,
+            'page_order' => 1,
+            'title' => 'Travail',
+            'type' => 'free_write',
+            'content' => ['body' => 'Consignes'],
+        ]);
+        $activity->publishTo([$this->student->id]);
+
+        $this->actingAs($this->studentUser)
+            ->postJson(route('student.activities.submit', $activity))
+            ->assertStatus(422)
+            ->assertJson(['message' => 'Prends une photo de ton résultat avant de soumettre.']);
     }
 
     public function test_teacher_can_delete_activity(): void

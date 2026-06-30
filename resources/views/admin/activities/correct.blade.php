@@ -45,6 +45,20 @@
         </div>
 
         <aside class="es-correction-aside">
+            @if ($activity->requiresResultPhoto() && $progression?->result_photo_path)
+                <div class="es-card p-5 mb-4">
+                    <h2 class="font-extrabold text-lg mb-3">📷 Photo du résultat</h2>
+                    <a href="{{ route('activities.result-photo.show', [$activity, $student]) }}" target="_blank" class="block">
+                        <img
+                            src="{{ route('activities.result-photo.show', [$activity, $student]) }}"
+                            alt="Photo du résultat de {{ $student->full_name }}"
+                            class="w-full rounded-xl border border-stone-200 bg-white object-contain max-h-80"
+                        >
+                    </a>
+                    <p class="text-xs text-es-muted mt-2">Clique sur l'image pour l'ouvrir en grand.</p>
+                </div>
+            @endif
+
             <div class="es-card es-correction-panel p-5 space-y-4">
                 <h2 class="font-extrabold text-lg">Validation</h2>
 
